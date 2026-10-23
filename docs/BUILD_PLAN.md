@@ -38,7 +38,7 @@ One monorepo: a Flutter app, a Python backend on Cloud Run, and Firebase for dat
 | --- | --- | --- |
 | App | Flutter (stable), Dart | One codebase for Android and iPhone |
 | State / routing | Riverpod, go\_router | Testable, standard in 2026 Flutter apps |
-| Share intake | receive\_sharing\_intent plugin + two Android share activities (Me, Home) | Space chosen by the tap |
+| Share intake | Two native Kotlin share activities (Me, Home) that queue the URL and finish without starting Flutter | Space chosen by the tap; closes in under 1 s |
 | On-device download (Android) | youtubedl-android (yt-dlp for Android) behind a Kotlin platform channel | Residential IP, not blocked |
 | Data / auth / push | Firestore, Firebase Auth (Google sign-in), Storage, FCM | Offline sync, built-in push |
 | Maps | google\_maps\_flutter + Places API (New), called from backend | Key stays server-side |
@@ -194,7 +194,7 @@ Gate: 10 real reels (5 TikTok, 5 Instagram) go from share to correct JSON on an 
 - [x] **P0-01 · Repo and skeleton**
   - Monorepo created with the structure in Locked tech spec; Flutter app runs on your phone; FastAPI returns 200 on `/health` locally.
   - GitHub Actions runs lint + tests on every push.
-- [ ] **P0-02 · Android share intake**
+- [x] **P0-02 · Android share intake**
   - Two share targets, "Reelbrain · Me" and "Reelbrain · Home", appear when sharing from TikTok, Instagram and YouTube.
   - Each receives the URL, logs it with the space, and closes in under 1 s without opening the main app.
 - [ ] **P0-03 · On-device downloader (Android)**

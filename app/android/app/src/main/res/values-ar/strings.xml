@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="share_me">ريل برين · أنا</string>
+    <string name="share_home">ريل برين · البيت</string>
+    <string name="share_no_link">لا يوجد رابط للحفظ</string>
+</resources>
