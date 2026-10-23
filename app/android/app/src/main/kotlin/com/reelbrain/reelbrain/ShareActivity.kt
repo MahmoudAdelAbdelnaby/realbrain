@@ -13,7 +13,17 @@ import android.widget.Toast
 class ShareActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val space = if (componentName.className.endsWith("ShareHome")) "home" else "me"
+        handle(intent)
+    }
+
+    // A second share that lands before this one finished is delivered here, not to a new instance.
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handle(intent)
+    }
+
+    private fun handle(intent: Intent?) {
+        val space = if (intent?.component?.className?.endsWith("ShareHome") ?: componentName.className.endsWith("ShareHome")) "home" else "me"
         val text = intent?.getStringExtra(Intent.EXTRA_TEXT)
         val url = ShareText.extractUrl(text)
         if (url == null) {

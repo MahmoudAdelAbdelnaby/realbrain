@@ -30,17 +30,27 @@ object Downloader {
         if (ready) return
         YoutubeDL.getInstance().init(ctx.applicationContext)
         ready = true
-        // TikTok/Instagram extractors break often; a stale yt-dlp is the most common failure.
-        val prefs = ctx.getSharedPreferences("downloader", Context.MODE_PRIVATE)
-        if (System.currentTimeMillis() - prefs.getLong("updated_at", 0) > UPDATE_EVERY_MS) {
-            runCatching { YoutubeDL.getInstance().updateYoutubeDL(ctx.applicationContext, YoutubeDL.UpdateChannel.STABLE) }
-                .onSuccess { prefs.edit().putLong("updated_at", System.currentTimeMillis()).apply() }
-                .onFailure { Log.w(ShareActivity.TAG, "yt-dlp update failed", it) }
-        }
     }
 
-    /** Blocking; call off the main thread. Throws [DownloadError]. */
-    fun download(ctx: Context, url: String): Download {
+    /**
+     * TikTok/Instagram extractors break often, so yt-dlp updates itself at most daily.
+     * Called after a download, never before: the first share shouldn't wait on it.
+     */
+    fun updateIfStale(ctx: Context) {
+        val prefs = ctx.getSharedPreferences("downloader", Context.MODE_PRIVATE)
+        if (!ready || System.currentTimeMillis() - prefs.getLong("updated_at", 0) < UPDATE_EVERY_MS) return
+        runCatching { YoutubeDL.getInstance().updateYoutubeDL(ctx.applicationContext, YoutubeDL.UpdateChannel.STABLE) }
+            .onSuccess { prefs.edit().putLong("updated_at", System.currentTimeMillis()).apply() }
+            .onFailure { Log.w(ShareActivity.TAG, "yt-dlp update failed", it) }
+    }
+
+    /** Kills a running yt-dlp, so a stopped worker can't leave one racing its own retry. */
+    fun stop(processId: String) {
+        YoutubeDL.getInstance().destroyProcessById(processId)
+    }
+
+    /** Blocking; call off the main thread. Throws [DownloadError], or InterruptedException when stopped. */
+    fun download(ctx: Context, url: String, processId: String = url): Download {
         try {
             init(ctx)
         } catch (e: Exception) {
@@ -59,7 +69,12 @@ object Downloader {
             addOption("--retries", "2")
         }
         val out = try {
-            YoutubeDL.getInstance().execute(request).out
+            YoutubeDL.getInstance().execute(request, processId).out
+        } catch (e: InterruptedException) {
+            stop(processId)
+            throw e
+        } catch (e: YoutubeDL.CanceledException) {
+            throw InterruptedException("stopped")
         } catch (e: Exception) {
             val msg = e.message ?: e.toString()
             throw DownloadError(DownloadErrors.classify(msg), msg.takeLast(500))
@@ -81,16 +96,24 @@ object Downloader {
 object DownloadErrors {
     // Order matters: the first matching rule wins.
     private val rules = listOf(
-        "NO_NETWORK" to Regex("(?i)unable to resolve host|network is unreachable|failed to resolve|no address associated|connection refused|getaddrinfo"),
+        "NO_NETWORK" to Regex("(?i)unable to resolve host|network is unreachable|failed to resolve|no address associated|connection refused|getaddrinfo|remote end closed|connection reset|connection aborted|transporterror"),
         "TIMEOUT" to Regex("(?i)timed out|timeout"),
         "LOGIN_REQUIRED" to Regex("(?i)login required|log in|sign in|cookies|private|rate-limit reached|requested content is not available"),
-        "NOT_FOUND" to Regex("(?i)http error 404|not found|video unavailable|this video is unavailable|has been removed|does not exist"),
+        // yt-dlp couldn't read the page (TikTok "status code 10240", "unable to extract"): the server fallback may.
+        "EXTRACTOR" to Regex("""(?i)status code \d+|unable to extract|please report this issue"""),
+        "NOT_FOUND" to Regex("(?i)http error 404|video unavailable|this video is unavailable|has been removed|does not exist"),
         "UNSUPPORTED_URL" to Regex("(?i)unsupported url|no video formats|is not a valid url|no video could be found"),
         "BLOCKED" to Regex("(?i)http error 403|forbidden|http error 429|too many requests"),
     )
 
-    fun classify(message: String): String =
-        rules.firstOrNull { (_, re) -> re.containsMatchIn(message) }?.first ?: "UNKNOWN"
+    /**
+     * Classifies on yt-dlp's ERROR lines only: its WARNING lines ("ffmpeg ... does not exist",
+     * "impersonation") appear on every run and used to win the match.
+     */
+    fun classify(message: String): String {
+        val errors = message.lines().filter { it.trimStart().startsWith("ERROR") }.joinToString("\n").ifEmpty { message }
+        return rules.firstOrNull { (_, re) -> re.containsMatchIn(errors) }?.first ?: "UNKNOWN"
+    }
 
     /** Retrying helps for these; the rest fail the same way again. */
     fun isTransient(code: String) = code == "NO_NETWORK" || code == "TIMEOUT" || code == "BLOCKED"

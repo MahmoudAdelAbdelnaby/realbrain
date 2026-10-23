@@ -39,6 +39,7 @@ android {
         buildConfigField("String", "FIREBASE_API_KEY", localProp("reelbrain.firebaseApiKey"))
         buildConfigField("String", "FIREBASE_APP_ID", localProp("reelbrain.firebaseAppId"))
         buildConfigField("String", "FIREBASE_PROJECT_ID", localProp("reelbrain.firebaseProjectId"))
+        buildConfigField("String", "DEV_TOKEN", localProp("reelbrain.devToken"))
     }
 
     buildFeatures {

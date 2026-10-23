@@ -125,6 +125,13 @@ class _Message extends StatelessWidget {
       );
 }
 
+/// The yt-dlp ERROR line behind a failure code, so a wrong code can't hide the real cause.
+String _errorLine(Map<String, dynamic> save) {
+  final lines = (save['error_detail'] as String? ?? '').split('\n');
+  final error = lines.where((l) => l.startsWith('ERROR')).lastOrNull;
+  return error == null ? '' : '\n$error';
+}
+
 class _SaveTile extends StatelessWidget {
   const _SaveTile(this.save);
   final Map<String, dynamic> save;
@@ -137,7 +144,7 @@ class _SaveTile extends StatelessWidget {
     final detail = switch (status) {
       'downloaded' => '${((size ?? 0) / 1e6).toStringAsFixed(1)} MB · '
           '${dur?.toStringAsFixed(0) ?? '?'} s · ${save['download_ms']} ms',
-      'failed' || 'upload_failed' => '${save['error']}',
+      'failed' || 'upload_failed' => '${save['error']}${_errorLine(save)}',
       _ => status,
     };
     return ListTile(
@@ -146,7 +153,11 @@ class _SaveTile extends StatelessWidget {
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       ),
-      subtitle: Text('${save['space']} · $detail'),
+      subtitle: Text(
+        '${save['space']} · $detail',
+        maxLines: 3,
+        overflow: TextOverflow.ellipsis,
+      ),
       trailing: switch (status) {
         'queued' || 'downloading' || 'uploading' => const SizedBox.square(
             dimension: 20,

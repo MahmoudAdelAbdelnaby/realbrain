@@ -2,7 +2,15 @@ package com.reelbrain.reelbrain
 
 import android.content.Context
 import android.util.Log
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.pm.ServiceInfo
+import android.os.Build
+import androidx.core.app.NotificationCompat
 import androidx.work.BackoffPolicy
+import androidx.work.ExistingWorkPolicy
+import androidx.work.ForegroundInfo
+import androidx.work.OutOfQuotaPolicy
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.NetworkType
@@ -10,7 +18,9 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
@@ -65,9 +75,10 @@ object Saves {
             .setInputData(workDataOf("id" to id))
             .setConstraints(Constraints(requiredNetworkType = NetworkType.CONNECTED))
             .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 15, TimeUnit.SECONDS)
+            // Expedited: starts now, even with the app closed. Plain work was deferred until the app reopened.
+            .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
             .build()
-        // ponytail: plain (not expedited) work; starts in seconds on an idle phone. Expedite if saves feel slow.
-        WorkManager.getInstance(ctx).enqueue(work)
+        WorkManager.getInstance(ctx).enqueueUniqueWork("save-$id", ExistingWorkPolicy.KEEP, work)
         return id
     }
 }
@@ -92,10 +103,16 @@ class SaveWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ctx, 
             Saves.upsert(ctx, id, mapOf("status" to "downloading", "attempt" to runAttemptCount + 1))
             val started = System.currentTimeMillis()
             try {
-                val d = Downloader.download(ctx, url)
-                Saves.upsert(ctx, id, d.toMap() + mapOf("status" to "downloaded", "download_ms" to System.currentTimeMillis() - started, "error" to null))
+                val d = runInterruptible { Downloader.download(ctx, url, id) }
+                Saves.upsert(
+                    ctx, id,
+                    d.toMap() + mapOf("status" to "downloaded", "download_ms" to System.currentTimeMillis() - started, "error" to null, "error_detail" to null),
+                )
                 Log.i(ShareActivity.TAG, "downloaded id=$id ${d.sizeBytes}B ${d.durationS}s in ${System.currentTimeMillis() - started}ms")
                 file = File(d.path)
+            } catch (e: CancellationException) {
+                Downloader.stop(id) // the worker was stopped: don't leave yt-dlp racing the retry
+                throw e
             } catch (e: DownloadError) {
                 Log.w(ShareActivity.TAG, "download id=$id failed ${e.code}: ${e.message}")
                 val retry = DownloadErrors.isTransient(e.code) && !lastTry
@@ -104,6 +121,7 @@ class SaveWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ctx, 
                 return@withContext sendWithoutVideo(id, save, e.code)
             }
         }
+        Downloader.updateIfStale(ctx)
         if (!Backend.configured) return@withContext Result.success()
 
         // 2. Hand the video to the backend.
@@ -125,6 +143,20 @@ class SaveWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ctx, 
             Saves.upsert(ctx, id, mapOf("status" to if (lastTry) "upload_failed" else "downloaded", "error" to "UPLOAD", "error_detail" to e.message))
             if (lastTry) Result.failure() else Result.retry()
         }
+    }
+
+    /** Needed below Android 12, where expedited work runs as a foreground service. */
+    override suspend fun getForegroundInfo(): ForegroundInfo {
+        val nm = ctx.getSystemService(NotificationManager::class.java)
+        if (Build.VERSION.SDK_INT >= 26) {
+            nm.createNotificationChannel(NotificationChannel("saves", "Saving reels", NotificationManager.IMPORTANCE_LOW))
+        }
+        val n = NotificationCompat.Builder(ctx, "saves")
+            .setSmallIcon(android.R.drawable.stat_sys_download)
+            .setContentTitle("Saving reel")
+            .setOngoing(true)
+            .build()
+        return if (Build.VERSION.SDK_INT >= 29) ForegroundInfo(1, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC) else ForegroundInfo(1, n)
     }
 
     private fun sendWithoutVideo(id: String, save: JSONObject, reason: String): Result {

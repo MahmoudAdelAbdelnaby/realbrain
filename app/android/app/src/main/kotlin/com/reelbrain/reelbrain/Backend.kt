@@ -15,9 +15,12 @@ import java.util.concurrent.TimeUnit
 /**
  * Phone -> backend calls from the Backend contract. Configured from android/local.properties
  * (reelbrain.apiUrl, reelbrain.firebaseApiKey/AppId/ProjectId); without them saves stay on the phone.
+ * Local backend on the PC instead: reelbrain.apiUrl=http://<pc-ip>:8000 and reelbrain.devToken=dev
+ * (only accepted by a backend started with AUTH_MODE=dev).
  */
 object Backend {
-    val configured get() = BuildConfig.API_URL.isNotEmpty() && BuildConfig.FIREBASE_APP_ID.isNotEmpty()
+    val configured get() =
+        BuildConfig.API_URL.isNotEmpty() && (BuildConfig.FIREBASE_APP_ID.isNotEmpty() || BuildConfig.DEV_TOKEN.isNotEmpty())
 
     @Synchronized
     private fun auth(ctx: Context): FirebaseAuth {
@@ -34,6 +37,7 @@ object Backend {
 
     /** Firebase ID token. ponytail: anonymous sign-in for the Phase 0 spike; P1-03 links it to Google sign-in. */
     private fun token(ctx: Context): String {
+        if (BuildConfig.DEV_TOKEN.isNotEmpty()) return BuildConfig.DEV_TOKEN
         val auth = auth(ctx)
         val user = auth.currentUser ?: Tasks.await(auth.signInAnonymously(), 30, TimeUnit.SECONDS).user!!
         return Tasks.await(user.getIdToken(false), 30, TimeUnit.SECONDS).token!!

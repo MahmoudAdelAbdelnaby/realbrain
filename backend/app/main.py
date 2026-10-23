@@ -1,4 +1,5 @@
 import logging
+import os
 import uuid
 from urllib.parse import urlparse
 
@@ -12,6 +13,10 @@ from app.pipeline.process import process
 from app.schemas import CreatedSave, CreateSave, NoVideo, ProcessTask
 
 logging.basicConfig(level=logging.INFO)
+if not os.environ.get("GEMINI_API_KEY"):
+    logging.getLogger("reelbrain").warning(
+        "GEMINI_API_KEY is not set: saves will upload but fail at Extract. Add it to backend/.env."
+    )
 app = FastAPI(title="Reelbrain API")
 MAX_VIDEO_BYTES = 200 * 1024 * 1024
 

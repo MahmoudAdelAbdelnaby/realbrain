@@ -20,6 +20,18 @@ class DownloadErrorsTest {
         assertEquals("UNKNOWN", code("something odd"))
     }
 
+    // Real stderr from the S22 test run: the ffmpeg WARNING used to make all of these NOT_FOUND.
+    private val warnings = "WARNING: ffmpeg-location /data/app/x/lib/arm64/libffmpeg.so does not exist! Continuing without ffmpeg\n" +
+        "WARNING: [TikTok] The extractor is attempting impersonation, but no impersonate target is available.\n"
+
+    @Test
+    fun ignoresWarningLines() {
+        assertEquals("BLOCKED", code(warnings + "ERROR: [TikTok] 7699: Unable to download webpage: HTTP Error 403: Forbidden"))
+        assertEquals("EXTRACTOR", code(warnings + "ERROR: [TikTok] 7696: Video not available, status code 10240; please report this issue"))
+        assertEquals("NO_NETWORK", code(warnings + "ERROR: [vm.tiktok] ZSg: Unable to download webpage: Remote end closed connection without response"))
+        assertEquals("UNKNOWN", code(warnings + "ERROR: Unable to rename file: [Errno 2] No such file or directory: 'a.mp4.part'"))
+    }
+
     @Test
     fun onlyNetworkishErrorsRetry() {
         assertTrue(DownloadErrors.isTransient("NO_NETWORK"))
