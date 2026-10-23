@@ -197,31 +197,44 @@ Gate: 10 real reels (5 TikTok, 5 Instagram) go from share to correct JSON on an 
 - [x] **P0-02 · Android share intake**
   - Two share targets, "Reelbrain · Me" and "Reelbrain · Home", appear when sharing from TikTok, Instagram and YouTube.
   - Each receives the URL, logs it with the space, and closes in under 1 s without opening the main app.
-- [ ] **P0-03 · On-device downloader (Android)**
+- [x] **P0-03 · On-device downloader (Android)**
   - Kotlin platform channel wraps youtubedl-android; `download(url) → file path, duration, size`.
   - Downloads succeed for at least 9 of the 10 test reels over home Wi-Fi and mobile data; failures return a clear error code.
   - Runs in a background worker so it survives closing the share sheet.
-- [ ] **P0-04 · Backend pipeline v0 (local)**
+- [x] **P0-04 · Backend pipeline v0 (local)**
   - `POST /v1/saves` + upload + `/internal/process` working locally with the Gemini key from env.
   - Extract call returns JSON that validates against the Pydantic schema for all 10 reels; ffmpeg saves the key frame at `key_frame_t`.
 - [ ] **P0-05 · Deploy to Cloud Run + Cloud Tasks**
   - Backend deployed; Cloud Tasks queue with 3 retries and exponential backoff; 429 from Gemini is retried, not failed.
   - One end-to-end run from the phone to Cloud Run to Firestore.
-- [ ] **P0-06 · Fallback chain**
+- [x] **P0-06 · Fallback chain**
   - If the phone can't download, `/no-video` triggers: cloud mirror → yt-dlp → caption-only (`partial`).
   - Each step's outcome logged; caption-only still produces a summary.
-- [ ] **P0-07 · Spike report**
+- [x] **P0-07 · Spike report**
   - Table in this doc: per reel, download path used, Gemini latency, section detected, correct yes/no.
   - Decision recorded: on-device download confirmed or replaced; Gemini model and real free quota noted.
 
-**Spike report** (fill from `python -m scripts.spike_report --cloud` in `backend/`, then mark Correct? by hand)
+**Spike report** (24 Oct 2026, Samsung S22 Ultra, local backend on the PC; "Correct?" is my reading, to be confirmed by you)
 
 | # | Platform | Reel | Download path | Gemini s | Sections detected | Status | Correct? |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | | | | | | | |
+| 1 | Instagram | reel/De1aH9Po2ps (Plinth, Arabic) | phone | 297* | tools 0.98 | ready | yes |
+| 2 | TikTok | ZSgmg8pkU (VoiceStudio) | phone | 224* | tools 0.95, fact_check 0.85 | ready | yes |
+| 3 | TikTok | ZSgm3sUEk (hairline skill) | phone | 22 | tools 1.00 | ready | yes |
+| 4 | TikTok | ZSgm3tAkB (AirPods sale, Arabic) | phone | 164 | none | needs_review | yes (products aren't a Phase 1 section) |
+| 5 | Instagram | reel/Dezc4qeimex (brag skill) | phone | 29 | tools 0.95 | ready | yes |
+| 6 | Instagram | reel/De1HVuyixUW (Aroya cruise, Arabic) | phone | 67 | places 0.95 | ready | yes |
+| - | TikTok | ZSgm7onTd | all fallbacks failed | | | failed | video unavailable everywhere (TikTok oEmbed 400) |
+| - | Instagram | reel/Ddwj68hNLCA | phone | | | failed | not counted: ran before the Gemini key was set |
 
-- Decision, on-device download: _pending_
-- Gemini model pinned (`GEMINI_MODEL`): _pending_; real free quota seen in AI Studio: _pending_
+\* includes waits on Gemini 503 "high demand" before the model chain existed.
+
+**Gate:** passed by owner decision on 24 Oct with 6 of 10 reels (3 TikTok, 3 Instagram), all correct, all downloaded on the phone, $0 spent. The other 4 were skipped to move on.
+
+- **Decision, on-device download: confirmed.** 6 of 6 working reels downloaded on the phone (Instagram 4.9 to 19.6 MB in 4 to 19 s). The server fallback is only for dead or blocked links. TikTok links yt-dlp can't read come back as `EXTRACTOR` and go to `/no-video`.
+- **Gemini models:** `GEMINI_MODELS` = 3.6 Flash, 3.8 Flash, 3.5 Flash-Lite, 3.1 Flash-Lite, tried in order on 429/5xx, for each key in `GEMINI_API_KEYS` (yours, then your wife's). 3.6 Flash answers in 20 to 70 s per reel. 3.8 Flash was overloaded on test day.
+- **Free quota seen in AI Studio (24 Oct):** Flash models 5 requests/minute and 20/day each; 3.5 and 3.1 Flash-Lite 15/minute and 500/day each. Gemini calls are spaced 15 s apart. `gemini-2.5-flash` is refused for new keys, and search grounding is 0/day for Gemini 3+ (see the note on Call 2 for P1-08).
+- **Still open from Phase 0:** P0-05, the Cloud Run deploy (`infra/deploy.ps1`, which needs your gcloud login and Firebase console steps). Phase 1 can run against the local backend until then. Deploy before P1-06 push notifications and before Phase 2.
 
 ## Phase 1 — MVP: five sections on Android
 
