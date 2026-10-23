@@ -242,6 +242,8 @@ Gate: two weeks of daily use by you on Android (your wife joins in Phase 2 when 
 
 **Foundation**
 
+_24 Oct: P1-01 and P1-02 are deferred by owner decision (the plan was approved, built later). Function first; screens stay plain Material until then._
+
 - [ ] **P1-01 · Design tokens and theme**
   - All colour, type, radius and motion tokens from Design system in `lib/core/theme`; light/dark switch; Plex Sans Arabic loads in RTL.
   - A hidden "Design gallery" screen shows every token and component.
