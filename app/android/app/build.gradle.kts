@@ -29,6 +29,14 @@ android {
         versionName = flutter.versionName
     }
 
+    // youtubedl-android runs python/yt-dlp from extracted .so files.
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
+            keepDebugSymbols += "**/*.zip.so" // python stdlib zips, not ELF; strip can't touch them
+        }
+    }
+
     buildTypes {
         release {
             // TODO: Add your own signing config for the release build.
@@ -49,5 +57,7 @@ flutter {
 }
 
 dependencies {
+    implementation("io.github.junkfood02.youtubedl-android:library:0.18.1")
+    implementation("androidx.work:work-runtime-ktx:2.11.2")
     testImplementation("junit:junit:4.13.2")
 }

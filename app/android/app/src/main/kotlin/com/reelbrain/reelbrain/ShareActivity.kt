@@ -5,8 +5,6 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
-import org.json.JSONArray
-import org.json.JSONObject
 
 /**
  * Share target behind the "Reelbrain · Me" and "Reelbrain · Home" aliases.
@@ -21,24 +19,14 @@ class ShareActivity : Activity() {
             Log.w(TAG, "share to $space had no link")
             Toast.makeText(this, R.string.share_no_link, Toast.LENGTH_SHORT).show()
         } else {
-            enqueue(url, space)
-            Log.i(TAG, "queued space=$space url=$url")
+            val id = Saves.enqueue(this, url, space)
+            Log.i(TAG, "queued id=$id space=$space url=$url")
         }
         finish()
     }
 
-    // ponytail: SharedPreferences JSON list; P0-03's worker drains it. Move to WorkManager input/Room if it grows.
-    private fun enqueue(url: String, space: String) {
-        val prefs = getSharedPreferences(QUEUE, MODE_PRIVATE)
-        val list = JSONArray(prefs.getString(KEY, "[]"))
-        list.put(JSONObject().put("url", url).put("space", space).put("at", System.currentTimeMillis()))
-        prefs.edit().putString(KEY, list.toString()).apply()
-    }
-
     companion object {
         const val TAG = "Reelbrain"
-        const val QUEUE = "share_queue"
-        const val KEY = "pending"
     }
 }
 

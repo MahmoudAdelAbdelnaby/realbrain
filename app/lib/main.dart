@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
+import 'features/save/saves_screen.dart';
+
 void main() => runApp(const ReelbrainApp());
 
 // ponytail: ground/surface/text/muted only; full token set lands in P1-01 (lib/core/theme).
@@ -33,36 +35,7 @@ class ReelbrainApp extends StatelessWidget {
       darkTheme: _theme(Brightness.dark),
       supportedLocales: const [Locale('en'), Locale('ar')],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      home: const HomeScreen(),
-    );
-  }
-}
-
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final t = Theme.of(context).textTheme;
-    final muted = Theme.of(context).colorScheme.onSurfaceVariant;
-    return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsetsDirectional.symmetric(horizontal: 16),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Reelbrain', style: t.headlineMedium),
-              const SizedBox(height: 8),
-              Text(
-                'Share a reel to Reelbrain to save it.',
-                style: t.bodyLarge?.copyWith(color: muted),
-              ),
-            ],
-          ),
-        ),
-      ),
+      home: const SavesScreen(),
     );
   }
 }
