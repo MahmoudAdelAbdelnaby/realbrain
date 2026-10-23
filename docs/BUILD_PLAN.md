@@ -270,10 +270,9 @@ Gate: two weeks of daily use by you on Android (your wife joins in Phase 2 when 
 
 - [ ] **P1-16 · Settings, quotas and cost guard**
   - Language, theme, daily cap of 20 saves, budget alert check.
-  - **AI provider chain** (proposed 24 Oct, pending approval): an ordered, drag-to-reorder list in Settings, each entry a provider + key + model, tried top to bottom when one is busy (429/5xx) or out of quota. Keys are stored encrypted in Secret Manager by the backend, never on the phone or in Firestore. Each row shows today's use against its free limit.
-    - Gemini keys: yours and your wife's (each from **its own Google account**; several projects on one account to stack free quota breaks the Gemini API terms). Each key runs the Flash models, then Flash-Lite.
-    - Backup providers, Groq and OpenRouter: neither takes a video file, so they run a **degraded Extract**. Whisper speech-to-text on Groq gives the transcript, ffmpeg cuts about 6 frames, and a vision model returns the same Extract JSON. The result is marked `provider` on the save so the spike report and Inbox can tell.
-    - Phase 0 already has the backend half: `GEMINI_API_KEYS` and `GEMINI_MODELS` in `backend/.env`, each key tries every model before the next key (a video uploaded with one key can't be used by another).
+  - **Gemini key chain** (approved 24 Oct): an ordered list of Gemini API keys in Settings (yours and your wife's, **each from its own Google account**; several projects on one account to stack free quota breaks the Gemini API terms). Each key tries every model before the next. Keys are stored encrypted in Secret Manager by the backend, never on the phone or in Firestore. Each row shows today's use against its free limit.
+    - Model order per key: 3.6 Flash → 3.8 Flash → 3.5 Flash-Lite → 3.1 Flash-Lite (free tier, 24 Oct: Flash 20 requests a day each, Flash-Lite 500 a day each). Other providers were dropped: none of them takes a video file.
+    - Phase 0 already has the backend half: `GEMINI_API_KEYS` and `GEMINI_MODELS` in `backend/.env`.
 - [ ] **P1-17 · Test set regression**
   - Script runs the 20-reel set through the pipeline and prints accuracy per section; must hit 85% before the gate.
 
