@@ -1,13 +1,14 @@
 import logging
 import os
 import uuid
+from typing import Annotated
 from urllib.parse import urlparse
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Request, Response
 from fastapi.responses import FileResponse
 
 from app import spaces, store, tasks
-from app.auth import cloud_tasks, user
+from app.auth import claims, cloud_tasks, user
 from app.pipeline.extract import Transient
 from app.pipeline.process import process
 from app.schemas import CreatedSave, CreateHousehold, CreateSave, Me, NoVideo, ProcessTask
@@ -47,9 +48,11 @@ def owned_save(save_id: str, uid: str) -> dict:
 
 
 @app.post("/v1/me")
-def me(body: Me, uid: str = Depends(user)) -> dict:
-    """First call creates users/{uid} and the personal space; later calls just return them."""
-    u = spaces.ensure_user(uid, body.name, body.lang)
+def me(body: Me, token: Annotated[dict, Depends(claims)]) -> dict:
+    """First call creates users/{uid} and the personal space; later calls just return them.
+    The name comes from the Google sign-in token when the app doesn't have it yet."""
+    uid = token["uid"]
+    u = spaces.ensure_user(uid, body.name or token.get("name"), body.lang)
     return {"uid": uid, "spaces": u["spaces"]}
 
 

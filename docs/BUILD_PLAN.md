@@ -261,10 +261,12 @@ _24 Oct: P1-01 and P1-02 are deferred by owner decision (the plan was approved, 
   - Google sign-in; on first launch a personal space is created; "Create household" generates an invite link; joining adds the uid to `members`.
   - Security rules deployed and covered by emulator tests.
   - _Verified 24 Oct on the S22: sign-in, personal space, household created, a Home share processed into the household. Join is covered by backend tests; the second phone (iPhone) joins in Phase 2. The invite page on Firebase Hosting (`hosting/`) is built but not published: it is only needed for the Android App Link, so typed codes are used until iOS Universal Links (P2-02)._
-- [ ] **P1-04 · Save toast and background upload**
+- [x] **P1-04 · Save toast and background upload**
   - Signature save toast (pill, thumbnail, gold check, 1 s); upload continues with the app closed; retry on network loss.
-- [ ] **P1-05 · Home feed and processing card**
+  - _24 Oct: background upload, retry and waiting-while-offline verified on the S22; the share shows a plain "Saving to Me/Home". The styled pill (thumbnail, check) is deferred with P1-01/P1-02._
+- [x] **P1-05 · Home feed and processing card**
   - Live list of saves with shimmer and step text while processing; pull to refresh; per-section "to try" counters.
+  - _24 Oct, on the S22: feed live from Firestore across Me and Home, processing card with live step text switched to the result by itself, Dev and Tools counter shown._
   - _Note: Design system v2 replaced the shimmer with flat grey bars at the final size; built that way. Items carry `space_id`/`save_id` and saves a `sections` list (backend-written), so counters use one collection-group query per space (rule + index in `infra/`)._
 - [ ] **P1-06 · Push notifications**
   - FCM message on `ready` with the key result in the text; tapping opens the item; Fact Check notifications carry the verdict line.

@@ -23,17 +23,23 @@ def _bearer(authorization: str | None) -> str:
     return authorization.removeprefix("Bearer ").strip()
 
 
-def user(authorization: str | None = Header(None)) -> str:
-    """FastAPI dependency: the caller's Firebase uid."""
+def claims(authorization: str | None = Header(None)) -> dict:
+    """FastAPI dependency: the caller's verified Firebase token (uid, name, email...)."""
     token = _bearer(authorization)
     if DEV and (token == "dev" or token.startswith("dev:")):
-        return token.removeprefix("dev:")
+        return {"uid": token.removeprefix("dev:")}
     from firebase_admin import auth
 
     try:
-        return auth.verify_id_token(token, firebase_app())["uid"]
+        decoded = auth.verify_id_token(token, firebase_app())
     except Exception as e:
         raise HTTPException(401, "invalid token") from e
+    return {**decoded, "uid": decoded["uid"]}
+
+
+def user(authorization: str | None = Header(None)) -> str:
+    """FastAPI dependency: the caller's Firebase uid."""
+    return claims(authorization)["uid"]
 
 
 def cloud_tasks(authorization: str | None = Header(None)) -> None:
