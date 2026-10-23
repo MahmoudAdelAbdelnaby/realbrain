@@ -6,9 +6,13 @@ Share a reel, get the knowledge. Specs live in [docs/](docs/).
 | --- | --- |
 | `app/` | Flutter client |
 | `backend/` | FastAPI service (Cloud Run) |
+| `infra/` | Firestore rules, indexes, Cloud Run + Tasks config |
 | `docs/` | PRD and build plan |
+| `test/fixtures/reels.md` | The 20-reel test set |
 
 ## Backend
+
+Python 3.12 (CI uses 3.12).
 
 ```bash
 cd backend
