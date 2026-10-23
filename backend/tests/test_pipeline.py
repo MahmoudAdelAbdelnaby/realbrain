@@ -196,3 +196,23 @@ def test_extract_tries_every_model_then_the_next_key(monkeypatch):
     monkeypatch.setenv("GEMINI_API_KEYS", "mine")
     with pytest.raises(Transient, match="key1 flash 503, key1 lite 503"):
         ex.extract(None, "caption", {})
+
+
+def test_gemini_calls_are_spaced(monkeypatch):
+    from app.pipeline import extract as ex
+
+    clock = {"t": 100.0}
+    slept = []
+    monkeypatch.setattr(ex, "MIN_GAP_S", 15)
+    monkeypatch.setattr(ex, "_last_call", 0.0)
+    monkeypatch.setattr(ex.time, "monotonic", lambda: clock["t"])
+
+    def sleep(s):
+        slept.append(round(s))
+        clock["t"] += s
+
+    monkeypatch.setattr(ex.time, "sleep", sleep)
+    ex._pace()  # first call goes straight out
+    clock["t"] += 4
+    ex._pace()  # 4 s later: waits the remaining 11 s
+    assert slept == [11]

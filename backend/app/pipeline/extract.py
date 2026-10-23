@@ -2,6 +2,7 @@
 
 import logging
 import os
+import threading
 import time
 from functools import cache
 from pathlib import Path
@@ -18,6 +19,12 @@ MODELS = os.environ.get(
 ).split(",")
 MODEL = MODELS[0]
 TRANSIENT = (408, 429, 500, 502, 503, 504)
+# Free tier allows 5 requests/minute per model: space Gemini calls so a burst of shares queues
+# here instead of tripping 429s and falling down to Flash-Lite. Per process; the Cloud Tasks
+# queue (infra/deploy.ps1) also dispatches one save at a time.
+MIN_GAP_S = float(os.environ.get("GEMINI_MIN_GAP_S", "15"))
+_pace_lock = threading.Lock()
+_last_call = 0.0
 PROMPT = (Path(__file__).resolve().parent.parent / "prompts" / "extract.md").read_text("utf-8")
 
 
@@ -26,6 +33,17 @@ def keys() -> list[str]:
     One key per Google account: several projects on one account to stack free quota breaks the API terms."""
     raw = os.environ.get("GEMINI_API_KEYS") or os.environ.get("GEMINI_API_KEY") or ""
     return [k.strip() for k in raw.split(",") if k.strip()]
+
+
+def _pace() -> None:
+    """Blocks until MIN_GAP_S has passed since the previous Gemini call; callers queue in order."""
+    global _last_call
+    with _pace_lock:
+        wait = _last_call + MIN_GAP_S - time.monotonic()
+        if wait > 0:
+            log.info("pacing Gemini: waiting %.0fs", wait)
+            time.sleep(wait)
+        _last_call = time.monotonic()
 
 
 class Transient(Exception):
@@ -98,6 +116,7 @@ def _with_key(c, video, caption, meta, video_uri, busy: list[str], label: str) -
             temperature=0.2,
         )
         for model in MODELS:
+            _pace()
             try:
                 response = c.models.generate_content(model=model, contents=parts, config=config)
             except errors.APIError as e:

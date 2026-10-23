@@ -42,8 +42,8 @@ if ($LASTEXITCODE -ne 0) {
     Remove-Item $tmp
 } else { Write-Host "exists, keeping it (add a version to rotate: gcloud secrets versions add gemini-api-key --data-file=...)" }
 
-Step "Cloud Tasks queue (3 attempts, exponential backoff)"
-$qargs = "--location=$Region", "--max-attempts=3", "--min-backoff=10s", "--max-backoff=300s", "--max-doublings=4", "--max-concurrent-dispatches=2"
+Step "Cloud Tasks queue (3 attempts, exponential backoff, one save every 15 s for the free Gemini limit)"
+$qargs = "--location=$Region", "--max-attempts=3", "--min-backoff=10s", "--max-backoff=300s", "--max-doublings=4", "--max-concurrent-dispatches=1", "--max-dispatches-per-second=0.067"
 gcloud tasks queues describe process --location $Region 2>$null | Out-Null
 if ($LASTEXITCODE -ne 0) { gcloud tasks queues create process @qargs } else { gcloud tasks queues update process @qargs }
 
