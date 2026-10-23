@@ -170,25 +170,29 @@ def test_low_confidence_goes_to_review(monkeypatch):
     )
 
 
-def test_extract_falls_through_busy_models(monkeypatch):
+def test_extract_tries_every_model_then_the_next_key(monkeypatch):
     from google.genai import errors
 
     from app.pipeline import extract as ex
 
     calls = []
 
-    class Models:
-        def generate_content(self, model, contents, config):
-            calls.append(model)
-            if model != "lite":
-                raise errors.APIError(503, {"error": {"message": "high demand"}})
-            return type("R", (), {"text": SAMPLE.model_dump_json()})()
+    def fake_client(key):
+        class Models:
+            def generate_content(self, model, contents, config):
+                calls.append((key, model))
+                if (key, model) != ("wife", "flash"):
+                    raise errors.APIError(503, {"error": {"message": "high demand"}})
+                return type("R", (), {"text": SAMPLE.model_dump_json()})()
 
-    monkeypatch.setattr(ex, "MODELS", ["flash-a", "flash-b", "lite"])
-    monkeypatch.setattr(ex, "client", lambda: type("C", (), {"models": Models()})())
+        return type("C", (), {"models": Models()})()
+
+    monkeypatch.setenv("GEMINI_API_KEYS", "mine, wife")
+    monkeypatch.setattr(ex, "MODELS", ["flash", "lite"])
+    monkeypatch.setattr(ex, "client", fake_client)
     assert ex.extract(None, "caption", {}).language == "ar-EG"
-    assert calls == ["flash-a", "flash-b", "lite"]
+    assert calls == [("mine", "flash"), ("mine", "lite"), ("wife", "flash")]
 
-    monkeypatch.setattr(ex, "MODELS", ["flash-a"])
-    with pytest.raises(Transient):
+    monkeypatch.setenv("GEMINI_API_KEYS", "mine")
+    with pytest.raises(Transient, match="key1 flash 503, key1 lite 503"):
         ex.extract(None, "caption", {})

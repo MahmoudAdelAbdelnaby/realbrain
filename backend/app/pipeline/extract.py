@@ -10,13 +10,22 @@ from app.schemas import ExtractResult, gemini_schema
 
 log = logging.getLogger("reelbrain.extract")
 
-# Free tier (AI Studio, 24 Oct 2026): each Flash model has its own 20 requests/day, Flash-Lite 500/day.
+# Free tier (AI Studio, 24 Oct 2026): each Flash model has its own 20 requests/day; 3.5 and 3.1 Flash-Lite 500/day each.
 # Busy or out of quota -> the next model, so one save never burns a retry on the same overloaded model.
 # 3.6 first: 3.8 answered in 200 s and 503'd repeatedly on the spike day; 3.6 in 3 s.
-MODELS = os.environ.get("GEMINI_MODELS", "gemini-3.6-flash,gemini-3.8-flash,gemini-3.5-flash-lite").split(",")
+MODELS = os.environ.get(
+    "GEMINI_MODELS", "gemini-3.6-flash,gemini-3.8-flash,gemini-3.5-flash-lite,gemini-3.1-flash-lite"
+).split(",")
 MODEL = MODELS[0]
 TRANSIENT = (408, 429, 500, 502, 503, 504)
 PROMPT = (Path(__file__).resolve().parent.parent / "prompts" / "extract.md").read_text("utf-8")
+
+
+def keys() -> list[str]:
+    """GEMINI_API_KEYS (comma-separated, tried in order), else GEMINI_API_KEY.
+    One key per Google account: several projects on one account to stack free quota breaks the API terms."""
+    raw = os.environ.get("GEMINI_API_KEYS") or os.environ.get("GEMINI_API_KEY") or ""
+    return [k.strip() for k in raw.split(",") if k.strip()]
 
 
 class Transient(Exception):
@@ -24,10 +33,10 @@ class Transient(Exception):
 
 
 @cache
-def client():
+def client(key: str):
     from google import genai
 
-    return genai.Client(api_key=os.environ["GEMINI_API_KEY"])
+    return genai.Client(api_key=key)
 
 
 def _context(caption: str | None, meta: dict) -> str:
@@ -40,17 +49,39 @@ def _context(caption: str | None, meta: dict) -> str:
 def extract(
     video: Path | None, caption: str | None, meta: dict, video_uri: str | None = None
 ) -> ExtractResult:
-    """video: a local file; video_uri: a URL Gemini can read itself (YouTube). Neither: caption-only."""
+    """video: a local file; video_uri: a URL Gemini can read itself (YouTube). Neither: caption-only.
+
+    Each key tries every model in MODELS before the next key. An uploaded file belongs to one key's
+    project, so the video is uploaded again per key, never per model.
+    """
+    if not keys():
+        raise RuntimeError("no Gemini key: set GEMINI_API_KEY or GEMINI_API_KEYS in backend/.env")
+    busy: list[str] = []
+    for n, key in enumerate(keys(), 1):
+        result = _with_key(client(key), video, caption, meta, video_uri, busy, f"key{n}")
+        if result is not None:
+            return result
+    raise Transient("Gemini busy: " + ", ".join(busy))
+
+
+def _with_key(c, video, caption, meta, video_uri, busy: list[str], label: str) -> ExtractResult | None:
+    """None when every model on this key was busy or out of quota (reasons appended to busy)."""
     from google.genai import errors, types
 
     parts: list = []
     uploaded = None
     try:
         if video is not None:
-            uploaded = client().files.upload(file=video, config={"mime_type": "video/mp4"})
+            try:
+                uploaded = c.files.upload(file=video, config={"mime_type": "video/mp4"})
+            except errors.APIError as e:
+                if e.code not in TRANSIENT:
+                    raise
+                busy.append(f"{label} upload {e.code}")
+                return None
             while uploaded.state and uploaded.state.name == "PROCESSING":
                 time.sleep(2)
-                uploaded = client().files.get(name=uploaded.name)
+                uploaded = c.files.get(name=uploaded.name)
             if uploaded.state and uploaded.state.name == "FAILED":
                 raise RuntimeError("Gemini could not process the video file")
             parts.append(uploaded)
@@ -66,22 +97,21 @@ def extract(
             response_json_schema=gemini_schema(ExtractResult),
             temperature=0.2,
         )
-        busy = []
         for model in MODELS:
             try:
-                response = client().models.generate_content(model=model, contents=parts, config=config)
+                response = c.models.generate_content(model=model, contents=parts, config=config)
             except errors.APIError as e:
                 if e.code not in TRANSIENT:
                     raise
-                busy.append(f"{model} {e.code}")
-                log.warning("extract on %s busy (%s), trying next model", model, e.code)
+                busy.append(f"{label} {model} {e.code}")
+                log.warning("extract %s %s busy (%s), trying next", label, model, e.code)
                 continue
-            log.info("extract model=%s", model)
+            log.info("extract %s model=%s", label, model)
             return ExtractResult.model_validate_json(response.text)
-        raise Transient("Gemini busy: " + ", ".join(busy))
+        return None
     finally:
         if uploaded is not None:
             try:
-                client().files.delete(name=uploaded.name)
+                c.files.delete(name=uploaded.name)
             except Exception as e:  # noqa: BLE001 - cleanup only; files expire after 48 h anyway
                 log.debug("could not delete %s: %s", uploaded.name, e)
