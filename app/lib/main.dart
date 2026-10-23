@@ -14,7 +14,8 @@ ThemeData _theme(Brightness b) {
       brightness: b,
       surface: dark ? const Color(0xFF18181A) : const Color(0xFFFFFFFF),
       onSurface: text,
-      onSurfaceVariant: dark ? const Color(0xFFB4B4B4) : const Color(0xFF5F6368),
+      onSurfaceVariant:
+          dark ? const Color(0xFFB4B4B4) : const Color(0xFF5F6368),
     ),
     scaffoldBackgroundColor:
         dark ? const Color(0xFF0E0E0F) : const Color(0xFFF7F7F5),
