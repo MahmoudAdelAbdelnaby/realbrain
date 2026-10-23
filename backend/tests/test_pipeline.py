@@ -105,27 +105,21 @@ def test_save_upload_process_ready(monkeypatch, tiny_mp4):
         "meta": {"platform": "tiktok", "url": "https://vt.tiktok.com/ZSg/", "creator": None},
     }
     assert save["language"] == "ar-EG" and save["summary"]
-    assert [i["section"] for i in save["items"]] == [
-        "fact_check",
-        "tools",
-        "recipe",
-        "places",
-        "workout",
-    ]
-    assert save["items"][2]["data"]["steps"][0]["timer_s"] == 600
-    frame = store.DATA / "frames" / "me" / f"{save_id}.jpg"
+    items = store.get_items(save)
+    assert [i["section"] for i in items] == ["fact_check", "tools", "recipe", "places", "workout"]
+    assert items[2]["data"]["steps"][0]["timer_s"] == 600
+    assert save["space_id"] == "p_dev", "share target 'me' resolves to the personal space"
+    frame = store.DATA / "frames" / "p_dev" / f"{save_id}.jpg"
     assert frame.stat().st_size > 0 and client.get(save["key_frame_url"].split("8000")[1]).status_code == 200
     assert not store.local_video(save_id).exists(), "video must be deleted when the job ends"
 
 
-def test_other_users_cannot_touch_a_save():
-    r = client.post(
-        "/v1/saves",
-        json={"source_url": "https://youtu.be/a", "space_id": "me"},
-        headers=AUTH,
-    )
-    store.update_save(store.get_save(r.json()["save_id"]), {"created_by": "someone-else"})
-    assert client.post(f"/v1/saves/{r.json()['save_id']}/uploaded", headers=AUTH).status_code == 404
+def test_non_members_cannot_touch_a_save():
+    r = client.post("/v1/saves", json={"source_url": "https://youtu.be/a", "space_id": "me"}, headers=AUTH)
+    save_id = r.json()["save_id"]
+    stranger = {"Authorization": "Bearer dev:stranger"}
+    assert client.post(f"/v1/saves/{save_id}/uploaded", headers=stranger).status_code == 404
+    assert client.post(f"/v1/saves/{save_id}/uploaded", headers=AUTH).status_code == 202
 
 
 def _uploaded_save() -> str:

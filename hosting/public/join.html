@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Join a Reelbrain Home</title>
+  <style>
+    :root { color-scheme: light dark; --ground: #F7F7F5; --text: #111111; --muted: #5F6368; --raised: #F0F0EE; }
+    @media (prefers-color-scheme: dark) { :root { --ground: #0E0E0F; --text: #FFFFFF; --muted: #B4B4B4; --raised: #222225; } }
+    body { margin: 0; background: var(--ground); color: var(--text); font: 16px/1.5 system-ui, sans-serif; }
+    main { max-width: 28rem; margin: 0 auto; padding: 48px 16px; }
+    h1 { font-size: 28px; font-weight: 600; margin: 0 0 8px; }
+    p { color: var(--muted); margin: 0 0 24px; }
+    code { display: block; background: var(--raised); border-radius: 12px; padding: 16px; font-size: 28px;
+           letter-spacing: 0.1em; text-align: center; font-variant-numeric: tabular-nums; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Join a Reelbrain Home</h1>
+    <p>If Reelbrain is installed, this link opens it. Otherwise open Reelbrain, go to Spaces, and type this code:</p>
+    <code id="code">…</code>
+  </main>
+  <script>
+    const code = location.pathname.split("/").filter(Boolean)[1] || "";
+    document.getElementById("code").textContent = /^[a-z0-9]{8}$/i.test(code) ? code.toLowerCase() : "invalid link";
+  </script>
+</body>
+</html>

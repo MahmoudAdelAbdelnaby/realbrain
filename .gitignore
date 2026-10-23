@@ -7,6 +7,12 @@ __pycache__/
 .ruff_cache/
 *.pem
 *service-account*.json
-google-services.json
+google-services*.json
 GoogleService-Info.plist
 backend/data/
+
+# firebase
+.firebase/
+firebase-debug.log
+firestore-debug.log
+!.github/ci-google-services.json

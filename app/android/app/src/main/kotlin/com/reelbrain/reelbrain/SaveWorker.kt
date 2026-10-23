@@ -71,6 +71,11 @@ object Saves {
             ctx, id,
             mapOf("url" to url, "space" to space, "shared_text" to sharedText, "status" to "queued", "at" to System.currentTimeMillis()),
         )
+        start(ctx, id, ExistingWorkPolicy.KEEP)
+        return id
+    }
+
+    private fun start(ctx: Context, id: String, policy: ExistingWorkPolicy) {
         val work = OneTimeWorkRequestBuilder<SaveWorker>()
             .setInputData(workDataOf("id" to id))
             .setConstraints(Constraints(requiredNetworkType = NetworkType.CONNECTED))
@@ -78,8 +83,21 @@ object Saves {
             // Expedited: starts now, even with the app closed. Plain work was deferred until the app reopened.
             .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
             .build()
-        WorkManager.getInstance(ctx).enqueueUniqueWork("save-$id", ExistingWorkPolicy.KEEP, work)
-        return id
+        WorkManager.getInstance(ctx).enqueueUniqueWork("save-$id", policy, work)
+    }
+
+    /** Right after sign-in (or a backend change): send waiting saves now instead of at their next backoff. */
+    fun retryWaiting(ctx: Context): Int {
+        val list = all(ctx)
+        var n = 0
+        for (i in 0 until list.length()) {
+            val save = list.getJSONObject(i)
+            if (save.optString("status") == "waiting") {
+                start(ctx, save.getString("id"), ExistingWorkPolicy.REPLACE)
+                n++
+            }
+        }
+        return n
     }
 }
 
@@ -124,24 +142,29 @@ class SaveWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ctx, 
         Downloader.updateIfStale(ctx)
         if (!Backend.configured) return@withContext Result.success()
 
-        // 2. Hand the video to the backend.
+        // 2. Hand the video to the backend. Not signed in, or the backend unreachable (PC off, away
+        //    from home): keep the video and retry with backoff, so nothing shared is ever lost.
         try {
             Saves.upsert(ctx, id, mapOf("status" to "uploading"))
             val saved = Saves.get(ctx, id)!!
             val (saveId, uploadUrl) = Backend.createSave(
-                ctx, url, save.getString("space"),
-                saved.str("caption") ?: save.str("shared_text"), saved.str("creator"),
+                url, save.getString("space"), saved.str("caption") ?: save.str("shared_text"), saved.str("creator"),
             )
             Backend.upload(uploadUrl, file!!)
-            Backend.uploaded(ctx, saveId)
+            Backend.uploaded(saveId)
             file!!.delete()
-            Saves.upsert(ctx, id, mapOf("status" to "uploaded", "save_id" to saveId, "path" to null, "error" to null))
+            Saves.upsert(ctx, id, mapOf("status" to "uploaded", "save_id" to saveId, "path" to null, "error" to null, "error_detail" to null))
             Log.i(ShareActivity.TAG, "uploaded id=$id save=$saveId")
             Result.success()
-        } catch (e: Exception) {
-            Log.w(ShareActivity.TAG, "upload id=$id failed: ${e.message}")
-            Saves.upsert(ctx, id, mapOf("status" to if (lastTry) "upload_failed" else "downloaded", "error" to "UPLOAD", "error_detail" to e.message))
-            if (lastTry) Result.failure() else Result.retry()
+        } catch (e: Rejected) {
+            Log.w(ShareActivity.TAG, "upload id=$id rejected: ${e.message}")
+            Saves.upsert(ctx, id, mapOf("status" to "upload_failed", "error" to "HTTP_${e.code}", "error_detail" to e.message))
+            Result.failure()
+        } catch (e: IOException) {
+            val why = if (e is NotSignedIn) "NOT_SIGNED_IN" else "BACKEND_UNREACHABLE"
+            Log.w(ShareActivity.TAG, "upload id=$id waiting ($why): ${e.message}")
+            Saves.upsert(ctx, id, mapOf("status" to "waiting", "error" to why, "error_detail" to e.message))
+            Result.retry()
         }
     }
 
@@ -162,10 +185,13 @@ class SaveWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ctx, 
     private fun sendWithoutVideo(id: String, save: JSONObject, reason: String): Result {
         if (!Backend.configured) return Result.failure()
         return try {
-            val (saveId, _) = Backend.createSave(ctx, save.getString("url"), save.getString("space"), save.str("shared_text"), null)
-            Backend.noVideo(ctx, saveId, reason)
+            val (saveId, _) = Backend.createSave(save.getString("url"), save.getString("space"), save.str("shared_text"), null)
+            Backend.noVideo(saveId, reason)
             Saves.upsert(ctx, id, mapOf("status" to "sent_without_video", "save_id" to saveId))
             Result.success()
+        } catch (e: Rejected) {
+            Log.w(ShareActivity.TAG, "no-video id=$id rejected: ${e.message}")
+            Result.failure()
         } catch (e: IOException) {
             Log.w(ShareActivity.TAG, "no-video id=$id failed: ${e.message}")
             Result.retry()

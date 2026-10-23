@@ -168,11 +168,17 @@ The app talks to a small authenticated API; the backend alone writes AI results 
 | POST /v1/saves/{id}/section | section | 200 | User correction; logged for prompt tuning |
 | POST /v1/items/{id}/deep-dive | — | 202 | Fact Check explainer on demand |
 | POST /internal/process | save\_id | 200 | Called by Cloud Tasks only (OIDC-verified) |
+| POST /v1/me | name?, lang? | uid, spaces{me, home?} | Added in P1-03: creates `users/{uid}` and the personal space on first call; idempotent |
+| POST /v1/spaces/household | name | space\_id, invite\_url | Added in P1-03: one household per user; the creator is the first member |
+| POST /v1/spaces/{id}/invite | — | invite\_url | Added in P1-03: new link for a household you're a member of, valid 7 days |
+| POST /v1/invites/{code}/accept | — | space\_id | Added in P1-03: adds the caller's uid to `members` |
 
 **Firestore collections**
 
 ```
-users/{uid}                         name, lang, fcm_tokens[], default_space
+users/{uid}                         name, lang, fcm_tokens[], default_space,
+                                    spaces{me, home} (P1-03: maps the share targets to space ids)
+invites/{code}                      space_id, created_by, expires_at (backend only)
 spaces/{spaceId}                    name, type: personal|household, members[]
 spaces/{spaceId}/saves/{saveId}     source_url, platform, creator, caption,
                                     thumb_url, key_frame_url, status, step_text,
@@ -184,6 +190,8 @@ spaces/{spaceId}/lists/{listId}     section, name, item_refs[]
 ```
 
 `items` is queried as a collection group by `section`, so each section tab is one query.
+
+**Spaces and invites (P1-03):** the phone keeps sending `space_id` = `me` or `home`; the backend resolves them through `users/{uid}.spaces`. Spaces and invites are created only by the backend, so a client can never add itself to `members`. An invite link is `https://reelbrain-dev.web.app/join/<code>` on Firebase Hosting (free on Spark): an Android App Link opens the app straight to the join screen, and the page shows the code for typing in.
 
 **Security rules:** a user reads a space only if their uid is in `members`; clients may write only `note`, `user_state` and list membership; everything AI-produced is written by the backend service account. Videos in Storage are deleted when the job ends; key frames live under `frames/{spaceId}/`.
 

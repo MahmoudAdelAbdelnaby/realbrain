@@ -150,3 +150,12 @@ class NoVideo(BaseModel):
 
 class ProcessTask(BaseModel):
     save_id: str
+
+
+class Me(BaseModel):
+    name: str | None = Field(None, max_length=200)
+    lang: str | None = Field(None, max_length=10)
+
+
+class CreateHousehold(BaseModel):
+    name: str = Field("Home", min_length=1, max_length=60)

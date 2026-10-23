@@ -6,11 +6,11 @@ from urllib.parse import urlparse
 from fastapi import Depends, FastAPI, Header, HTTPException, Request, Response
 from fastapi.responses import FileResponse
 
-from app import store, tasks
+from app import spaces, store, tasks
 from app.auth import cloud_tasks, user
 from app.pipeline.extract import Transient
 from app.pipeline.process import process
-from app.schemas import CreatedSave, CreateSave, NoVideo, ProcessTask
+from app.schemas import CreatedSave, CreateHousehold, CreateSave, Me, NoVideo, ProcessTask
 
 logging.basicConfig(level=logging.INFO)
 if not (os.environ.get("GEMINI_API_KEY") or os.environ.get("GEMINI_API_KEYS")):
@@ -39,11 +39,34 @@ def platform(url: str) -> str:
 
 
 def owned_save(save_id: str, uid: str) -> dict:
+    """The save, if the caller is a member of its space (404 otherwise, so ids can't be probed)."""
     save = store.get_save(save_id)
-    # ponytail: owner-only until spaces/members exist (P1-03); then check uid in space members.
-    if save is None or save.get("created_by") != uid:
+    if save is None or not spaces.is_member(uid, save["space_id"]):
         raise HTTPException(404, "save not found")
     return save
+
+
+@app.post("/v1/me")
+def me(body: Me, uid: str = Depends(user)) -> dict:
+    """First call creates users/{uid} and the personal space; later calls just return them."""
+    u = spaces.ensure_user(uid, body.name, body.lang)
+    return {"uid": uid, "spaces": u["spaces"]}
+
+
+@app.post("/v1/spaces/household")
+def create_household(body: CreateHousehold, uid: str = Depends(user)) -> dict:
+    space_id, url = spaces.create_household(uid, body.name)
+    return {"space_id": space_id, "invite_url": url}
+
+
+@app.post("/v1/spaces/{space_id}/invite")
+def new_invite(space_id: str, uid: str = Depends(user)) -> dict:
+    return {"invite_url": spaces.invite(uid, space_id)}
+
+
+@app.post("/v1/invites/{code}/accept")
+def accept_invite(code: str, uid: str = Depends(user)) -> dict:
+    return {"space_id": spaces.accept(uid, code)}
 
 
 @app.post("/v1/saves", response_model=CreatedSave)
@@ -54,7 +77,7 @@ def create_save(body: CreateSave, uid: str = Depends(user)) -> CreatedSave:
         {
             "source_url": body.source_url,
             "platform": platform(body.source_url),
-            "space_id": body.space_id,
+            "space_id": spaces.resolve(uid, body.space_id),
             "note": body.note,
             "caption": body.caption,
             "creator": body.creator,
@@ -114,7 +137,9 @@ if not store.BUCKET:
 
     @app.put("/dev/uploads/{save_id}")
     async def dev_upload(save_id: str, request: Request) -> dict:
-        if store.get_save(save_id) is None:
+        # The unguessable save id is the credential, like a signed URL; one upload per save.
+        save = store.get_save(save_id)
+        if save is None or save.get("status") != "received":
             raise HTTPException(404, "save not found")
         size = 0
         with store.local_video(save_id).open("wb") as f:

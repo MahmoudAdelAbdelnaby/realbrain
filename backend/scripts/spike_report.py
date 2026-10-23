@@ -14,9 +14,14 @@ from pathlib import Path
 
 
 def local_saves() -> list[dict]:
-    from app.store import DATA
+    from app import store
 
-    return [json.loads(p.read_text("utf-8")) for p in (DATA / "saves").glob("*.json")]
+    saves = []
+    for f in (store.DATA / "docs" / "spaces").glob("*/saves/*.json"):
+        save = json.loads(f.read_text("utf-8"))
+        save["items"] = store.get_items(save)
+        saves.append(save)
+    return saves
 
 
 def cloud_saves(project: str) -> list[dict]:

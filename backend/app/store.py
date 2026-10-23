@@ -1,7 +1,9 @@
-"""Saves, videos and frames.
+"""Documents (Firestore paths), videos and frames.
 
-Cloud (GCS_BUCKET set): Firestore + Cloud Storage, as in the Backend contract.
-Local (default): JSON files and a folder under DATA_DIR, so the pipeline runs with only a Gemini key.
+Documents: Firestore when USE_FIRESTORE=1 or GCS_BUCKET is set; otherwise JSON files under
+DATA_DIR/docs laid out by the same paths, so tests and a laptop run need only a Gemini key.
+Videos and frames: Cloud Storage when GCS_BUCKET is set; otherwise a folder under DATA_DIR
+(served by the /dev routes). That split is the Spark-plan setup: Firestore results, videos on the PC.
 """
 
 import json
@@ -13,9 +15,10 @@ from datetime import timedelta
 from pathlib import Path
 
 BUCKET = os.environ.get("GCS_BUCKET")
+FIRESTORE = bool(BUCKET) or os.environ.get("USE_FIRESTORE") == "1"
 DATA = Path(os.environ.get("DATA_DIR", Path(__file__).resolve().parent.parent / "data"))
 PUBLIC_URL = os.environ.get("PUBLIC_URL", "http://127.0.0.1:8000")
-_lock = threading.Lock()
+_lock = threading.RLock()
 
 
 def _firestore():
@@ -34,76 +37,122 @@ def _bucket():
     return storage.bucket(BUCKET, firebase_app())
 
 
+# --- documents ---
+
+
+def _file(path: str) -> Path:
+    parts = path.split("/")
+    if any(p in ("", ".", "..") for p in parts):
+        raise ValueError(f"bad path {path!r}")
+    return DATA / "docs" / Path(*parts[:-1]) / f"{parts[-1]}.json"
+
+
+def doc_get(path: str) -> dict | None:
+    if FIRESTORE:
+        snap = _firestore().document(path).get()
+        return snap.to_dict() if snap.exists else None
+    f = _file(path)
+    return json.loads(f.read_text("utf-8")) if f.exists() else None
+
+
+def doc_set(path: str, data: dict) -> None:
+    if FIRESTORE:
+        _firestore().document(path).set(data)
+        return
+    with _lock:
+        f = _file(path)
+        f.parent.mkdir(parents=True, exist_ok=True)
+        f.write_text(json.dumps(data, ensure_ascii=False, indent=2), "utf-8")
+
+
+def doc_update(path: str, fields: dict) -> None:
+    if FIRESTORE:
+        _firestore().document(path).update(fields)
+        return
+    with _lock:
+        doc_set(path, {**(doc_get(path) or {}), **fields})
+
+
+def doc_array_add(path: str, field: str, value) -> None:
+    """Adds value to an array field if missing (Firestore ArrayUnion), safe with concurrent joins."""
+    if FIRESTORE:
+        from google.cloud.firestore import ArrayUnion
+
+        _firestore().document(path).update({field: ArrayUnion([value])})
+        return
+    with _lock:
+        data = doc_get(path) or {}
+        if value not in data.get(field, []):
+            doc_set(path, {**data, field: [*data.get(field, []), value]})
+
+
+def col_list(path: str) -> list[dict]:
+    if FIRESTORE:
+        return [d.to_dict() for d in _firestore().collection(path).stream()]
+    d = DATA / "docs" / Path(*path.split("/"))
+    return [json.loads(f.read_text("utf-8")) for f in sorted(d.glob("*.json"))] if d.exists() else []
+
+
+def col_replace(path: str, docs: dict[str, dict]) -> None:
+    """Replaces every document in a collection (re-runs and retries stay idempotent)."""
+    if FIRESTORE:
+        db = _firestore()
+        col = db.collection(path)
+        batch = db.batch()
+        for old in col.list_documents():
+            batch.delete(old)
+        for doc_id, data in docs.items():
+            batch.set(col.document(doc_id), data)
+        batch.commit()
+        return
+    with _lock:
+        d = DATA / "docs" / Path(*path.split("/"))
+        if d.exists():
+            for f in d.glob("*.json"):
+                f.unlink()
+        for doc_id, data in docs.items():
+            doc_set(f"{path}/{doc_id}", data)
+
+
 # --- saves ---
+
+
+def _save_path(save: dict) -> str:
+    return f"spaces/{save['space_id']}/saves/{save['save_id']}"
 
 
 def create_save(save_id: str, fields: dict) -> None:
     fields = {**fields, "save_id": save_id, "created_at": time.time()}
-    if BUCKET:
-        db = _firestore()
-        db.document(f"spaces/{fields['space_id']}/saves/{save_id}").set(fields)
-        # Endpoints only get the save id; this index finds its space without a collection-group query.
-        db.document(f"save_index/{save_id}").set(
-            {"space_id": fields["space_id"], "created_by": fields["created_by"]}
-        )
-        return
-    with _lock:
-        _local_path(save_id).write_text(
-            json.dumps({**fields, "items": []}, ensure_ascii=False, indent=2), "utf-8"
-        )
+    doc_set(_save_path(fields), fields)
+    # Endpoints only get the save id; this index finds its space without a collection-group query.
+    doc_set(f"save_index/{save_id}", {"space_id": fields["space_id"], "created_by": fields["created_by"]})
 
 
 def get_save(save_id: str) -> dict | None:
-    if BUCKET:
-        db = _firestore()
-        index = db.document(f"save_index/{save_id}").get()
-        if not index.exists:
-            return None
-        doc = db.document(f"spaces/{index.get('space_id')}/saves/{save_id}").get()
-        return doc.to_dict() if doc.exists else None
-    p = _local_path(save_id)
-    return json.loads(p.read_text("utf-8")) if p.exists() else None
+    index = doc_get(f"save_index/{save_id}")
+    return doc_get(f"spaces/{index['space_id']}/saves/{save_id}") if index else None
 
 
 def update_save(save: dict, fields: dict) -> None:
     """Every status change is written straight away so the processing card updates live."""
     save.update(fields)
-    if BUCKET:
-        _firestore().document(f"spaces/{save['space_id']}/saves/{save['save_id']}").update(fields)
-        return
-    with _lock:
-        p = _local_path(save["save_id"])
-        data = json.loads(p.read_text("utf-8"))
-        data.update(fields)
-        p.write_text(json.dumps(data, ensure_ascii=False, indent=2), "utf-8")
+    doc_update(_save_path(save), fields)
 
 
 def put_items(save: dict, items: list[dict]) -> None:
-    """One item per extracted section, replacing earlier ones (re-runs and retries are idempotent)."""
-    if BUCKET:
-        db = _firestore()
-        col = db.collection(f"spaces/{save['space_id']}/saves/{save['save_id']}/items")
-        batch = db.batch()
-        for old in col.list_documents():
-            batch.delete(old)
-        for i, item in enumerate(items):
-            batch.set(col.document(f"{i}-{item['section']}"), item)
-        batch.commit()
-        return
-    update_save(save, {"items": items})
+    """One item per extracted section."""
+    col_replace(_save_path(save) + "/items", {f"{i}-{item['section']}": item for i, item in enumerate(items)})
 
 
-def _local_path(save_id: str) -> Path:
-    d = DATA / "saves"
-    d.mkdir(parents=True, exist_ok=True)
-    return d / f"{Path(save_id).name}.json"
+def get_items(save: dict) -> list[dict]:
+    return col_list(_save_path(save) + "/items")
 
 
 # --- videos (transient) and frames ---
 
 
 def upload_url(save_id: str) -> str:
-    """Where the phone PUTs the video. Signed GCS URL, valid 15 min."""
+    """Where the phone PUTs the video. Signed GCS URL, valid 15 min; or this backend's /dev route."""
     if BUCKET:
         import google.auth
         from google.auth.transport.requests import Request

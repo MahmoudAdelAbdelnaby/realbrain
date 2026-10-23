@@ -2,9 +2,11 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
 
-const downloader = MethodChannel('reelbrain/downloader');
+import '../../core/native.dart';
+import '../spaces/household_screen.dart';
 
 /// Phase 0 spike screen: every share and what the on-device downloader did with it.
 /// ponytail: polls the native save list every 2 s; becomes a Firestore listener in P1-05.
@@ -37,7 +39,7 @@ class _SavesScreenState extends State<SavesScreen> {
 
   Future<void> _load() async {
     try {
-      final raw = await downloader.invokeMethod<String>('saves') ?? '[]';
+      final raw = await native.invokeMethod<String>('saves') ?? '[]';
       final list = (jsonDecode(raw) as List).cast<Map<String, dynamic>>();
       _set(list, null);
     } on PlatformException catch (e) {
@@ -58,7 +60,7 @@ class _SavesScreenState extends State<SavesScreen> {
   Future<void> _save() async {
     final url = _url.text.trim();
     if (!url.startsWith('http')) return;
-    await downloader.invokeMethod('enqueue', {'url': url, 'space': 'me'});
+    await native.invokeMethod('enqueue', {'url': url, 'space': 'me'});
     _url.clear();
     await _load();
   }
@@ -67,7 +69,23 @@ class _SavesScreenState extends State<SavesScreen> {
   Widget build(BuildContext context) {
     final saves = _saves;
     return Scaffold(
-      appBar: AppBar(title: const Text('Reelbrain')),
+      appBar: AppBar(
+        title: const Text('Reelbrain'),
+        actions: [
+          IconButton(
+            tooltip: 'Spaces',
+            icon: const Icon(Icons.group_outlined),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const HouseholdScreen()),
+            ),
+          ),
+          PopupMenuButton<String>(
+            onSelected: (_) => FirebaseAuth.instance.signOut(),
+            itemBuilder: (_) =>
+                const [PopupMenuItem(value: 'out', child: Text('Sign out'))],
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Column(
           children: [
@@ -145,6 +163,9 @@ class _SaveTile extends StatelessWidget {
       'downloaded' => '${((size ?? 0) / 1e6).toStringAsFixed(1)} MB · '
           '${dur?.toStringAsFixed(0) ?? '?'} s · ${save['download_ms']} ms',
       'failed' || 'upload_failed' => '${save['error']}${_errorLine(save)}',
+      'waiting' => save['error'] == 'NOT_SIGNED_IN'
+          ? 'waiting for sign-in'
+          : 'waiting for the backend (PC off or not reachable)',
       _ => status,
     };
     return ListTile(
@@ -159,6 +180,7 @@ class _SaveTile extends StatelessWidget {
         overflow: TextOverflow.ellipsis,
       ),
       trailing: switch (status) {
+        'waiting' => const Icon(Icons.schedule),
         'queued' || 'downloading' || 'uploading' => const SizedBox.square(
             dimension: 20,
             child: CircularProgressIndicator(strokeWidth: 2),

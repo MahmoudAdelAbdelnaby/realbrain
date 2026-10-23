@@ -5,7 +5,8 @@ from functools import cache
 
 from fastapi import Header, HTTPException
 
-# Local only: AUTH_MODE=dev accepts "Bearer dev" as uid "dev". Never set on Cloud Run.
+# Local only: AUTH_MODE=dev accepts "Bearer dev" as uid "dev" (and "Bearer dev:<name>" as uid <name>,
+# for tests with two people). Never set on Cloud Run or behind a public tunnel.
 DEV = os.environ.get("AUTH_MODE") == "dev"
 
 
@@ -25,8 +26,8 @@ def _bearer(authorization: str | None) -> str:
 def user(authorization: str | None = Header(None)) -> str:
     """FastAPI dependency: the caller's Firebase uid."""
     token = _bearer(authorization)
-    if DEV and token == "dev":
-        return "dev"
+    if DEV and (token == "dev" or token.startswith("dev:")):
+        return token.removeprefix("dev:")
     from firebase_admin import auth
 
     try:

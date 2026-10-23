@@ -1,4 +1,33 @@
 {
-  "firestore": { "rules": "infra/firestore.rules" },
-  "storage": { "rules": "infra/storage.rules" }
+  "firestore": {
+    "rules": "infra/firestore.rules"
+  },
+  "storage": {
+    "rules": "infra/storage.rules"
+  },
+  "hosting": {
+    "public": "hosting/public",
+    "cleanUrls": true,
+    "rewrites": [
+      {
+        "source": "/join/**",
+        "destination": "/join.html"
+      }
+    ],
+    "headers": [
+      {
+        "source": "/.well-known/assetlinks.json",
+        "headers": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ]
+      }
+    ],
+    "ignore": [
+      "firebase.json",
+      "**/node_modules/**"
+    ]
+  }
 }

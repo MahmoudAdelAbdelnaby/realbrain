@@ -1,9 +1,15 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
-import 'features/save/saves_screen.dart';
+import 'features/auth/auth_gate.dart';
 
-void main() => runApp(const ReelbrainApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase
+      .initializeApp(); // options from android/app/google-services.json
+  runApp(const ReelbrainApp());
+}
 
 // ponytail: ground/surface/text/muted only; full token set lands in P1-01 (lib/core/theme).
 ThemeData _theme(Brightness b) {
@@ -25,7 +31,8 @@ ThemeData _theme(Brightness b) {
 }
 
 class ReelbrainApp extends StatelessWidget {
-  const ReelbrainApp({super.key});
+  const ReelbrainApp({super.key, this.home = const AuthGate()});
+  final Widget home;
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +42,7 @@ class ReelbrainApp extends StatelessWidget {
       darkTheme: _theme(Brightness.dark),
       supportedLocales: const [Locale('en'), Locale('ar')],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      home: const SavesScreen(),
+      home: home,
     );
   }
 }

@@ -1,10 +1,47 @@
 rules_version = '2';
-// Phase 0: only the backend (service account, bypasses rules) touches Firestore.
-// P1-03 replaces this with member-based read rules from the Backend contract.
+// Backend contract: a user reads a space only if their uid is in `members`; clients may write only
+// `note`, `user_state` and list membership. Everything else (users, spaces, invites, AI results)
+// is written by the backend's service account, which bypasses these rules.
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if false;
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function member(spaceId) {
+      return signedIn()
+        && request.auth.uid in get(/databases/$(database)/documents/spaces/$(spaceId)).data.members;
+    }
+
+    function onlyChanges(fields) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(fields);
+    }
+
+    match /users/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+    }
+
+    match /spaces/{spaceId} {
+      allow read: if signedIn() && request.auth.uid in resource.data.members;
+
+      match /saves/{saveId} {
+        allow read: if member(spaceId);
+        allow update: if member(spaceId) && onlyChanges(['note'])
+          && (request.resource.data.note == null
+              || (request.resource.data.note is string && request.resource.data.note.size() <= 2000));
+
+        match /items/{itemId} {
+          allow read: if member(spaceId);
+          allow update: if member(spaceId) && onlyChanges(['user_state'])
+            && request.resource.data.user_state in [null, 'to_try', 'tried', 'visited', 'cooked', 'done'];
+        }
+      }
+
+      match /lists/{listId} {
+        allow read: if member(spaceId);
+        allow update: if member(spaceId) && onlyChanges(['item_refs'])
+          && request.resource.data.item_refs is list;
+      }
     }
   }
 }

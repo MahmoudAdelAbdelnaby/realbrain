@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.reelbrain.reelbrain",
+      "sha256_cert_fingerprints": [
+        "07:84:60:D4:58:2F:28:0F:1C:B1:5D:2C:14:A5:38:F1:E4:1B:DF:6C:24:FF:59:B1:7A:99:A8:2D:77:CC:58:0C"
+      ]
+    }
+  }
+]

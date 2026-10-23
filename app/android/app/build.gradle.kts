@@ -2,11 +2,13 @@ import java.util.Properties
 
 plugins {
     id("com.android.application")
+    // Reads app/google-services.json (git-ignored; download from the Firebase console).
+    id("com.google.gms.google-services")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
 
-// Per-machine, git-ignored: reelbrain.apiUrl and the Firebase app's apiKey/appId/projectId (P0-05).
+// Per-machine, git-ignored: reelbrain.apiUrl, the backend the phone talks to.
 val local = Properties().apply {
     rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
 }
@@ -36,10 +38,6 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         buildConfigField("String", "API_URL", localProp("reelbrain.apiUrl"))
-        buildConfigField("String", "FIREBASE_API_KEY", localProp("reelbrain.firebaseApiKey"))
-        buildConfigField("String", "FIREBASE_APP_ID", localProp("reelbrain.firebaseAppId"))
-        buildConfigField("String", "FIREBASE_PROJECT_ID", localProp("reelbrain.firebaseProjectId"))
-        buildConfigField("String", "DEV_TOKEN", localProp("reelbrain.devToken"))
     }
 
     buildFeatures {
