@@ -68,3 +68,10 @@ def test_home_without_household_falls_back_to_personal():
         "/v1/saves", json={"source_url": "https://youtu.be/a", "space_id": "home"}, headers=STRANGER
     ).json()["save_id"]
     assert store.get_save(save_id)["space_id"] == "p_stranger"
+
+
+def test_missing_name_is_filled_in_later():
+    first = {"Authorization": "Bearer dev:late-name"}
+    client.post("/v1/me", json={}, headers=first)
+    client.post("/v1/me", json={"name": "Sara"}, headers=first)
+    assert store.doc_get("users/late-name")["name"] == "Sara"

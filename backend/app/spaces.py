@@ -18,6 +18,11 @@ def ensure_user(uid: str, name: str | None = None, lang: str | None = None) -> d
     """users/{uid} and the personal space, created on the first call; later calls return them."""
     user = store.doc_get(f"users/{uid}")
     if user:
+        # Firebase may not have the display name yet on the very first call; fill it in later.
+        missing = {k: v for k, v in (("name", name), ("lang", lang)) if v and not user.get(k)}
+        if missing:
+            store.doc_update(f"users/{uid}", missing)
+            user.update(missing)
         return user
     personal = f"p_{uid}"
     store.doc_set(

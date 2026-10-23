@@ -257,9 +257,10 @@ _24 Oct: P1-01 and P1-02 are deferred by owner decision (the plan was approved, 
   - A hidden "Design gallery" screen shows every token and component.
 - [ ] **P1-02 · Core components**
   - SaveCard, SectionChip, StatusPill, SkeletonCard, EmptyState, BottomSheet built and shown in the gallery in both themes and both directions.
-- [ ] **P1-03 · Auth and spaces**
+- [x] **P1-03 · Auth and spaces**
   - Google sign-in; on first launch a personal space is created; "Create household" generates an invite link; joining adds the uid to `members`.
   - Security rules deployed and covered by emulator tests.
+  - _Verified 24 Oct on the S22: sign-in, personal space, household created, a Home share processed into the household. Join is covered by backend tests; the second phone (iPhone) joins in Phase 2. The invite page on Firebase Hosting (`hosting/`) is built but not published: it is only needed for the Android App Link, so typed codes are used until iOS Universal Links (P2-02)._
 - [ ] **P1-04 · Save toast and background upload**
   - Signature save toast (pill, thumbnail, gold check, 1 s); upload continues with the app closed; retry on network loss.
 - [ ] **P1-05 · Home feed and processing card**
