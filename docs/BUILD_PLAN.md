@@ -214,6 +214,15 @@ Gate: 10 real reels (5 TikTok, 5 Instagram) go from share to correct JSON on an 
   - Table in this doc: per reel, download path used, Gemini latency, section detected, correct yes/no.
   - Decision recorded: on-device download confirmed or replaced; Gemini model and real free quota noted.
 
+**Spike report** (fill from `python -m scripts.spike_report --cloud` in `backend/`, then mark Correct? by hand)
+
+| # | Platform | Reel | Download path | Gemini s | Sections detected | Status | Correct? |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | | | | | | | |
+
+- Decision, on-device download: _pending_
+- Gemini model pinned (`GEMINI_MODEL`): _pending_; real free quota seen in AI Studio: _pending_
+
 ## Phase 1 — MVP: five sections on Android
 
 Gate: two weeks of daily use by you on Android (your wife joins in Phase 2 when the iPhone build lands), 85% or more saves filed correctly, nothing lost.
