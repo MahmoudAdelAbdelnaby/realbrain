@@ -137,7 +137,7 @@ class _SaveTile extends StatelessWidget {
     final detail = switch (status) {
       'downloaded' => '${((size ?? 0) / 1e6).toStringAsFixed(1)} MB · '
           '${dur?.toStringAsFixed(0) ?? '?'} s · ${save['download_ms']} ms',
-      'failed' => '${save['error']}',
+      'failed' || 'upload_failed' => '${save['error']}',
       _ => status,
     };
     return ListTile(
@@ -147,12 +147,14 @@ class _SaveTile extends StatelessWidget {
         overflow: TextOverflow.ellipsis,
       ),
       subtitle: Text('${save['space']} · $detail'),
-      trailing: status == 'downloading' || status == 'queued'
-          ? const SizedBox.square(
-              dimension: 20,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            )
-          : Icon(status == 'downloaded' ? Icons.check : Icons.error_outline),
+      trailing: switch (status) {
+        'queued' || 'downloading' || 'uploading' => const SizedBox.square(
+            dimension: 20,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        'failed' || 'upload_failed' => const Icon(Icons.error_outline),
+        _ => const Icon(Icons.check),
+      },
     );
   }
 }
