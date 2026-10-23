@@ -26,6 +26,21 @@ The app now opens on a **Saves** screen: every share with its status, size, dura
 
 ## 2. P0-04 backend pipeline, locally (needs your Gemini key)
 
+**Local backend on your PC (the phone talks to it over Wi-Fi):**
+- [ ] Put your key after `GEMINI_API_KEY=` in `backend\.env`. The file is already there with `AUTH_MODE=dev` and `PUBLIC_URL=http://192.168.1.13:8000`.
+- [ ] Start it, or restart it after editing `.env` (Ctrl+C in the **backend** tab first):
+  ```powershell
+  cd "C:\Users\Sarah Tarek\Documents\ReelBrain\backend"
+  ```
+  ```powershell
+  .venv\Scripts\uvicorn app.main:app --host 0.0.0.0 --port 8000 --env-file .env
+  ```
+- [ ] `app\android\local.properties` already points the debug app at `http://192.168.1.13:8000` with the dev token. Shares now go phone → PC → Gemini. Results land in `backend\data\saves\*.json`, and key frames in `backend\data\frames`.
+- [ ] If your PC's Wi-Fi IP changes, update it in both files (`ipconfig` shows it).
+- [ ] Report: `.venv\Scripts\python -m scripts.spike_report` (local saves, no `--cloud`).
+
+**Or one file at a time, without the phone:**
+
 - [ ] Copy `backend\.env.example` to `backend\.env` and put your key after `GEMINI_API_KEY=`.
 - [ ] Copy one downloaded reel off the phone (debug builds allow this):
   ```powershell
