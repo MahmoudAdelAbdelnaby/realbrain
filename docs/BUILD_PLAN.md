@@ -191,7 +191,7 @@ spaces/{spaceId}/lists/{listId}     section, name, item_refs[]
 
 Gate: 10 real reels (5 TikTok, 5 Instagram) go from share to correct JSON on an Android phone, at $0. No design work in this phase; ugly screens are fine.
 
-- [ ] **P0-01 · Repo and skeleton**
+- [x] **P0-01 · Repo and skeleton**
   - Monorepo created with the structure in Locked tech spec; Flutter app runs on your phone; FastAPI returns 200 on `/health` locally.
   - GitHub Actions runs lint + tests on every push.
 - [ ] **P0-02 · Android share intake**
