@@ -108,6 +108,8 @@ def test_save_upload_process_ready(monkeypatch, tiny_mp4):
     items = store.get_items(save)
     assert [i["section"] for i in items] == ["fact_check", "tools", "recipe", "places", "workout"]
     assert items[2]["data"]["steps"][0]["timer_s"] == 600
+    assert {i["space_id"] for i in items} == {"p_dev"} and items[0]["save_id"] == save_id
+    assert save["sections"] == ["fact_check", "tools", "recipe", "places", "workout"]
     assert save["space_id"] == "p_dev", "share target 'me' resolves to the personal space"
     frame = store.DATA / "frames" / "p_dev" / f"{save_id}.jpg"
     assert frame.stat().st_size > 0 and client.get(save["key_frame_url"].split("8000")[1]).status_code == 200

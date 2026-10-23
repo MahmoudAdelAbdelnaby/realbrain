@@ -3,4 +3,6 @@
     <string name="share_me">ريل برين · أنا</string>
     <string name="share_home">ريل برين · البيت</string>
     <string name="share_no_link">لا يوجد رابط للحفظ</string>
+    <string name="share_saving_me">جارٍ الحفظ في أنا</string>
+    <string name="share_saving_home">جارٍ الحفظ في البيت</string>
 </resources>

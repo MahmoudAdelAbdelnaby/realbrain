@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/native.dart';
-import '../save/saves_screen.dart';
+import '../feed/feed_screen.dart';
 import '../spaces/household_screen.dart';
 
 /// Signed out: the sign-in screen. Signed in: make sure the user and personal space exist,
@@ -79,7 +79,7 @@ class _AuthGateState extends State<AuthGate> {
         return Navigator(
           key: _nav,
           onGenerateRoute: (_) =>
-              MaterialPageRoute(builder: (_) => const SavesScreen()),
+              MaterialPageRoute(builder: (_) => const FeedScreen()),
         );
       },
     );

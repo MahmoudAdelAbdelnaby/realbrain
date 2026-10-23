@@ -15,7 +15,7 @@ void main() {
   testWidgets('app boots with empty state', (tester) async {
     await tester.pumpWidget(const ReelbrainApp(home: SavesScreen()));
     await tester.pump();
-    expect(find.text('Reelbrain'), findsOneWidget);
+    expect(find.text('Phone queue'), findsOneWidget);
     expect(find.textContaining('No saves yet'), findsOneWidget);
   });
 
@@ -35,7 +35,7 @@ void main() {
     addTearDown(tester.platformDispatcher.clearLocalesTestValue);
     await tester.pumpWidget(const ReelbrainApp(home: SavesScreen()));
     await tester.pump();
-    final dir = Directionality.of(tester.element(find.text('Reelbrain')));
+    final dir = Directionality.of(tester.element(find.text('Phone queue')));
     expect(dir, TextDirection.rtl);
   });
 

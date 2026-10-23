@@ -2,7 +2,7 @@
 import { readFileSync } from "node:fs";
 import { after, before, beforeEach, test } from "node:test";
 import { assertFails, assertSucceeds, initializeTestEnvironment } from "@firebase/rules-unit-testing";
-import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
+import { collectionGroup, doc, getDoc, getDocs, query, setDoc, updateDoc, where } from "firebase/firestore";
 
 let env;
 const SAVE = "spaces/h_home/saves/s1";
@@ -24,7 +24,8 @@ beforeEach(async () => {
     await setDoc(doc(db, "spaces/h_home"), { name: "Home", type: "household", members: ["me", "wife"] });
     await setDoc(doc(db, "spaces/p_me"), { name: "Me", type: "personal", members: ["me"] });
     await setDoc(doc(db, SAVE), { source_url: "https://x", status: "ready", note: null, summary: "AI text" });
-    await setDoc(doc(db, `${SAVE}/items/0-recipe`), { section: "recipe", user_state: null, data: {} });
+    await setDoc(doc(db, `${SAVE}/items/0-recipe`), { section: "recipe", user_state: null, data: {}, space_id: "h_home" });
+    await setDoc(doc(db, "spaces/p_me/saves/s9/items/0-tools"), { section: "tools", user_state: null, space_id: "p_me" });
     await setDoc(doc(db, "spaces/h_home/lists/l1"), { name: "Date night", item_refs: [] });
     await setDoc(doc(db, "invites/abcd2345"), { space_id: "h_home", created_by: "me" });
   });
@@ -74,4 +75,13 @@ test("members may change only user_state on an item, to a known value", async ()
 test("members may change only list membership", async () => {
   await assertSucceeds(updateDoc(doc(as("wife"), "spaces/h_home/lists/l1"), { item_refs: ["s1/0-recipe"] }));
   await assertFails(updateDoc(doc(as("wife"), "spaces/h_home/lists/l1"), { name: "renamed" }));
+});
+
+test("items across saves: only a query filtered to a space you're in", async () => {
+  const items = (db, space) => getDocs(query(collectionGroup(db, "items"), where("space_id", "==", space)));
+  await assertSucceeds(items(as("wife"), "h_home"));
+  await assertSucceeds(items(as("me"), "p_me"));
+  await assertFails(items(as("wife"), "p_me"));
+  await assertFails(items(as("stranger"), "h_home"));
+  await assertFails(getDocs(collectionGroup(as("me"), "items")));
 });

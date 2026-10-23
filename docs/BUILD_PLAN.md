@@ -265,6 +265,7 @@ _24 Oct: P1-01 and P1-02 are deferred by owner decision (the plan was approved, 
   - Signature save toast (pill, thumbnail, gold check, 1 s); upload continues with the app closed; retry on network loss.
 - [ ] **P1-05 · Home feed and processing card**
   - Live list of saves with shimmer and step text while processing; pull to refresh; per-section "to try" counters.
+  - _Note: Design system v2 replaced the shimmer with flat grey bars at the final size; built that way. Items carry `space_id`/`save_id` and saves a `sections` list (backend-written), so counters use one collection-group query per space (rule + index in `infra/`)._
 - [ ] **P1-06 · Push notifications**
   - FCM message on `ready` with the key result in the text; tapping opens the item; Fact Check notifications carry the verdict line.
 - [ ] **P1-07 · Inbox and section correction**

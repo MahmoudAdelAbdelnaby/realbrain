@@ -2,14 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/native.dart';
-import '../spaces/household_screen.dart';
 
-/// Phase 0 spike screen: every share and what the on-device downloader did with it.
-/// ponytail: polls the native save list every 2 s; becomes a Firestore listener in P1-05.
+/// Phone queue (debug): every share and what the on-device download and upload did with it.
+/// ponytail: polls the native list every 2 s; the real feed is Firestore (FeedScreen).
 class SavesScreen extends StatefulWidget {
   const SavesScreen({super.key});
 
@@ -69,23 +67,7 @@ class _SavesScreenState extends State<SavesScreen> {
   Widget build(BuildContext context) {
     final saves = _saves;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Reelbrain'),
-        actions: [
-          IconButton(
-            tooltip: 'Spaces',
-            icon: const Icon(Icons.group_outlined),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const HouseholdScreen()),
-            ),
-          ),
-          PopupMenuButton<String>(
-            onSelected: (_) => FirebaseAuth.instance.signOut(),
-            itemBuilder: (_) =>
-                const [PopupMenuItem(value: 'out', child: Text('Sign out'))],
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text('Phone queue')),
       body: SafeArea(
         child: Column(
           children: [

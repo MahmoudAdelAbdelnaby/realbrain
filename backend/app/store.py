@@ -140,8 +140,13 @@ def update_save(save: dict, fields: dict) -> None:
 
 
 def put_items(save: dict, items: list[dict]) -> None:
-    """One item per extracted section."""
-    col_replace(_save_path(save) + "/items", {f"{i}-{item['section']}": item for i, item in enumerate(items)})
+    """One item per extracted section. space_id/save_id let the app query items across saves
+    (collection group, P1-05 counters) and let the rules check membership."""
+    ids = {"space_id": save["space_id"], "save_id": save["save_id"], "created_at": save.get("created_at")}
+    col_replace(
+        _save_path(save) + "/items",
+        {f"{i}-{item['section']}": {**item, **ids} for i, item in enumerate(items)},
+    )
 
 
 def get_items(save: dict) -> list[dict]:

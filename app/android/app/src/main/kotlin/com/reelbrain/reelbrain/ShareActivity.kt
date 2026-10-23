@@ -32,6 +32,8 @@ class ShareActivity : Activity() {
         } else {
             val id = Saves.enqueue(this, url, space, text?.replace(url, "")?.trim()?.ifEmpty { null })
             Log.i(TAG, "queued id=$id space=$space url=$url")
+            // ponytail: plain toast; the styled save pill (thumbnail, check) comes with the design pass.
+            Toast.makeText(this, if (space == "home") R.string.share_saving_home else R.string.share_saving_me, Toast.LENGTH_SHORT).show()
         }
         finish()
     }

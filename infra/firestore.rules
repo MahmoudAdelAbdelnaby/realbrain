@@ -17,6 +17,12 @@ service cloud.firestore {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly(fields);
     }
 
+    // Items across saves (collection group), for the feed's "to try" counters. Queries must filter
+    // on space_id == <a space you're in>; the backend writes space_id on every item.
+    match /{path=**}/items/{itemId} {
+      allow read: if member(resource.data.space_id);
+    }
+
     match /users/{uid} {
       allow read: if signedIn() && request.auth.uid == uid;
     }

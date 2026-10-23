@@ -66,6 +66,7 @@ def process(save_id: str, attempt: int = 0, max_attempts: int = 3) -> str:
                     "step_text": None,
                     "language": result.language,
                     "summary": result.summary,
+                    "sections": [s.type for s in result.sections],  # feed card chips without reading items
                     "key_frame_url": frame_url,
                     "extract_ms": extract_ms,  # spike report (P0-07)
                 },
