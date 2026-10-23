@@ -10,8 +10,12 @@ from app.schemas import ExtractResult, gemini_schema
 
 log = logging.getLogger("reelbrain.extract")
 
-# Newest free Flash by default; pin a concrete model in env once the spike picks one (P0-07).
-MODEL = os.environ.get("GEMINI_MODEL", "gemini-flash-latest")
+# Free tier (AI Studio, 24 Oct 2026): each Flash model has its own 20 requests/day, Flash-Lite 500/day.
+# Busy or out of quota -> the next model, so one save never burns a retry on the same overloaded model.
+# 3.6 first: 3.8 answered in 200 s and 503'd repeatedly on the spike day; 3.6 in 3 s.
+MODELS = os.environ.get("GEMINI_MODELS", "gemini-3.6-flash,gemini-3.8-flash,gemini-3.5-flash-lite").split(",")
+MODEL = MODELS[0]
+TRANSIENT = (408, 429, 500, 502, 503, 504)
 PROMPT = (Path(__file__).resolve().parent.parent / "prompts" / "extract.md").read_text("utf-8")
 
 
@@ -56,21 +60,25 @@ def extract(
             parts.append("There is no video, only the caption below. Extract only what the caption states.")
         parts.append(_context(caption, meta))
 
-        response = client().models.generate_content(
-            model=MODEL,
-            contents=parts,
-            config=types.GenerateContentConfig(
-                system_instruction=PROMPT,
-                response_mime_type="application/json",
-                response_json_schema=gemini_schema(ExtractResult),
-                temperature=0.2,
-            ),
+        config = types.GenerateContentConfig(
+            system_instruction=PROMPT,
+            response_mime_type="application/json",
+            response_json_schema=gemini_schema(ExtractResult),
+            temperature=0.2,
         )
-        return ExtractResult.model_validate_json(response.text)
-    except errors.APIError as e:
-        if e.code in (408, 429, 500, 502, 503, 504):
-            raise Transient(f"Gemini {e.code}: {e.message}") from e
-        raise
+        busy = []
+        for model in MODELS:
+            try:
+                response = client().models.generate_content(model=model, contents=parts, config=config)
+            except errors.APIError as e:
+                if e.code not in TRANSIENT:
+                    raise
+                busy.append(f"{model} {e.code}")
+                log.warning("extract on %s busy (%s), trying next model", model, e.code)
+                continue
+            log.info("extract model=%s", model)
+            return ExtractResult.model_validate_json(response.text)
+        raise Transient("Gemini busy: " + ", ".join(busy))
     finally:
         if uploaded is not None:
             try:

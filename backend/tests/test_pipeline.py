@@ -168,3 +168,27 @@ def test_low_confidence_goes_to_review(monkeypatch):
         client.post("/internal/process", json={"save_id": save_id}, headers=AUTH).json()["status"]
         == "needs_review"
     )
+
+
+def test_extract_falls_through_busy_models(monkeypatch):
+    from google.genai import errors
+
+    from app.pipeline import extract as ex
+
+    calls = []
+
+    class Models:
+        def generate_content(self, model, contents, config):
+            calls.append(model)
+            if model != "lite":
+                raise errors.APIError(503, {"error": {"message": "high demand"}})
+            return type("R", (), {"text": SAMPLE.model_dump_json()})()
+
+    monkeypatch.setattr(ex, "MODELS", ["flash-a", "flash-b", "lite"])
+    monkeypatch.setattr(ex, "client", lambda: type("C", (), {"models": Models()})())
+    assert ex.extract(None, "caption", {}).language == "ar-EG"
+    assert calls == ["flash-a", "flash-b", "lite"]
+
+    monkeypatch.setattr(ex, "MODELS", ["flash-a"])
+    with pytest.raises(Transient):
+        ex.extract(None, "caption", {})
