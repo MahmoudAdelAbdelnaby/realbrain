@@ -8,6 +8,7 @@ from pathlib import Path
 from app import store
 from app.pipeline import frames
 from app.pipeline.extract import Transient, extract
+from app.pipeline.fetch import fallback
 from app.schemas import needs_review
 
 log = logging.getLogger("reelbrain.process")
@@ -24,21 +25,39 @@ def process(save_id: str, attempt: int = 0, max_attempts: int = 3) -> str:
 
     started = time.monotonic()
     with tempfile.TemporaryDirectory() as tmp:
-        video = Path(tmp) / "video.mp4"
+        video: Path | None = Path(tmp) / "video.mp4"
         try:
+            uri, caption, fetch = None, save.get("caption"), {"fetch_path": "phone"}
             if not store.fetch_video(save_id, video):
-                raise RuntimeError("no video uploaded")
-            store.update_save(save, {"status": "extracting", "step_text": "Watching the video"})
-            meta = {"platform": save.get("platform"), "url": save.get("source_url")}
-            result = extract(video, save.get("caption"), meta)
+                store.update_save(save, {"status": "fetching", "step_text": "Getting the video"})
+                got = fallback(save, video)
+                video, uri, caption = got.path, got.uri, got.caption
+                fetch = {"fetch_path": got.used, "fetch_steps": got.steps}
+                if got.creator and not save.get("creator"):
+                    fetch["creator"] = got.creator
+                if got.used == "none":
+                    raise RuntimeError("no video or caption from any source")
+            caption_only = video is None and uri is None
+            store.update_save(
+                save,
+                {**fetch, "caption": caption, "status": "extracting", "step_text": "Watching the video"},
+            )
+            meta = {
+                "platform": save.get("platform"),
+                "url": save.get("source_url"),
+                "creator": save.get("creator"),
+            }
+            t0 = time.monotonic()
+            result = extract(video, caption, meta, video_uri=uri)
+            extract_ms = int((time.monotonic() - t0) * 1000)
 
             frame_url = None
-            if result.key_frame_t is not None:
+            if video is not None and result.key_frame_t is not None:
                 jpg = frames.key_frame(video, result.key_frame_t, Path(tmp) / "frame.jpg")
                 if jpg:
                     frame_url = store.put_frame(save["space_id"], save_id, jpg)
 
-            status = "needs_review" if needs_review(result) else "ready"
+            status = "partial" if caption_only else "needs_review" if needs_review(result) else "ready"
             store.put_items(save, [_item(s) for s in result.sections])
             store.update_save(
                 save,
@@ -48,6 +67,7 @@ def process(save_id: str, attempt: int = 0, max_attempts: int = 3) -> str:
                     "language": result.language,
                     "summary": result.summary,
                     "key_frame_url": frame_url,
+                    "extract_ms": extract_ms,  # spike report (P0-07)
                 },
             )
             store.delete_video(save_id)

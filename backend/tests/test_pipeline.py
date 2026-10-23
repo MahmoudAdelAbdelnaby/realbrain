@@ -102,7 +102,7 @@ def test_save_upload_process_ready(monkeypatch, tiny_mp4):
     assert seen == {
         "video_exists": True,
         "caption": "koshari #recipe",
-        "meta": {"platform": "tiktok", "url": "https://vt.tiktok.com/ZSg/"},
+        "meta": {"platform": "tiktok", "url": "https://vt.tiktok.com/ZSg/", "creator": None},
     }
     assert save["language"] == "ar-EG" and save["summary"]
     assert [i["section"] for i in save["items"]] == [

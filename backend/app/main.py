@@ -9,7 +9,7 @@ from app import store, tasks
 from app.auth import cloud_tasks, user
 from app.pipeline.extract import Transient
 from app.pipeline.process import process
-from app.schemas import CreatedSave, CreateSave, ProcessTask
+from app.schemas import CreatedSave, CreateSave, NoVideo, ProcessTask
 
 logging.basicConfig(level=logging.INFO)
 app = FastAPI(title="Reelbrain API")
@@ -65,6 +65,17 @@ def create_save(body: CreateSave, uid: str = Depends(user)) -> CreatedSave:
 def uploaded(save_id: str, uid: str = Depends(user)) -> dict:
     save = owned_save(save_id, uid)
     store.update_save(save, {"status": "uploaded", "step_text": "Queued"})
+    tasks.enqueue(save_id)
+    return {"save_id": save_id}
+
+
+@app.post("/v1/saves/{save_id}/no-video", status_code=202)
+def no_video(save_id: str, body: NoVideo, uid: str = Depends(user)) -> dict:
+    """The phone couldn't fetch the video: the backend tries its fallback chain."""
+    save = owned_save(save_id, uid)
+    store.update_save(
+        save, {"status": "fetching", "step_text": "Getting the video", "no_video_reason": body.reason}
+    )
     tasks.enqueue(save_id)
     return {"save_id": save_id}
 
