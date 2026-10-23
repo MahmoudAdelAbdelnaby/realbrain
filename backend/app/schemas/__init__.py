@@ -134,7 +134,9 @@ class CreateSave(BaseModel):
     source_url: str = Field(pattern=r"^https?://")
     space_id: str = Field(min_length=1, max_length=128)
     note: str | None = Field(None, max_length=2000)
+    # Optional, from the phone's yt-dlp metadata; fill the save doc's caption/creator fields.
     caption: str | None = Field(None, max_length=5000)
+    creator: str | None = Field(None, max_length=200)
 
 
 class CreatedSave(BaseModel):

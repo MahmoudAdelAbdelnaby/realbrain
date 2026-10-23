@@ -1,0 +1,9 @@
+rules_version = '2';
+// Videos arrive through signed URLs and frames are written by the backend; clients get nothing directly.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

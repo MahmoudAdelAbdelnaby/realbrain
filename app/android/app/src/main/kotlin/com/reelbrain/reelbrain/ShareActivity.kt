@@ -14,12 +14,13 @@ class ShareActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val space = if (componentName.className.endsWith("ShareHome")) "home" else "me"
-        val url = ShareText.extractUrl(intent?.getStringExtra(Intent.EXTRA_TEXT))
+        val text = intent?.getStringExtra(Intent.EXTRA_TEXT)
+        val url = ShareText.extractUrl(text)
         if (url == null) {
             Log.w(TAG, "share to $space had no link")
             Toast.makeText(this, R.string.share_no_link, Toast.LENGTH_SHORT).show()
         } else {
-            val id = Saves.enqueue(this, url, space)
+            val id = Saves.enqueue(this, url, space, text?.replace(url, "")?.trim()?.ifEmpty { null })
             Log.i(TAG, "queued id=$id space=$space url=$url")
         }
         finish()

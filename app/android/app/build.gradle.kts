@@ -1,8 +1,16 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
+
+// Per-machine, git-ignored: reelbrain.apiUrl and the Firebase app's apiKey/appId/projectId (P0-05).
+val local = Properties().apply {
+    rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
+}
+fun localProp(key: String) = "\"" + (local.getProperty(key) ?: "") + "\""
 
 android {
     namespace = "com.reelbrain.reelbrain"
@@ -27,6 +35,14 @@ android {
         // flag during build.
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        buildConfigField("String", "API_URL", localProp("reelbrain.apiUrl"))
+        buildConfigField("String", "FIREBASE_API_KEY", localProp("reelbrain.firebaseApiKey"))
+        buildConfigField("String", "FIREBASE_APP_ID", localProp("reelbrain.firebaseAppId"))
+        buildConfigField("String", "FIREBASE_PROJECT_ID", localProp("reelbrain.firebaseProjectId"))
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 
     // youtubedl-android runs python/yt-dlp from extracted .so files.
@@ -59,5 +75,7 @@ flutter {
 dependencies {
     implementation("io.github.junkfood02.youtubedl-android:library:0.18.1")
     implementation("androidx.work:work-runtime-ktx:2.11.2")
+    implementation(platform("com.google.firebase:firebase-bom:35.1.0"))
+    implementation("com.google.firebase:firebase-auth")
     testImplementation("junit:junit:4.13.2")
 }

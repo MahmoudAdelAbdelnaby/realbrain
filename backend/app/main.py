@@ -52,6 +52,7 @@ def create_save(body: CreateSave, uid: str = Depends(user)) -> CreatedSave:
             "space_id": body.space_id,
             "note": body.note,
             "caption": body.caption,
+            "creator": body.creator,
             "status": "received",
             "step_text": None,
             "created_by": uid,

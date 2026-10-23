@@ -6,8 +6,16 @@ import com.yausername.youtubedl_android.YoutubeDL
 import com.yausername.youtubedl_android.YoutubeDLRequest
 import java.io.File
 
-data class Download(val path: String, val durationS: Double?, val sizeBytes: Long) {
-    fun toMap() = mapOf("path" to path, "duration_s" to durationS, "size_bytes" to sizeBytes)
+data class Download(
+    val path: String,
+    val durationS: Double?,
+    val sizeBytes: Long,
+    val caption: String? = null,
+    val creator: String? = null,
+) {
+    fun toMap() = mapOf(
+        "path" to path, "duration_s" to durationS, "size_bytes" to sizeBytes, "caption" to caption, "creator" to creator,
+    )
 }
 
 class DownloadError(val code: String, message: String) : Exception(message)
@@ -46,6 +54,7 @@ object Downloader {
             addOption("-f", "b[height<=720]/b")
             addOption("-o", "${dir.absolutePath}/%(extractor)s-%(id)s.%(ext)s")
             addOption("--print", "after_move:%(filepath)s|%(duration)s")
+            addOption("--write-info-json") // caption and creator for the backend
             addOption("--socket-timeout", "20")
             addOption("--retries", "2")
         }
@@ -55,8 +64,16 @@ object Downloader {
             val msg = e.message ?: e.toString()
             throw DownloadError(DownloadErrors.classify(msg), msg.takeLast(500))
         }
-        return DownloadErrors.parsePrint(out)
+        val d = DownloadErrors.parsePrint(out)
             ?: throw DownloadError("NO_OUTPUT", "yt-dlp printed no file: ${out.takeLast(300)}")
+        val info = File(File(d.path).parentFile, File(d.path).nameWithoutExtension + ".info.json")
+        return runCatching {
+            val json = org.json.JSONObject(info.readText())
+            d.copy(
+                caption = json.optString("description").ifBlank { json.optString("title") }.ifBlank { null },
+                creator = json.optString("uploader").ifBlank { json.optString("channel") }.ifBlank { null },
+            )
+        }.getOrDefault(d).also { info.delete() }
     }
 }
 
