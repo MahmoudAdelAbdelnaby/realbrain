@@ -12,13 +12,14 @@ Share a reel, get the knowledge. Specs live in [docs/](docs/).
 
 ## Backend
 
-Python 3.12 (CI uses 3.12).
+Python 3.12 (CI uses 3.12) and ffmpeg on PATH. Copy `backend/.env.example` to `backend/.env` and add your Gemini key.
 
 ```bash
 cd backend
 python -m venv .venv && .venv/Scripts/pip install -r requirements-dev.txt   # bin/ on macOS/Linux
 .venv/Scripts/uvicorn app.main:app --reload   # http://127.0.0.1:8000/health
 .venv/Scripts/pytest
+.venv/Scripts/python -m scripts.extract_file reel.mp4 --caption "..."   # one real reel through Gemini
 ```
 
 ## App

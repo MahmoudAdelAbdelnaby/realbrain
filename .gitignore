@@ -9,3 +9,4 @@ __pycache__/
 *service-account*.json
 google-services.json
 GoogleService-Info.plist
+backend/data/

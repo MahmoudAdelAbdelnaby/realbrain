@@ -1,0 +1,24 @@
+{
+  "language": "ar-EG",
+  "summary": "طريقة عمل كشري في البيت",
+  "summary_en": "How to make koshari at home",
+  "transcript": [{"t": 3.2, "text": "النهارده هنعمل كشري"}],
+  "on_screen_text": [{"t": 5.0, "text": "github.com/example/tool"}],
+  "sections": [
+    {"type": "fact_check", "confidence": 0.91, "claims": [{"text": "Lentils are high in protein", "t": 12.0}]},
+    {"type": "tools", "confidence": 0.88,
+     "items": [{"name": "uv", "url_guess": "https://github.com/astral-sh/uv", "kind": "github_repo",
+                "use_shown": "install python deps", "snippet": "pip install uv", "t": 20.5}]},
+    {"type": "recipe", "confidence": 0.95,
+     "title": "كشري", "servings": 4, "total_min": 35,
+     "ingredients": [{"name": "عدس", "qty": 200, "unit": "g", "estimated": false}],
+     "steps": [{"text": "اسلق العدس", "timer_s": 600, "t": 41.0}]},
+    {"type": "places", "confidence": 0.8,
+     "items": [{"name": "Abou Tarek", "area": "Downtown", "city": "Cairo",
+                "why_go": "Classic koshari", "what_to_order": "Large koshari", "t": 8.0}]},
+    {"type": "workout", "confidence": 0.9,
+     "exercises": [{"name": "Plank", "duration_s": 120, "reps": null, "sets": 1,
+                    "rest_s": 30, "cues": "Keep hips level", "t": 15.0, "estimated": false}]}
+  ],
+  "key_frame_t": 0.5
+}
