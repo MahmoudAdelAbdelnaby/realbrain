@@ -92,3 +92,14 @@ def test_retry_runs_a_failed_save_again(calls, monkeypatch):
         client.post("/internal/process", json={"save_id": save_id}, headers=TASKS).json()["status"]
         == "needs_review"
     )
+
+
+def test_none_of_these_keeps_a_plain_save_without_rereading(calls):
+    save_id = _review_save()
+    r = client.post(f"/v1/saves/{save_id}/section", json={"section": "none"}, headers=AUTH)
+    assert r.status_code == 200
+    save = store.get_save(save_id)
+    assert save["status"] == "ready" and save["sections"] == [] and store.get_items(save) == []
+    assert len(calls) == 1, "no second Extract call"
+    assert not store.local_video(save_id).exists()
+    assert any(c["to_section"] == "none" for c in store.col_list("corrections") if c["save_id"] == save_id)

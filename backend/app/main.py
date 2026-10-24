@@ -147,6 +147,14 @@ def file_under(save_id: str, body: FileUnder, uid: str = Depends(user)) -> dict:
             "at": time.time(),
         },
     )
+    if body.section == "none":
+        # Nothing to re-read for: a plain save with no section, out of the Inbox.
+        store.put_items(save, [])
+        store.update_save(
+            save, {"status": "ready", "sections": [], "forced_section": "none", "step_text": None}
+        )
+        store.delete_video(save_id)
+        return {"save_id": save_id}
     store.update_save(
         save, {"status": "received", "forced_section": body.section, "step_text": "Re-reading the video"}
     )

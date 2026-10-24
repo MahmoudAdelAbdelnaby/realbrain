@@ -16,31 +16,80 @@ class SaveScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ref = FirebaseFirestore.instance.doc('spaces/$spaceId/saves/$saveId');
-    return Scaffold(
-      appBar: AppBar(title: const Text('Save')),
-      body: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-        stream: ref.snapshots(),
-        builder: (context, snap) {
-          if (snap.hasError) {
-            return _pad(Text('Could not open this save: ${snap.error}'));
-          }
-          if (!snap.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          final save = snap.data!.data();
-          if (save == null) {
-            return _pad(const Text('This save no longer exists.'));
-          }
-          return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-            stream: ref.collection('items').snapshots(),
-            builder: (context, items) => SaveDetail(
-              save: save,
-              items: [for (final d in items.data?.docs ?? const []) d.data()],
-            ),
-          );
-        },
-      ),
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: ref.snapshots(),
+      builder: (context, snap) {
+        final save = snap.data?.data();
+        final settled = save != null && !_processing.contains(save['status']);
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('Save'),
+            actions: [
+              if (settled)
+                TextButton(
+                  onPressed: () => changeSection(context, save),
+                  child: const Text('Change section'),
+                ),
+            ],
+          ),
+          body: switch (snap) {
+            AsyncSnapshot(hasError: true) =>
+              _pad(Text('Could not open this save: ${snap.error}')),
+            AsyncSnapshot(hasData: false) =>
+              const Center(child: CircularProgressIndicator()),
+            _ when save == null =>
+              _pad(const Text('This save no longer exists.')),
+            _ => StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                stream: ref.collection('items').snapshots(),
+                builder: (context, items) => SaveDetail(
+                  save: save,
+                  items: [
+                    for (final d in items.data?.docs ?? const []) d.data()
+                  ],
+                ),
+              ),
+          },
+        );
+      },
     );
+  }
+}
+
+const _processing = {'received', 'uploaded', 'fetching', 'extracting'};
+
+/// Re-file a save: a section re-reads the video with that hint; "None of these" keeps it as a
+/// plain save (for things no section covers yet, like products before P3-02).
+Future<void> changeSection(
+    BuildContext context, Map<String, dynamic> save) async {
+  final current = (save['sections'] as List?)?.cast<String>() ?? const [];
+  final section = await showModalBottomSheet<String>(
+    context: context,
+    builder: (context) => SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const ListTile(
+            title: Text('File this under'),
+            subtitle: Text('Reelbrain re-reads the video for that section.'),
+          ),
+          for (final e in sectionLabels.entries)
+            ListTile(
+              title: Text(e.value),
+              trailing:
+                  current.contains(e.key) ? const Icon(Icons.check) : null,
+              onTap: () => Navigator.pop(context, e.key),
+            ),
+          ListTile(
+            title: const Text('None of these'),
+            subtitle: const Text('Keep it as a plain save'),
+            onTap: () => Navigator.pop(context, 'none'),
+          ),
+        ],
+      ),
+    ),
+  );
+  if (section != null && context.mounted) {
+    await fileUnder(context, save, section);
   }
 }
 
@@ -90,16 +139,6 @@ class SaveDetail extends StatelessWidget {
               style: TextStyle(
                   color: muted, decoration: TextDecoration.underline)),
         ),
-        if (save['save_id'] != null &&
-            !const {'received', 'uploaded', 'fetching', 'extracting'}
-                .contains(save['status']))
-          Align(
-            alignment: AlignmentDirectional.centerStart,
-            child: TextButton(
-              onPressed: () => _chooseSection(context),
-              child: const Text('Wrong section?'),
-            ),
-          ),
         for (final item in items) ...[
           const Divider(height: 32),
           Text(sectionLabels[item['section']] ?? '${item['section']}',
@@ -110,27 +149,6 @@ class SaveDetail extends StatelessWidget {
         ],
       ],
     );
-  }
-
-  Future<void> _chooseSection(BuildContext context) async {
-    final section = await showModalBottomSheet<String>(
-      context: context,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const ListTile(title: Text('File this under')),
-            for (final e in sectionLabels.entries)
-              ListTile(
-                  title: Text(e.value),
-                  onTap: () => Navigator.pop(context, e.key)),
-          ],
-        ),
-      ),
-    );
-    if (section != null && context.mounted) {
-      await fileUnder(context, save, section);
-    }
   }
 
   static String _at(Object? t) {

@@ -145,7 +145,8 @@ class CreatedSave(BaseModel):
 
 
 class FileUnder(BaseModel):
-    section: Literal["fact_check", "tools", "recipe", "places", "workout"]
+    # "none": nothing fits (e.g. a product ad before P3-02); keep it as a plain save.
+    section: Literal["fact_check", "tools", "recipe", "places", "workout", "none"]
 
 
 class NoVideo(BaseModel):

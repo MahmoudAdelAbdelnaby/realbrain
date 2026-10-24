@@ -17,7 +17,9 @@ Future<void> fileUnder(
         context,
         () => api('POST', '/v1/saves/${save['save_id']}/section',
             {'section': section}),
-        'Re-reading it as ${sectionLabels[section]}');
+        section == 'none'
+            ? 'Kept as a plain save'
+            : 'Re-reading it as ${sectionLabels[section]}');
 
 Future<void> retrySave(BuildContext context, Map<String, dynamic> save) => _run(
     context,
@@ -99,6 +101,9 @@ class _Actions extends StatelessWidget {
             ActionChip(
                 label: Text(e.value),
                 onPressed: () => fileUnder(context, save, e.key)),
+          ActionChip(
+              label: const Text('None of these'),
+              onPressed: () => fileUnder(context, save, 'none')),
         ],
         TextButton.icon(
           onPressed: () => retrySave(context, save),

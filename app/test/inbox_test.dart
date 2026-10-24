@@ -42,6 +42,7 @@ void main() {
     ]));
     expect(find.text('File as'), findsOneWidget);
     expect(find.widgetWithText(ActionChip, 'Recipes'), findsOneWidget);
+    expect(find.widgetWithText(ActionChip, 'None of these'), findsOneWidget);
     expect(find.text('Retry'), findsNWidgets(2));
   });
 
