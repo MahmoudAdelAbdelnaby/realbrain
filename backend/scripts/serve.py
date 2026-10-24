@@ -19,7 +19,8 @@ import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-URL = re.compile(r"https://[a-z0-9-]+\.trycloudflare\.com")
+# The tunnel line, not Cloudflare's own API host (which appears in errors when a request fails).
+URL = re.compile(r"https://(?!api\.)[a-z0-9-]+\.trycloudflare\.com")
 
 
 def load_env() -> None:
