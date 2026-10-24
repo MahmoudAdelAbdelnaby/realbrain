@@ -5,8 +5,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/native.dart';
+import '../../core/theme/tokens.dart';
 import '../../core/theme/gallery.dart';
+import '../../core/liquid_pill.dart';
 import '../../core/widgets.dart';
+import '../places/places_map.dart';
 import '../factcheck/fact_check_view.dart' show verdictLabels;
 import '../inbox/inbox_screen.dart';
 import '../library/library_screen.dart';
@@ -122,6 +125,7 @@ class _FeedScreenState extends State<FeedScreen> {
     }
     _inbox.dispose();
     _allItems.dispose();
+    _flashTimer?.cancel();
     super.dispose();
   }
 
@@ -145,7 +149,17 @@ class _FeedScreenState extends State<FeedScreen> {
       _inbox.value = inbox;
       _allItems.value = allItems;
     });
-    return Scaffold(
+    final processing =
+        saves.where((s) => _processing.contains(s['status'])).toList();
+    _trackReady(saves);
+    final flash = _flash;
+    final PillStatus? status = processing.isNotEmpty
+        ? _pillStatus(processing.first,
+            processing.first['step_text'] as String? ?? 'Saving')
+        : flash != null
+            ? _pillStatus(flash, _readyLine(flash))
+            : null;
+    final home = Scaffold(
       appBar: AppBar(
         // Long-press the title for the hidden design gallery (P1-01).
         title: GestureDetector(
@@ -153,42 +167,7 @@ class _FeedScreenState extends State<FeedScreen> {
               .push(MaterialPageRoute(builder: (_) => const DesignGallery())),
           child: const Text('Reelbrain'),
         ),
-        actions: [
-          IconButton(
-            tooltip: 'Search',
-            icon: const Icon(Icons.search),
-            onPressed: () => _push(const LibraryScreen()),
-          ),
-          IconButton(
-            tooltip: 'Inbox',
-            icon: Badge(
-              isLabelVisible: inbox.isNotEmpty,
-              label: Text('${inbox.length}'),
-              child: const Icon(Icons.inbox_outlined),
-            ),
-            onPressed: () =>
-                _push(InboxScreen(saves: _inbox, spaceLabel: spaceLabel)),
-          ),
-          IconButton(
-            tooltip: 'Phone queue',
-            icon: const Icon(Icons.download_outlined),
-            onPressed: () => _push(const SavesScreen()),
-          ),
-          IconButton(
-            tooltip: 'Spaces',
-            icon: const Icon(Icons.group_outlined),
-            onPressed: () => _push(const HouseholdScreen()),
-          ),
-          PopupMenuButton<String>(
-            onSelected: (v) => v == 'out'
-                ? FirebaseAuth.instance.signOut()
-                : _push(const SettingsScreen()),
-            itemBuilder: (_) => const [
-              PopupMenuItem(value: 'settings', child: Text('Settings')),
-              PopupMenuItem(value: 'out', child: Text('Sign out')),
-            ],
-          ),
-        ],
+        actions: [_AccountMenu(onOpen: _push)],
       ),
       body: RefreshIndicator(
         onRefresh: _refresh,
@@ -202,6 +181,106 @@ class _FeedScreenState extends State<FeedScreen> {
           error: _error,
         ),
       ),
+    );
+    // Tabs other than Home end above the pill instead of scrolling under it.
+    Widget above(Widget w) =>
+        Padding(padding: const EdgeInsets.only(bottom: _pillRoom), child: w);
+    return PopScope(
+      canPop: _tab == 0,
+      onPopInvokedWithResult: (popped, _) {
+        if (!popped) {
+          setState(() => _tab = 0); // Back from a tab goes Home first
+        }
+      },
+      child: Scaffold(
+        extendBody: true,
+        body: IndexedStack(index: _tab, children: [
+          home,
+          above(const LibraryScreen()),
+          above(ValueListenableBuilder<List<Map<String, dynamic>>>(
+            valueListenable: _allItems,
+            builder: (context, all, _) => PlacesMap(items: [
+              for (final i in all)
+                if (i['section'] == 'places') i
+            ]),
+          )),
+          above(InboxScreen(saves: _inbox, spaceLabel: spaceLabel)),
+        ]),
+        bottomNavigationBar: LiquidPill(
+          selected: _tab,
+          onSelect: (i) => setState(() => _tab = i),
+          status: status,
+          destinations: [
+            (
+              icon: Icons.home_outlined,
+              selectedIcon: Icons.home,
+              label: 'Home',
+              badge: 0
+            ),
+            (
+              icon: Icons.search,
+              selectedIcon: Icons.search,
+              label: 'Search',
+              badge: 0
+            ),
+            (
+              icon: Icons.map_outlined,
+              selectedIcon: Icons.map,
+              label: 'Map',
+              badge: 0
+            ),
+            (
+              icon: Icons.inbox_outlined,
+              selectedIcon: Icons.inbox,
+              label: 'Inbox',
+              badge: inbox.length
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static const _pillRoom = 88.0;
+  int _tab = 0;
+
+  // "Ready" flash: a save that was processing a moment ago and just finished.
+  final _wasProcessing = <String>{};
+  Map<String, dynamic>? _flash;
+  Timer? _flashTimer;
+
+  void _trackReady(List<Map<String, dynamic>> saves) {
+    for (final s in saves) {
+      final id = s['save_id'] as String?;
+      if (id == null) continue;
+      final busy = _processing.contains(s['status']);
+      if (busy) {
+        _wasProcessing.add(id);
+      } else if (_wasProcessing.remove(id) &&
+          (s['status'] == 'ready' || s['status'] == 'partial')) {
+        _flash = s;
+        _flashTimer?.cancel();
+        _flashTimer = Timer(const Duration(seconds: 4), () {
+          if (mounted) setState(() => _flash = null);
+        });
+      }
+    }
+  }
+
+  PillStatus _pillStatus(Map<String, dynamic> save, String text) {
+    final url = frameUrl(save['key_frame_url'] as String?);
+    final id = save['save_id'] as String?, space = save['space_id'] as String?;
+    return (
+      key: '${id}_${save['status']}',
+      thumb: url == null
+          ? null
+          : Image.network(url,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => const SizedBox()),
+      text: text,
+      onTap: id == null || space == null
+          ? null
+          : () => _push(SaveScreen(spaceId: space, saveId: id)),
     );
   }
 
@@ -441,4 +520,55 @@ class _Note extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
       padding: const EdgeInsets.symmetric(vertical: 24), child: Text(text));
+}
+
+/// The pill's "ready" line: the section and what was found ("Recipes · Koshari at home...").
+String _readyLine(Map<String, dynamic> save) {
+  final sections = (save['sections'] as List?)?.cast<String>() ?? const [];
+  final what = sections.isEmpty
+      ? 'Saved'
+      : sections.first == 'fact_check' && save['verdict'] != null
+          ? 'Fact Check: ${verdictLabels[save['verdict']] ?? save['verdict']}'
+          : sectionLabels[sections.first] ?? sections.first;
+  final summary = save['summary'] as String?;
+  return summary == null ? what : '$what · $summary';
+}
+
+/// The avatar in the top bar: Settings and the less used screens (design v3).
+class _AccountMenu extends StatelessWidget {
+  const _AccountMenu({required this.onOpen});
+  final void Function(Widget screen) onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+    final photo = user?.photoURL;
+    final initial = (user?.displayName ?? user?.email ?? '?')
+        .characters
+        .first
+        .toUpperCase();
+    return PopupMenuButton<String>(
+      tooltip: 'Account',
+      onSelected: (v) => switch (v) {
+        'out' => FirebaseAuth.instance.signOut(),
+        'queue' => onOpen(const SavesScreen()),
+        'spaces' => onOpen(const HouseholdScreen()),
+        _ => onOpen(const SettingsScreen()),
+      },
+      itemBuilder: (_) => const [
+        PopupMenuItem(value: 'settings', child: Text('Settings')),
+        PopupMenuItem(value: 'spaces', child: Text('Spaces')),
+        PopupMenuItem(value: 'queue', child: Text('Phone queue')),
+        PopupMenuItem(value: 'out', child: Text('Sign out')),
+      ],
+      child: Padding(
+        padding: const EdgeInsetsDirectional.only(end: RbSpace.side),
+        child: CircleAvatar(
+          radius: 16,
+          backgroundImage: photo == null ? null : NetworkImage(photo),
+          child: photo == null ? Text(initial) : null,
+        ),
+      ),
+    );
+  }
 }
