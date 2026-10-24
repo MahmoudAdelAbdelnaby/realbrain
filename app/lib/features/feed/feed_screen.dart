@@ -484,16 +484,27 @@ class SaveCard extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 6),
       clipBehavior: Clip.antiAlias,
-      child: InkWell(
+      child: Pressable(
         onTap: saveId == null || spaceId == null
             ? null
             : () => Navigator.of(context).push(MaterialPageRoute(
-                  builder: (_) => SaveScreen(spaceId: spaceId, saveId: saveId),
+                  builder: (_) => SaveScreen(
+                      spaceId: spaceId,
+                      saveId: saveId,
+                      initial: save,
+                      heroTag: 'frame-$saveId-latest'),
                 )),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _Frame(stored: save['key_frame_url'] as String?),
+            // Skeletons have no id, and two of them would share a tag.
+            HeroMode(
+              enabled: saveId != null,
+              child: Hero(
+                tag: 'frame-$saveId-latest',
+                child: _Frame(stored: save['key_frame_url'] as String?),
+              ),
+            ),
             Expanded(
               child: Padding(
                 padding: const EdgeInsetsDirectional.fromSTEB(12, 12, 12, 12),

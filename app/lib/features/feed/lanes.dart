@@ -192,11 +192,17 @@ class LaneCard extends StatelessWidget {
         spaceId = save['space_id'] as String?;
     final verdict =
         item['section'] == 'fact_check' ? save['verdict'] as String? : null;
+    // One tag per lane: a save filed under two sections has a card in each.
+    final hero = 'frame-$saveId-${item['section']}';
     final card = Pressable(
       onTap: saveId == null || spaceId == null
           ? null
           : () => Navigator.of(context).push(MaterialPageRoute(
-              builder: (_) => SaveScreen(spaceId: spaceId, saveId: saveId))),
+              builder: (_) => SaveScreen(
+                  spaceId: spaceId,
+                  saveId: saveId,
+                  initial: save,
+                  heroTag: hero))),
       child: SizedBox(
         width: width,
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -206,7 +212,11 @@ class LaneCard extends StatelessWidget {
               width: width,
               height: width * 4 / 3,
               child: Stack(fit: StackFit.expand, children: [
-                FrameImage(save: save),
+                Hero(
+                    tag: hero,
+                    child: ClipRRect(
+                        borderRadius: BorderRadius.circular(RbSpace.cardRadius),
+                        child: FrameImage(save: save))),
                 Positioned(
                   left: 12,
                   right: 12,

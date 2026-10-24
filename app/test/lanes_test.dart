@@ -112,5 +112,7 @@ void main() {
     expect(find.text('2 claims'), findsOneWidget);
     expect(find.text('Mostly false'), findsOneWidget);
     expect(find.byType(MomentStrip), findsOneWidget);
+    // The frame flies to the save screen under a per-lane tag.
+    expect(tester.widget<Hero>(find.byType(Hero)).tag, 'frame-s1-fact_check');
   });
 }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/native.dart';
+import '../../core/theme/tokens.dart';
 import '../../core/widgets.dart';
 import '../factcheck/fact_check_view.dart';
 import '../recipes/recipe_view.dart';
@@ -14,9 +15,19 @@ import '../inbox/inbox_screen.dart' show fileUnder;
 /// One save in full (P1-06 tap target): key frame, summary and every extracted item.
 /// ponytail: plain generic rendering; each section gets its own card in P1-08..P1-13.
 class SaveScreen extends StatelessWidget {
-  const SaveScreen({super.key, required this.spaceId, required this.saveId});
+  const SaveScreen(
+      {super.key,
+      required this.spaceId,
+      required this.saveId,
+      this.initial,
+      this.heroTag});
   final String spaceId;
   final String saveId;
+
+  /// The save as the card that opened it had it: drawn at once, so the frame can fly in
+  /// (design v3 shared element) before Firestore answers.
+  final Map<String, dynamic>? initial;
+  final Object? heroTag;
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +35,7 @@ class SaveScreen extends StatelessWidget {
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
       stream: ref.snapshots(),
       builder: (context, snap) {
-        final save = snap.data?.data();
+        final save = snap.data?.data() ?? (snap.hasData ? null : initial);
         final settled = save != null && !_processing.contains(save['status']);
         return Scaffold(
           appBar: AppBar(
@@ -40,13 +51,14 @@ class SaveScreen extends StatelessWidget {
           body: switch (snap) {
             AsyncSnapshot(hasError: true) =>
               _pad(Text('Could not open this save: ${snap.error}')),
-            AsyncSnapshot(hasData: false) =>
+            AsyncSnapshot(hasData: false) when save == null =>
               const Center(child: CircularProgressIndicator()),
             _ when save == null =>
               _pad(const Text('This save no longer exists.')),
             _ => StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
                 stream: ref.collection('items').snapshots(),
                 builder: (context, items) => SaveDetail(
+                  heroTag: heroTag,
                   save: save,
                   items: [
                     for (final d in items.data?.docs ?? const []) d.data()
@@ -99,7 +111,9 @@ Widget _pad(Widget child) =>
 
 /// The body, separate from Firestore so it can be tested with plain data.
 class SaveDetail extends StatelessWidget {
-  const SaveDetail({super.key, required this.save, required this.items});
+  const SaveDetail(
+      {super.key, required this.save, required this.items, this.heroTag});
+  final Object? heroTag;
   final Map<String, dynamic> save;
   final List<Map<String, dynamic>> items;
 
@@ -113,13 +127,16 @@ class SaveDetail extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       children: [
         if (frame != null)
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: AspectRatio(
-              aspectRatio: 9 / 16,
-              child: Image.network(frame,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => const SizedBox()),
+          AspectRatio(
+            aspectRatio: 9 / 16,
+            child: Hero(
+              tag: heroTag ?? 'frame-${save['save_id']}',
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(RbSpace.cardRadius),
+                child: Image.network(frame,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => const SizedBox()),
+              ),
             ),
           ),
         const SizedBox(height: 12),
