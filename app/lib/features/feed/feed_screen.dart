@@ -652,7 +652,10 @@ class _AccountMenu extends StatelessWidget {
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
     final photo = user?.photoURL;
-    final initial = (user?.displayName ?? user?.email ?? '?')
+    // Provider sign-in can leave the name and email empty strings, not null.
+    final initial = [user?.displayName, user?.email, '?']
+        .firstWhere((s) => s != null && s.trim().isNotEmpty)!
+        .trim()
         .characters
         .first
         .toUpperCase();

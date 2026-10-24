@@ -95,6 +95,18 @@ ThemeData rbTheme(Brightness b) {
       checkmarkColor: c.accent,
       labelStyle: text.labelLarge,
     ),
+    // Selected segment matches the pill's selected destination.
+    segmentedButtonTheme: SegmentedButtonThemeData(
+      style: ButtonStyle(
+        backgroundColor: WidgetStateProperty.resolveWith((s) =>
+            s.contains(WidgetState.selected)
+                ? c.text.withValues(alpha: 0.12)
+                : Colors.transparent),
+        foregroundColor: WidgetStateProperty.resolveWith(
+            (s) => s.contains(WidgetState.selected) ? c.text : c.muted),
+        side: WidgetStatePropertyAll(BorderSide(color: c.line)),
+      ),
+    ),
     filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
             shape: round, minimumSize: const Size(64, RbSpace.touch))),
