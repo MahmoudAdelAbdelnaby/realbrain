@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/native.dart';
+import '../save/save_screen.dart';
 import '../save/saves_screen.dart';
 import '../spaces/household_screen.dart';
 
@@ -248,59 +249,68 @@ class SaveCard extends StatelessWidget {
       'failed' => 'Failed: ${save['step_text'] ?? 'unknown error'}',
       _ => null,
     };
+    final saveId = save['save_id'] as String?;
+    final spaceId = save['space_id'] as String?;
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 6),
       clipBehavior: Clip.antiAlias,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _Frame(url: save['key_frame_url'] as String?),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsetsDirectional.fromSTEB(12, 12, 12, 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(meta, style: TextStyle(color: muted, fontSize: 12)),
-                  const SizedBox(height: 4),
-                  if (processing) ...[
-                    Text(save['step_text'] as String? ?? 'Waiting to start',
-                        style: const TextStyle(fontWeight: FontWeight.w500)),
-                    const SizedBox(height: 8),
-                    const _Bar(widthFactor: 0.9),
-                    const SizedBox(height: 6),
-                    const _Bar(widthFactor: 0.6),
-                  ] else ...[
-                    Text(
-                      save['summary'] as String? ??
-                          save['source_url'] as String? ??
-                          '',
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    if (sections.isNotEmpty) ...[
+      child: InkWell(
+        onTap: saveId == null || spaceId == null
+            ? null
+            : () => Navigator.of(context).push(MaterialPageRoute(
+                  builder: (_) => SaveScreen(spaceId: spaceId, saveId: saveId),
+                )),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _Frame(stored: save['key_frame_url'] as String?),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsetsDirectional.fromSTEB(12, 12, 12, 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(meta, style: TextStyle(color: muted, fontSize: 12)),
+                    const SizedBox(height: 4),
+                    if (processing) ...[
+                      Text(save['step_text'] as String? ?? 'Waiting to start',
+                          style: const TextStyle(fontWeight: FontWeight.w500)),
+                      const SizedBox(height: 8),
+                      const _Bar(widthFactor: 0.9),
                       const SizedBox(height: 6),
+                      const _Bar(widthFactor: 0.6),
+                    ] else ...[
                       Text(
-                          sections
-                              .map((s) => sectionLabels[s] ?? s)
-                              .join(' · '),
-                          style: TextStyle(color: muted, fontSize: 12)),
-                    ],
-                    if (flag != null) ...[
-                      const SizedBox(height: 6),
-                      Text(flag,
-                          style: TextStyle(
-                              color: status == 'failed'
-                                  ? Theme.of(context).colorScheme.error
-                                  : muted,
-                              fontSize: 12)),
+                        save['summary'] as String? ??
+                            save['source_url'] as String? ??
+                            '',
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (sections.isNotEmpty) ...[
+                        const SizedBox(height: 6),
+                        Text(
+                            sections
+                                .map((s) => sectionLabels[s] ?? s)
+                                .join(' · '),
+                            style: TextStyle(color: muted, fontSize: 12)),
+                      ],
+                      if (flag != null) ...[
+                        const SizedBox(height: 6),
+                        Text(flag,
+                            style: TextStyle(
+                                color: status == 'failed'
+                                    ? Theme.of(context).colorScheme.error
+                                    : muted,
+                                fontSize: 12)),
+                      ],
                     ],
                   ],
-                ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -314,8 +324,8 @@ class SaveCard extends StatelessWidget {
 }
 
 class _Frame extends StatelessWidget {
-  const _Frame({this.url});
-  final String? url;
+  const _Frame({this.stored});
+  final String? stored;
 
   @override
   Widget build(BuildContext context) {
@@ -323,13 +333,20 @@ class _Frame extends StatelessWidget {
       color: Theme.of(context).colorScheme.surfaceContainerHighest,
       child: const SizedBox.expand(),
     );
-    return SizedBox(
-      width: 88,
-      height: 132, // 2:3, close to a 9:16 reel frame cropped for the list
-      child: url == null
-          ? placeholder
-          : Image.network(url!,
-              fit: BoxFit.cover, errorBuilder: (_, __, ___) => placeholder),
+    // Rebuilds when the backend's address arrives or changes (relative frame paths).
+    return ValueListenableBuilder<String?>(
+      valueListenable: backendUrl,
+      builder: (context, _, __) {
+        final url = frameUrl(stored);
+        return SizedBox(
+          width: 88,
+          height: 132, // 2:3, close to a 9:16 reel frame cropped for the list
+          child: url == null
+              ? placeholder
+              : Image.network(url,
+                  fit: BoxFit.cover, errorBuilder: (_, __, ___) => placeholder),
+        );
+      },
     );
   }
 }

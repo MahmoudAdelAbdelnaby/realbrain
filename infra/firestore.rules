@@ -23,6 +23,11 @@ service cloud.firestore {
       allow read: if member(resource.data.space_id);
     }
 
+    // The backend's current address (scripts/serve.py publishes it on each start).
+    match /config/backend {
+      allow read: if signedIn();
+    }
+
     match /users/{uid} {
       allow read: if signedIn() && request.auth.uid == uid;
     }

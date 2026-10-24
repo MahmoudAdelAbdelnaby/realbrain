@@ -5,7 +5,7 @@ import tempfile
 import time
 from pathlib import Path
 
-from app import store
+from app import notify, store
 from app.pipeline import frames
 from app.pipeline.extract import Transient, extract
 from app.pipeline.fetch import fallback
@@ -72,6 +72,8 @@ def process(save_id: str, attempt: int = 0, max_attempts: int = 3) -> str:
                 },
             )
             store.delete_video(save_id)
+            if status in ("ready", "partial"):
+                notify.send(save, result, partial=status == "partial")
             log.info(
                 "save=%s status=%s sections=%s in %.1fs",
                 save_id,

@@ -112,7 +112,7 @@ def test_save_upload_process_ready(monkeypatch, tiny_mp4):
     assert save["sections"] == ["fact_check", "tools", "recipe", "places", "workout"]
     assert save["space_id"] == "p_dev", "share target 'me' resolves to the personal space"
     frame = store.DATA / "frames" / "p_dev" / f"{save_id}.jpg"
-    assert frame.stat().st_size > 0 and client.get(save["key_frame_url"].split("8000")[1]).status_code == 200
+    assert frame.stat().st_size > 0 and client.get(save["key_frame_url"]).status_code == 200
     assert not store.local_video(save_id).exists(), "video must be deleted when the job ends"
 
 

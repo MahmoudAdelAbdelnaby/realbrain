@@ -218,4 +218,5 @@ def put_frame(space_id: str, save_id: str, jpg: Path) -> str:
     d = DATA / "frames" / Path(space_id).name
     d.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(jpg, d / f"{save_id}.jpg")
-    return f"{PUBLIC_URL}/dev/frames/{space_id}/{save_id}.jpg"
+    # Relative: the backend's address changes (tunnel restarts); the app prefixes the current one.
+    return f"/dev/frames/{space_id}/{save_id}.jpg"

@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 /// The Android side: downloader, background saves, backend calls (signed in as the Firebase user),
@@ -48,4 +49,15 @@ String? inviteCode(String? link) {
   }
   final code = uri.pathSegments[1].toLowerCase();
   return RegExp(r'^[a-z0-9]{8}$').hasMatch(code) ? code : null;
+}
+
+/// The backend's current address (Firestore config/backend), for relative key-frame paths.
+final backendUrl = ValueNotifier<String?>(null);
+
+/// Key frames are stored as /dev/frames/... (the backend's address changes) or a full URL.
+String? frameUrl(String? stored) {
+  if (stored == null) return null;
+  if (!stored.startsWith('/')) return stored;
+  final base = backendUrl.value;
+  return base == null ? null : '$base$stored';
 }

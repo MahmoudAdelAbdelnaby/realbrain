@@ -112,6 +112,7 @@ class SaveWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ctx, 
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         val id = inputData.getString("id") ?: return@withContext Result.failure()
         val save = Saves.get(ctx, id) ?: return@withContext Result.failure()
+        Backend.init(ctx)
         val url = save.getString("url")
         val lastTry = runAttemptCount >= 2
 

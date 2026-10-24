@@ -18,7 +18,14 @@ if not (os.environ.get("GEMINI_API_KEY") or os.environ.get("GEMINI_API_KEYS")):
     logging.getLogger("reelbrain").warning(
         "GEMINI_API_KEY is not set: saves will upload but fail at Extract. Add it to backend/.env."
     )
-app = FastAPI(title="Reelbrain API")
+# Reachable from the internet through the tunnel: no API explorer outside local dev.
+_dev_docs = os.environ.get("AUTH_MODE") == "dev"
+app = FastAPI(
+    title="Reelbrain API",
+    docs_url="/docs" if _dev_docs else None,
+    redoc_url=None,
+    openapi_url="/openapi.json" if _dev_docs else None,
+)
 MAX_VIDEO_BYTES = 200 * 1024 * 1024
 
 
@@ -53,6 +60,8 @@ def me(body: Me, token: Annotated[dict, Depends(claims)]) -> dict:
     The name comes from the Google sign-in token when the app doesn't have it yet."""
     uid = token["uid"]
     u = spaces.ensure_user(uid, body.name or token.get("name"), body.lang)
+    if body.fcm_token:
+        store.doc_array_add(f"users/{uid}", "fcm_tokens", body.fcm_token)
     return {"uid": uid, "spaces": u["spaces"]}
 
 

@@ -155,6 +155,7 @@ class ProcessTask(BaseModel):
 class Me(BaseModel):
     name: str | None = Field(None, max_length=200)
     lang: str | None = Field(None, max_length=10)
+    fcm_token: str | None = Field(None, max_length=4096)  # P1-06: this phone's push token
 
 
 class CreateHousehold(BaseModel):

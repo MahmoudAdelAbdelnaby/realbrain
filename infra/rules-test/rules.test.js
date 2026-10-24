@@ -28,6 +28,7 @@ beforeEach(async () => {
     await setDoc(doc(db, "spaces/p_me/saves/s9/items/0-tools"), { section: "tools", user_state: null, space_id: "p_me" });
     await setDoc(doc(db, "spaces/h_home/lists/l1"), { name: "Date night", item_refs: [] });
     await setDoc(doc(db, "invites/abcd2345"), { space_id: "h_home", created_by: "me" });
+    await setDoc(doc(db, "config/backend"), { url: "https://x.trycloudflare.com" });
   });
 });
 
@@ -84,4 +85,10 @@ test("items across saves: only a query filtered to a space you're in", async () 
   await assertFails(items(as("wife"), "p_me"));
   await assertFails(items(as("stranger"), "h_home"));
   await assertFails(getDocs(collectionGroup(as("me"), "items")));
+});
+
+test("signed-in users read the backend address; nobody writes it", async () => {
+  await assertSucceeds(getDoc(doc(as("stranger"), "config/backend")));
+  await assertFails(getDoc(doc(anon(), "config/backend")));
+  await assertFails(setDoc(doc(as("me"), "config/backend"), { url: "https://evil.example" }));
 });

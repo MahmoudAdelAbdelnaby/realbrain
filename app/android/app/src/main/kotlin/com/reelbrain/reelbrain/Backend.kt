@@ -17,12 +17,26 @@ class NotSignedIn : IOException("not signed in")
 class Rejected(val code: Int, message: String) : IOException(message)
 
 /**
- * Phone -> backend calls from the Backend contract. API URL from android/local.properties
- * (reelbrain.apiUrl); Firebase from app/google-services.json, signed in as the Google user the
- * Flutter app signed in (same default FirebaseApp in this process).
+ * Phone -> backend calls from the Backend contract. The backend's address comes from Firestore
+ * (config/backend, published by scripts/serve.py: it changes with each tunnel start), remembered
+ * here for background work; android/local.properties (reelbrain.apiUrl) is the fallback.
+ * Firebase from app/google-services.json, signed in as the Flutter app's Google user.
  */
 object Backend {
-    val configured get() = BuildConfig.API_URL.isNotEmpty()
+    @Volatile private var url: String? = null
+
+    fun init(ctx: Context) {
+        if (url == null) url = ctx.getSharedPreferences("backend", Context.MODE_PRIVATE).getString("url", null)
+    }
+
+    /** From the Flutter side when config/backend changes. */
+    fun setUrl(ctx: Context, value: String) {
+        url = value.trimEnd('/')
+        ctx.getSharedPreferences("backend", Context.MODE_PRIVATE).edit().putString("url", url).apply()
+    }
+
+    private val base get() = url ?: BuildConfig.API_URL.trimEnd('/')
+    val configured get() = base.isNotEmpty()
 
     private fun token(): String {
         val user = FirebaseAuth.getInstance().currentUser ?: throw NotSignedIn()
@@ -64,8 +78,8 @@ object Backend {
 
     /** Authenticated JSON call; also used by the Flutter screens through the platform channel. */
     fun call(method: String, path: String, body: String?): String {
-        if (!configured) throw IOException("no backend configured (reelbrain.apiUrl)")
-        val conn = URL(BuildConfig.API_URL.trimEnd('/') + path).openConnection() as HttpURLConnection
+        if (!configured) throw IOException("no backend address yet (start it with scripts/serve.py)")
+        val conn = URL(base + path).openConnection() as HttpURLConnection
         try {
             conn.requestMethod = method
             conn.connectTimeout = 20_000

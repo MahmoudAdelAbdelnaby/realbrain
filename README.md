@@ -22,6 +22,16 @@ python -m venv .venv && .venv/Scripts/pip install -r requirements-dev.txt   # bi
 .venv/Scripts/python -m scripts.extract_file reel.mp4 --caption "..."   # one real reel through Gemini
 ```
 
+### Run it for the phone (home or away)
+
+```bash
+cd backend
+.venv/Scripts/python -m scripts.serve      # Cloudflare quick tunnel + backend; the app picks up the address
+.venv/Scripts/python -m scripts.serve --lan  # home Wi-Fi only
+```
+
+Needs `gcloud auth application-default login` once (results go to Firestore on the Spark plan) and `cloudflared` installed.
+
 ## App
 
 ```bash

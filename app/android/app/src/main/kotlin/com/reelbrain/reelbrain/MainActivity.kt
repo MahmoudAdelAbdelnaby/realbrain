@@ -12,6 +12,7 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        Backend.init(applicationContext)
         channel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "reelbrain/downloader").apply {
             setMethodCallHandler { call, result ->
                 when (call.method) {
@@ -26,6 +27,14 @@ class MainActivity : FlutterActivity() {
                     )
                     "saves" -> result.success(Saves.all(applicationContext).toString())
                     "retryWaiting" -> result.success(Saves.retryWaiting(applicationContext))
+                    // This install's Firebase installation ID: FCM's send target once registered.
+                    "fid" -> background(result) {
+                        com.google.android.gms.tasks.Tasks.await(com.google.firebase.installations.FirebaseInstallations.getInstance().id)
+                    }
+                    "setBackendUrl" -> {
+                        Backend.setUrl(applicationContext, call.argument<String>("url")!!)
+                        result.success(null)
+                    }
                     // api(method, path, body?) -> response JSON text, as the signed-in user.
                     "api" -> background(result) {
                         Backend.call(call.argument<String>("method")!!, call.argument<String>("path")!!, call.argument<String>("body"))

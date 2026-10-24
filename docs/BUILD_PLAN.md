@@ -168,7 +168,7 @@ The app talks to a small authenticated API; the backend alone writes AI results 
 | POST /v1/saves/{id}/section | section | 200 | User correction; logged for prompt tuning |
 | POST /v1/items/{id}/deep-dive | — | 202 | Fact Check explainer on demand |
 | POST /internal/process | save\_id | 200 | Called by Cloud Tasks only (OIDC-verified) |
-| POST /v1/me | name?, lang? | uid, spaces{me, home?} | Added in P1-03: creates `users/{uid}` and the personal space on first call; idempotent |
+| POST /v1/me | name?, lang?, fcm\_token? | uid, spaces{me, home?} | Added in P1-03: creates `users/{uid}` and the personal space on first call; idempotent. P1-06: `fcm_token` adds this phone's push target (a Firebase installation ID, FCM's current send target) to `fcm_tokens` |
 | POST /v1/spaces/household | name | space\_id, invite\_url | Added in P1-03: one household per user; the creator is the first member |
 | POST /v1/spaces/{id}/invite | — | invite\_url | Added in P1-03: new link for a household you're a member of, valid 7 days |
 | POST /v1/invites/{code}/accept | — | space\_id | Added in P1-03: adds the caller's uid to `members` |
@@ -179,6 +179,7 @@ The app talks to a small authenticated API; the backend alone writes AI results 
 users/{uid}                         name, lang, fcm_tokens[], default_space,
                                     spaces{me, home} (P1-03: maps the share targets to space ids)
 invites/{code}                      space_id, created_by, expires_at (backend only)
+config/backend                      url, started_at (P1-06: the backend's current address; signed-in users read it)
 spaces/{spaceId}                    name, type: personal|household, members[]
 spaces/{spaceId}/saves/{saveId}     source_url, platform, creator, caption,
                                     thumb_url, key_frame_url, status, step_text,
@@ -268,8 +269,9 @@ _24 Oct: P1-01 and P1-02 are deferred by owner decision (the plan was approved, 
   - Live list of saves with shimmer and step text while processing; pull to refresh; per-section "to try" counters.
   - _24 Oct, on the S22: feed live from Firestore across Me and Home, processing card with live step text switched to the result by itself, Dev and Tools counter shown._
   - _Note: Design system v2 replaced the shimmer with flat grey bars at the final size; built that way. Items carry `space_id`/`save_id` and saves a `sections` list (backend-written), so counters use one collection-group query per space (rule + index in `infra/`)._
-- [ ] **P1-06 · Push notifications**
+- [x] **P1-06 · Push notifications**
   - FCM message on `ready` with the key result in the text; tapping opens the item; Fact Check notifications carry the verdict line.
+  - _24 Oct, on the S22: a TikTok share processed through the tunnel and the phone showed "Tool saved: hairline +1 more" with the summary (the Fact Check verdict line comes with P1-08). Tapping opens the save; also reachable by tapping a feed card. Away from home: `backend/scripts/serve.py` starts a Cloudflare quick tunnel and publishes its address to `config/backend`, and the app follows it._
 - [ ] **P1-07 · Inbox and section correction**
   - `needs_review`, `partial` and `failed` saves listed with one-tap filing and retry; corrections call `/section`.
 
