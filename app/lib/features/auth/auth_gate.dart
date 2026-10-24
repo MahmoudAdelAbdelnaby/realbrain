@@ -78,7 +78,8 @@ class _AuthGateState extends State<AuthGate> {
       // onRegistered only fires for a new registration; an already registered phone reports
       // its installation ID here.
       final fid = await native.invokeMethod<String>('fid');
-      debugPrint('Reelbrain push target ${fid == null ? 'missing' : 'registered'}');
+      debugPrint(
+          'Reelbrain push target ${fid == null ? 'missing' : 'registered'}');
       if (fid != null) await api('POST', '/v1/me', {'fcm_token': fid});
     } catch (e) {
       // No push (permission refused or no Play services): saves still work.

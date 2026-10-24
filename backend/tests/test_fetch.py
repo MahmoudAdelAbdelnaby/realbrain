@@ -59,7 +59,7 @@ def _no_video_save(url: str, caption: str | None = None) -> str:
 def test_everything_fails_but_caption_gives_a_partial_save(monkeypatch):
     seen = {}
 
-    def fake_extract(video, caption, meta, video_uri=None):
+    def fake_extract(video, caption, meta, video_uri=None, **_):
         seen.update(video=video, uri=video_uri, caption=caption)
         return SAMPLE
 

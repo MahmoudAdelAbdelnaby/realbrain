@@ -1,5 +1,6 @@
 import logging
 import os
+import time
 import uuid
 from typing import Annotated
 from urllib.parse import urlparse
@@ -11,7 +12,7 @@ from app import spaces, store, tasks
 from app.auth import claims, cloud_tasks, user
 from app.pipeline.extract import Transient
 from app.pipeline.process import process
-from app.schemas import CreatedSave, CreateHousehold, CreateSave, Me, NoVideo, ProcessTask
+from app.schemas import CreatedSave, CreateHousehold, CreateSave, FileUnder, Me, NoVideo, ProcessTask
 
 logging.basicConfig(level=logging.INFO)
 if not (os.environ.get("GEMINI_API_KEY") or os.environ.get("GEMINI_API_KEYS")):
@@ -124,6 +125,31 @@ def no_video(save_id: str, body: NoVideo, uid: str = Depends(user)) -> dict:
 def retry(save_id: str, uid: str = Depends(user)) -> dict:
     save = owned_save(save_id, uid)
     store.update_save(save, {"status": "received", "step_text": "Retrying"})
+    tasks.enqueue(save_id)
+    return {"save_id": save_id}
+
+
+@app.post("/v1/saves/{save_id}/section")
+def file_under(save_id: str, body: FileUnder, uid: str = Depends(user)) -> dict:
+    """User correction (Inbox, or "Wrong section?"): logged for prompt tuning, then Extract runs
+    again with the section as a hint, on the kept video or through the fallback chain."""
+    save = owned_save(save_id, uid)
+    store.doc_set(
+        f"corrections/{uuid.uuid4().hex}",
+        {
+            "save_id": save_id,
+            "space_id": save["space_id"],
+            "by": uid,
+            "from_status": save.get("status"),
+            "from_sections": save.get("sections") or [],
+            "to_section": body.section,
+            "language": save.get("language"),
+            "at": time.time(),
+        },
+    )
+    store.update_save(
+        save, {"status": "received", "forced_section": body.section, "step_text": "Re-reading the video"}
+    )
     tasks.enqueue(save_id)
     return {"save_id": save_id}
 

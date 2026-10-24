@@ -57,15 +57,33 @@ def client(key: str):
     return genai.Client(api_key=key)
 
 
-def _context(caption: str | None, meta: dict) -> str:
+SECTION_NAMES = {
+    "fact_check": "Fact Check",
+    "tools": "Dev and Tools",
+    "recipe": "Recipe",
+    "places": "Places",
+    "workout": "Workout",
+}
+
+
+def _context(caption: str | None, meta: dict, section_hint: str | None = None) -> str:
     lines = [f"{k}: {v}" for k, v in meta.items() if v]
     if caption:
         lines.append(f"caption: {caption}")
+    if section_hint:
+        lines.append(
+            f"The user filed this video under {SECTION_NAMES.get(section_hint, section_hint)}: return a "
+            f"`{section_hint}` section with everything the video gives for it (mark guesses estimated)."
+        )
     return "Video metadata:\n" + "\n".join(lines) if lines else "No caption or metadata."
 
 
 def extract(
-    video: Path | None, caption: str | None, meta: dict, video_uri: str | None = None
+    video: Path | None,
+    caption: str | None,
+    meta: dict,
+    video_uri: str | None = None,
+    section_hint: str | None = None,
 ) -> ExtractResult:
     """video: a local file; video_uri: a URL Gemini can read itself (YouTube). Neither: caption-only.
 
@@ -76,13 +94,15 @@ def extract(
         raise RuntimeError("no Gemini key: set GEMINI_API_KEY or GEMINI_API_KEYS in backend/.env")
     busy: list[str] = []
     for n, key in enumerate(keys(), 1):
-        result = _with_key(client(key), video, caption, meta, video_uri, busy, f"key{n}")
+        result = _with_key(client(key), video, caption, meta, video_uri, busy, f"key{n}", section_hint)
         if result is not None:
             return result
     raise Transient("Gemini busy: " + ", ".join(busy))
 
 
-def _with_key(c, video, caption, meta, video_uri, busy: list[str], label: str) -> ExtractResult | None:
+def _with_key(
+    c, video, caption, meta, video_uri, busy: list[str], label: str, section_hint: str | None = None
+) -> ExtractResult | None:
     """None when every model on this key was busy or out of quota (reasons appended to busy)."""
     from google.genai import errors, types
 
@@ -107,7 +127,7 @@ def _with_key(c, video, caption, meta, video_uri, busy: list[str], label: str) -
             parts.append(types.Part.from_uri(file_uri=video_uri, mime_type="video/*"))
         else:
             parts.append("There is no video, only the caption below. Extract only what the caption states.")
-        parts.append(_context(caption, meta))
+        parts.append(_context(caption, meta, section_hint))
 
         config = types.GenerateContentConfig(
             system_instruction=PROMPT,

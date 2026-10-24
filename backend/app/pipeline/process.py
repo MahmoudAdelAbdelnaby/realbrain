@@ -47,8 +47,9 @@ def process(save_id: str, attempt: int = 0, max_attempts: int = 3) -> str:
                 "url": save.get("source_url"),
                 "creator": save.get("creator"),
             }
+            hint = save.get("forced_section")  # P1-07: the user filed it under this section
             t0 = time.monotonic()
-            result = extract(video, caption, meta, video_uri=uri)
+            result = extract(video, caption, meta, video_uri=uri, **({"section_hint": hint} if hint else {}))
             extract_ms = int((time.monotonic() - t0) * 1000)
 
             frame_url = None
@@ -57,7 +58,12 @@ def process(save_id: str, attempt: int = 0, max_attempts: int = 3) -> str:
                 if jpg:
                     frame_url = store.put_frame(save["space_id"], save_id, jpg)
 
-            status = "partial" if caption_only else "needs_review" if needs_review(result) else "ready"
+            if hint:  # the user's choice beats the confidence bar
+                status = "ready" if any(s.type == hint for s in result.sections) else "needs_review"
+            else:
+                status = "needs_review" if needs_review(result) else "ready"
+            if caption_only:
+                status = "partial"
             store.put_items(save, [_item(s) for s in result.sections])
             store.update_save(
                 save,
@@ -71,7 +77,9 @@ def process(save_id: str, attempt: int = 0, max_attempts: int = 3) -> str:
                     "extract_ms": extract_ms,  # spike report (P0-07)
                 },
             )
-            store.delete_video(save_id)
+            # Kept while it needs review, so filing it re-reads the real video; gone once it resolves.
+            if status != "needs_review":
+                store.delete_video(save_id)
             if status in ("ready", "partial"):
                 notify.send(save, result, partial=status == "partial")
             log.info(

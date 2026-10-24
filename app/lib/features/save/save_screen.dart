@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 
 import '../../core/native.dart';
 import '../feed/feed_screen.dart' show sectionLabels;
+import '../inbox/inbox_screen.dart' show fileUnder;
 
 /// One save in full (P1-06 tap target): key frame, summary and every extracted item.
 /// ponytail: plain generic rendering; each section gets its own card in P1-08..P1-13.
@@ -89,6 +90,16 @@ class SaveDetail extends StatelessWidget {
               style: TextStyle(
                   color: muted, decoration: TextDecoration.underline)),
         ),
+        if (save['save_id'] != null &&
+            !const {'received', 'uploaded', 'fetching', 'extracting'}
+                .contains(save['status']))
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: TextButton(
+              onPressed: () => _chooseSection(context),
+              child: const Text('Wrong section?'),
+            ),
+          ),
         for (final item in items) ...[
           const Divider(height: 32),
           Text(sectionLabels[item['section']] ?? '${item['section']}',
@@ -99,6 +110,27 @@ class SaveDetail extends StatelessWidget {
         ],
       ],
     );
+  }
+
+  Future<void> _chooseSection(BuildContext context) async {
+    final section = await showModalBottomSheet<String>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const ListTile(title: Text('File this under')),
+            for (final e in sectionLabels.entries)
+              ListTile(
+                  title: Text(e.value),
+                  onTap: () => Navigator.pop(context, e.key)),
+          ],
+        ),
+      ),
+    );
+    if (section != null && context.mounted) {
+      await fileUnder(context, save, section);
+    }
   }
 
   static String _at(Object? t) {

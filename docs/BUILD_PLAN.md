@@ -165,7 +165,7 @@ The app talks to a small authenticated API; the backend alone writes AI results 
 | POST /v1/saves/{id}/uploaded | — | 202 | Enqueues processing |
 | POST /v1/saves/{id}/no-video | reason | 202 | Phone couldn't fetch; backend tries the fallback chain |
 | POST /v1/saves/{id}/retry | — | 202 | From Inbox |
-| POST /v1/saves/{id}/section | section | 200 | User correction; logged for prompt tuning |
+| POST /v1/saves/{id}/section | section | 200 | User correction; logged for prompt tuning (`corrections/{id}`, backend-only). P1-07: Extract re-runs with the section as a hint, on the kept video (`needs_review` saves keep theirs until resolved) or through the fallback chain |
 | POST /v1/items/{id}/deep-dive | — | 202 | Fact Check explainer on demand |
 | POST /internal/process | save\_id | 200 | Called by Cloud Tasks only (OIDC-verified) |
 | POST /v1/me | name?, lang?, fcm\_token? | uid, spaces{me, home?} | Added in P1-03: creates `users/{uid}` and the personal space on first call; idempotent. P1-06: `fcm_token` adds this phone's push target (a Firebase installation ID, FCM's current send target) to `fcm_tokens` |
@@ -274,6 +274,7 @@ _24 Oct: P1-01 and P1-02 are deferred by owner decision (the plan was approved, 
   - _24 Oct, on the S22: a TikTok share processed through the tunnel and the phone showed "Tool saved: hairline +1 more" with the summary (the Fact Check verdict line comes with P1-08). Tapping opens the save; also reachable by tapping a feed card. Away from home: `backend/scripts/serve.py` starts a Cloudflare quick tunnel and publishes its address to `config/backend`, and the app follows it._
 - [ ] **P1-07 · Inbox and section correction**
   - `needs_review`, `partial` and `failed` saves listed with one-tap filing and retry; corrections call `/section`.
+  - _24 Oct: built and tested (backend: re-read with hint, kept video, correction log, retry; app: Inbox with badge, File as chips, Retry, "Wrong section?" on the save screen). Seen live: with both Flash models at 503, 3.5 Flash-Lite filed an AirPods sale ad as Fact Check, which Flash had sent to review; worth watching in P1-17._
 
 **Sections**
 

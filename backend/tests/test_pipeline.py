@@ -76,7 +76,7 @@ def test_platform_detection():
 def test_save_upload_process_ready(monkeypatch, tiny_mp4):
     seen = {}
 
-    def fake_extract(video, caption, meta, video_uri=None):
+    def fake_extract(video, caption, meta, video_uri=None, **_):
         seen.update(video_exists=video.exists(), caption=caption, meta=meta)
         return SAMPLE
 

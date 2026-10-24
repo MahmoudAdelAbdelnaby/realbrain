@@ -144,6 +144,10 @@ class CreatedSave(BaseModel):
     upload_url: str
 
 
+class FileUnder(BaseModel):
+    section: Literal["fact_check", "tools", "recipe", "places", "workout"]
+
+
 class NoVideo(BaseModel):
     reason: str = Field(max_length=200)
 

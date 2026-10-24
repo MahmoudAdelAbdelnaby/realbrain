@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/native.dart';
+import '../inbox/inbox_screen.dart';
 import '../save/save_screen.dart';
 import '../save/saves_screen.dart';
 import '../spaces/household_screen.dart';
@@ -54,6 +55,7 @@ class _FeedScreenState extends State<FeedScreen> {
   Map<String, String> _spaces = {}; // label -> space id
   String? _error;
   bool _loaded = false;
+  final _inbox = ValueNotifier<List<Map<String, dynamic>>>(const []);
 
   @override
   void initState() {
@@ -111,6 +113,7 @@ class _FeedScreenState extends State<FeedScreen> {
     for (final s in _subs) {
       s.cancel();
     }
+    _inbox.dispose();
     super.dispose();
   }
 
@@ -126,10 +129,24 @@ class _FeedScreenState extends State<FeedScreen> {
     final saves = [for (final list in _saves.values) ...list]..sort((a, b) =>
         ((b['created_at'] ?? 0) as num)
             .compareTo((a['created_at'] ?? 0) as num));
+    String spaceLabel(String id) => labelOf[id] == 'home' ? 'Home' : 'Me';
+    final inbox = saves.where(inInbox).toList();
+    // The Inbox screen listens to this, so it stays live while open.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _inbox.value = inbox);
     return Scaffold(
       appBar: AppBar(
         title: const Text('Reelbrain'),
         actions: [
+          IconButton(
+            tooltip: 'Inbox',
+            icon: Badge(
+              isLabelVisible: inbox.isNotEmpty,
+              label: Text('${inbox.length}'),
+              child: const Icon(Icons.inbox_outlined),
+            ),
+            onPressed: () =>
+                _push(InboxScreen(saves: _inbox, spaceLabel: spaceLabel)),
+          ),
           IconButton(
             tooltip: 'Phone queue',
             icon: const Icon(Icons.download_outlined),
@@ -152,7 +169,7 @@ class _FeedScreenState extends State<FeedScreen> {
         child: FeedList(
           saves: saves,
           counts: toTryCounts([for (final list in _items.values) ...list]),
-          spaceLabel: (id) => labelOf[id] == 'home' ? 'Home' : 'Me',
+          spaceLabel: spaceLabel,
           loading: !_loaded,
           error: _error,
         ),
