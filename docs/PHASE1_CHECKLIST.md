@@ -56,9 +56,9 @@ When a check passes, tell me and I'll tick the ticket.
    `overrides` (edited workout seconds). The rules allow exactly that.
 7. **Gemini keys can't be edited in the app yet.** That needs Secret Manager, which needs billing.
    Keys stay in `backend\.env`, and Settings shows the count and today's use.
-9. **Icons stay Material outlined, not Phosphor** (spec says Phosphor). One fewer dependency; the look is close. Say if you want Phosphor.
 8. **The daily cap is counted per person in UTC days.** Past it, the phone's save shows HTTP 429
    in the Phone queue.
+9. **Icons stay Material outlined, not Phosphor** (spec says Phosphor). One fewer dependency; the look is close. Say if you want Phosphor.
 
 Say "approve all" or tell me which to change; I'll then mark them approved in `BUILD_PLAN.md`.
 
