@@ -295,6 +295,7 @@ _24 Oct: P1-01 and P1-02 are deferred by owner decision (the plan was approved, 
 - [ ] **P1-12 · Places + map**
   - Backend Places lookup with a picker when several matches; dark custom map, section-coloured pins, bottom carousel, Visited toggle, lists.
   - _24 Oct, partly built without billing: place details, Open in Maps (search link, no key), Visited. Blocked: the map and Places lookup need Blaze (Places API, Maps SDK). Proposed instead: OpenStreetMap tiles (flutter_map) + Nominatim geocoding on the backend, free. Decision 1 in docs/PHASE1_CHECKLIST.md._
+  - _Built on branch `p1-12-osm-map` (not merged, waiting for decision 1): backend geocodes each place with Nominatim (name+area+city, then name+city, then the area as "Area only"); Places screen → map icon → OSM map (tiles inverted in dark), neutral pins with the selected one in the accent, a bottom carousel that follows the pins, Visited and Open in Maps per card. No picker and no lists yet. Saves made before this have no pins until re-filed under Places._
 - [ ] **P1-13 · Workouts**
   - Exercise list with a pose frame per exercise (cut at each `t`); edit durations; combine saves into a routine.
 - [ ] **P1-14 · Workout mode**
