@@ -30,37 +30,28 @@ notifications.
 | P1-09 Tools | Tap **Dev and Tools** in the feed's counter row | Each tool shows ★ stars and last update (GitHub) or "Link checked". **Copy** copies the snippet. Status chips To try / Tried / Using / Not useful stick. Category filter works. |
 | P1-10 Recipes | Share a recipe reel, open it | **Serves − / +** rescales amounts; "≈" marks guesses; tags. In **Recipes**, tick two recipes → **Grocery list** merges the same ingredients; Share works. |
 | P1-11 Cooking mode | **Cook** on a recipe | Light screen, big text, swipe between steps, the reel's frame at that step. Start a timer, swipe on: it stays pinned and counts; it vibrates and beeps at zero. The screen never sleeps. |
-| P1-12 Places | Open a places save (the Aroya cruise one) | **Open in Maps** opens Google Maps searching that place. Visited chip in **Places**. (No map yet, see decision 1.) |
+| P1-12 Places | Open a places save (the Aroya cruise one) | **Open in Maps** opens Google Maps searching that place. Visited chip in **Places**. **Places → map icon:** pins on OpenStreetMap, cards along the bottom follow the pins. Share a new places reel to see a pin (older saves have none until re-filed under Places). |
 | P1-13 Workouts | Share a workout reel | Each exercise has a round frame from the reel. In **Workouts**, tick saves → **Make routine** → edit seconds (± 5) → **Start routine**. |
 | P1-14 Workout mode | **Start workout** | Ring timer around the pose, big digits, 3-2-1 clicks and vibration, rest then next by itself, pause/skip, Done for reps, "Workout complete". |
 | P1-15 Library | 🔍 in the feed | Search an Arabic word (e.g. كروز) and an English one. Platform and section filters narrow the list. |
-| P1-16 Settings | ⋮ → Settings | Switch to العربية and Dark: the whole app flips to right-to-left and dark. Saves today x of 20; Gemini use per model today. |
+| P1-16 Settings | ⋮ → Settings | Switch to العربية and Dark: the whole app flips to right-to-left and dark. Saves today (no cap); Gemini use per model today. |
 | P1-17 Regression | Nothing on the phone | Tonight: 5/7 → 7/7 on the 7 seed reels after a scoring fix and a tighter Fact Check prompt (details under P1-17). Add your own reels to `test/fixtures/reels.md` (target 20) and run `.venv\Scripts\python -m scripts.regression` in `backend`. |
 
 When a check passes, tell me and I'll tick the ticket.
 
-## Decisions I need from you (spec changes I made or propose)
+## Decisions (answered 25 Oct)
 
-1. **P1-12 map (needs your choice).** The locked spec uses Google Places API and the Maps SDK, and
-   both need billing (Blaze). The free alternative is **OpenStreetMap tiles in the app (flutter_map)
-   plus free geocoding (Nominatim) on the backend**: pins, a carousel and the Visited toggle, no
-   key, no card. Its accuracy for Cairo cafés is below Google's. Pick: OSM now, or wait for Blaze.
-   **Already built on branch `p1-12-osm-map`** (backend 58 tests, app 44, APK builds). Say "OSM" and I merge it; say "wait" and I delete the branch. Note: the APK in `appuild` right now is the branch build, so it includes the map (Places → map icon).
-2. **Search uses a stored `search_text` per save** (summary, transcript, on-screen text, names),
-   searched on the phone. This also answers the open question about storing transcripts.
-3. **Fact Check grounding uses Gemini 2.5 Flash-Lite.** It's the only free model left that can
-   search the web for new keys. "Dive deeper" is `/v1/saves/{id}/deep-dive`, one per save.
-4. **Tool status is per save, not per tool**, and adds two states, `using` and `not_useful`.
-5. **Recipes have AI `tags`** (cuisine, meal, diet) for the tag filter.
-6. **Lists:** created by `POST /v1/spaces/{id}/lists`. Members may change `item_refs` and per-item
-   `overrides` (edited workout seconds). The rules allow exactly that.
-7. **Gemini keys can't be edited in the app yet.** That needs Secret Manager, which needs billing.
-   Keys stay in `backend\.env`, and Settings shows the count and today's use.
-8. **The daily cap is counted per person in UTC days.** Past it, the phone's save shows HTTP 429
-   in the Phone queue.
-9. **Icons stay Material outlined, not Phosphor** (spec says Phosphor). One fewer dependency; the look is close. Say if you want Phosphor.
+All approved, except the daily cap, which is removed. Recorded in `BUILD_PLAN.md`.
 
-Say "approve all" or tell me which to change; I'll then mark them approved in `BUILD_PLAN.md`.
+1. **Map:** OpenStreetMap + Nominatim now (merged); Google Places/Maps when Blaze is on.
+2. **Search** uses a stored `search_text` per save, searched on the phone; transcripts are stored.
+3. **Fact Check grounding** uses Gemini 2.5 Flash-Lite; "Dive deeper" once per save.
+4. **Tool status** is per save, with `using` and `not_useful` added.
+5. **Recipes** have AI `tags`.
+6. **Lists:** members may change `item_refs` and `overrides` only.
+7. **Gemini keys** stay in `backend\.env` until Secret Manager (billing).
+8. **No daily cap.** Saves are still counted and shown in Settings.
+9. **Icons** are Material outlined, not Phosphor.
 
 ## Known issues
 

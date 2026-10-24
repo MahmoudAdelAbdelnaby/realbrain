@@ -78,7 +78,7 @@ def me(body: Me, token: Annotated[dict, Depends(claims)]) -> dict:
 
 @app.get("/v1/settings")
 def get_settings(uid: str = Depends(user)) -> dict:
-    """P1-16: your settings, today's saves against the cap, and Gemini use against free limits."""
+    """P1-16: your settings, today's saves, and Gemini use against free limits."""
     u = spaces.ensure_user(uid)
     s = u.get("settings") or {}
     used = u.get("saves_today") or {}
@@ -86,7 +86,6 @@ def get_settings(uid: str = Depends(user)) -> dict:
 
     return {
         "settings": {"lang": s.get("lang", "system"), "theme": s.get("theme", "system")},
-        "daily_cap": int(s.get("daily_cap") or usage.DEFAULT_CAP),
         "saves_today": used.get("count", 0) if used.get("date") == usage.today() else 0,
         "gemini": {"keys": len(keys()), "models": MODELS, "usage_today": usage.model_usage()},
         "billing": "Spark plan: $0, no billing account"
@@ -144,7 +143,7 @@ def accept_invite(code: str, uid: str = Depends(user)) -> dict:
 @app.post("/v1/saves", response_model=CreatedSave)
 def create_save(body: CreateSave, uid: str = Depends(user)) -> CreatedSave:
     space_id = spaces.resolve(uid, body.space_id)
-    usage.check_and_count_save(uid)  # P1-16 daily cap (429 past it)
+    usage.count_save(uid)  # P1-16, shown in Settings
     save_id = uuid.uuid4().hex
     store.create_save(
         save_id,

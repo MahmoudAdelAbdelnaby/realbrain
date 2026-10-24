@@ -103,7 +103,7 @@ Sections have no colours of their own. A section is named in words with one grey
 
 **Removed from v1, and why:** five section colours (colour belongs on data), the frosted glass navigation bar and the shimmer loader (decoration that Taste bans), the violet tools colour (banned palette), the verdict ring (a ring standing in for content; the verdict is now words plus pills), and the serif display face (one family for a product UI).
 
-**Icons:** Phosphor, regular weight, 20 px, grey. **Components to build first:** ResultCard, MomentStrip, VerdictPill, SaveToast, TimerDigits, StepView, EmptyState, BottomSheet, SkeletonCard.
+**Icons:** Material outlined (approved 25 Oct instead of Phosphor: one fewer dependency), 20 px, grey. **Components to build first:** ResultCard, MomentStrip, VerdictPill, SaveToast, TimerDigits, StepView, EmptyState, BottomSheet, SkeletonCard.
 
 ## AI contract
 
@@ -176,8 +176,8 @@ The app talks to a small authenticated API; the backend alone writes AI results 
 **Firestore collections**
 
 ```
-users/{uid}                         name, lang, fcm_tokens[], default_space, settings{lang, theme,
-                                    daily_cap}, saves_today (P1-16),
+users/{uid}                         name, lang, fcm_tokens[], default_space, settings{lang, theme},
+                                    saves_today (P1-16, counted, no cap),
                                     spaces{me, home} (P1-03: maps the share targets to space ids)
 invites/{code}                      space_id, created_by, expires_at (backend only)
 config/backend                      url, started_at (P1-06: the backend's current address; signed-in users read it)
@@ -295,7 +295,8 @@ _24 Oct: P1-01 and P1-02 are deferred by owner decision (the plan was approved, 
 - [ ] **P1-12 · Places + map**
   - Backend Places lookup with a picker when several matches; dark custom map, section-coloured pins, bottom carousel, Visited toggle, lists.
   - _24 Oct, partly built without billing: place details, Open in Maps (search link, no key), Visited. Blocked: the map and Places lookup need Blaze (Places API, Maps SDK). Proposed instead: OpenStreetMap tiles (flutter_map) + Nominatim geocoding on the backend, free. Decision 1 in docs/PHASE1_CHECKLIST.md._
-  - _Built on branch `p1-12-osm-map` (not merged, waiting for decision 1): backend geocodes each place with Nominatim (name+area+city, then name+city, then the area as "Area only"); Places screen → map icon → OSM map (tiles inverted in dark), neutral pins with the selected one in the accent, a bottom carousel that follows the pins, Visited and Open in Maps per card. No picker and no lists yet. Saves made before this have no pins until re-filed under Places._
+  - _Approved 25 Oct with the Phase 1 decisions: search_text per save, Fact Check grounding on 2.5 Flash-Lite, tool status per save (+ using, not_useful), recipe tags, list member edits (item_refs, overrides), Gemini keys in backend/.env until Secret Manager._
+  - _Approved 25 Oct: OpenStreetMap instead of Google Places/Maps until Blaze. Built and merged: backend geocodes each place with Nominatim (name+area+city, then name+city, then the area as "Area only"); Places screen → map icon → OSM map (tiles inverted in dark), neutral pins with the selected one in the accent, a bottom carousel that follows the pins, Visited and Open in Maps per card. No picker and no lists yet. Saves made before this have no pins until re-filed under Places._
 - [ ] **P1-13 · Workouts**
   - Exercise list with a pose frame per exercise (cut at each `t`); edit durations; combine saves into a routine.
 - [ ] **P1-14 · Workout mode**
@@ -306,7 +307,7 @@ _24 Oct: P1-01 and P1-02 are deferred by owner decision (the plan was approved, 
 **Hardening**
 
 - [ ] **P1-16 · Settings, quotas and cost guard**
-  - Language, theme, daily cap of 20 saves, budget alert check.
+  - Language, theme, saves counted per day, budget alert check. _No daily cap (owner decision, 25 Oct): the key chain and model fallback absorb quota limits._
   - **Gemini key chain** (approved 24 Oct): an ordered list of Gemini API keys in Settings (yours and your wife's, **each from its own Google account**; several projects on one account to stack free quota breaks the Gemini API terms). Each key tries every model before the next. Keys are stored encrypted in Secret Manager by the backend, never on the phone or in Firestore. Each row shows today's use against its free limit.
     - Model order per key: 3.6 Flash → 3.8 Flash → 3.5 Flash-Lite → 3.1 Flash-Lite (free tier, 24 Oct: Flash 20 requests a day each, Flash-Lite 500 a day each). Other providers were dropped: none of them takes a video file.
     - Phase 0 already has the backend half: `GEMINI_API_KEYS` and `GEMINI_MODELS` in `backend/.env`.

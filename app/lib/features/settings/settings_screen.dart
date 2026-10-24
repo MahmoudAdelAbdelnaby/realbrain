@@ -83,31 +83,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 (v) => _patch({'theme': v}),
               ),
               const Divider(height: 32),
-              Row(children: [
-                Expanded(
-                    child: Text(
-                        'Saves today: ${s['saves_today']} of ${s['daily_cap']}')),
-                IconButton(
-                  tooltip: 'Lower the daily limit',
-                  onPressed: (s['daily_cap'] as int) > 1
-                      ? () => _patch({
-                            'daily_cap': (s['daily_cap'] as int) - 5 < 1
-                                ? 1
-                                : (s['daily_cap'] as int) - 5
-                          })
-                      : null,
-                  icon: const Icon(Icons.remove),
-                ),
-                IconButton(
-                  tooltip: 'Raise the daily limit',
-                  onPressed: () => _patch({
-                    'daily_cap': ((s['daily_cap'] as int) + 5).clamp(1, 100)
-                  }),
-                  icon: const Icon(Icons.add),
-                ),
-              ]),
-              Text('The limit keeps you inside the free Gemini quota.',
-                  style: TextStyle(color: muted, fontSize: 12)),
+              Text('Saves today: ${s['saves_today']}'),
               const Divider(height: 32),
               Text(
                   'Gemini · ${(s['gemini'] as Map)['keys']} key(s), tried in order',

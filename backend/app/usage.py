@@ -1,15 +1,13 @@
-"""P1-16 cost guard: a daily cap of saves per user, and Gemini calls counted per model per day
-(shown in Settings against the free-tier limits). Days are UTC."""
+"""P1-16 usage: saves counted per user per day and Gemini calls per model per day (shown in
+Settings against the free-tier limits). Days are UTC. No daily cap (owner decision, 25 Oct): the
+key chain and the model fallback already absorb quota limits."""
 
 import logging
 import threading
 import time
 
-from fastapi import HTTPException
-
 from app import store
 
-DEFAULT_CAP = 20
 _lock = threading.Lock()
 # Free tier seen in AI Studio on 24 Oct 2026 (requests per day), for the Settings screen.
 FREE_RPD = {
@@ -25,15 +23,12 @@ def today() -> str:
     return time.strftime("%Y-%m-%d", time.gmtime())
 
 
-def check_and_count_save(uid: str) -> int:
-    """Counts one save for today; 429 past the user's cap. Returns today's count."""
+def count_save(uid: str) -> int:
+    """Counts one save for today. Returns today's count."""
     with _lock:
         user = store.doc_get(f"users/{uid}") or {}
-        cap = int((user.get("settings") or {}).get("daily_cap") or DEFAULT_CAP)
         used = user.get("saves_today") or {}
         count = used.get("count", 0) if used.get("date") == today() else 0
-        if count >= cap:
-            raise HTTPException(429, f"Daily limit of {cap} saves reached. It resets at midnight UTC.")
         store.doc_update(f"users/{uid}", {"saves_today": {"date": today(), "count": count + 1}})
         return count + 1
 

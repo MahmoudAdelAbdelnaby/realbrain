@@ -179,4 +179,3 @@ class CreateList(BaseModel):
 class Settings(BaseModel):
     lang: Literal["system", "en", "ar"] | None = None
     theme: Literal["system", "light", "dark"] | None = None
-    daily_cap: int | None = Field(None, ge=1, le=100)
