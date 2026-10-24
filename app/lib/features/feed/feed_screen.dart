@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' show ImageFilter;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -10,6 +11,8 @@ import '../../core/theme/gallery.dart';
 import '../../core/liquid_pill.dart';
 import '../../core/widgets.dart';
 import '../places/places_map.dart';
+import '../../core/glass.dart';
+import 'lanes.dart';
 import '../factcheck/fact_check_view.dart' show verdictLabels;
 import '../inbox/inbox_screen.dart';
 import '../library/library_screen.dart';
@@ -159,8 +162,20 @@ class _FeedScreenState extends State<FeedScreen> {
         : flash != null
             ? _pillStatus(flash, _readyLine(flash))
             : null;
+    if (_loaded && _known == null) {
+      _known = {for (final s in saves) s['save_id'] as String? ?? ''};
+    }
+    void openSection(String section) =>
+        _push(SectionScreen(section: section, items: _allItems));
     final home = Scaffold(
+      extendBodyBehindAppBar: true,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        // Glass once content scrolls under it (design v3).
+        flexibleSpace: _scrolled
+            ? const Glass(radius: 0, shadow: false, child: SizedBox.expand())
+            : null,
         // Long-press the title for the hidden design gallery (P1-01).
         title: GestureDetector(
           onLongPress: () => Navigator.of(context)
@@ -169,18 +184,90 @@ class _FeedScreenState extends State<FeedScreen> {
         ),
         actions: [_AccountMenu(onOpen: _push)],
       ),
-      body: RefreshIndicator(
-        onRefresh: _refresh,
-        child: FeedList(
-          saves: saves,
-          counts: toTryCounts(allItems),
-          onSection: (section) =>
-              _push(SectionScreen(section: section, items: _allItems)),
-          spaceLabel: spaceLabel,
-          loading: !_loaded,
-          error: _error,
-        ),
-      ),
+      body: Builder(builder: (context) {
+        final top = MediaQuery.paddingOf(context).top;
+        final header = <Widget>[
+          if (inbox.isNotEmpty)
+            _NeedsALook(
+                count: inbox.length, onTap: () => setState(() => _tab = 3)),
+          Padding(
+            padding:
+                const EdgeInsets.fromLTRB(RbSpace.side, 4, RbSpace.side, 16),
+            child: SegmentedButton<bool>(
+              showSelectedIcon: false,
+              segments: const [
+                ButtonSegment(value: false, label: Text('Sections')),
+                ButtonSegment(value: true, label: Text('Latest')),
+              ],
+              selected: {_latest},
+              onSelectionChanged: (v) => setState(() => _latest = v.first),
+            ),
+          ),
+        ];
+        final lanes = lanesOf(allItems, saves);
+        final Widget list = _latest
+            ? FeedList(
+                saves: saves,
+                counts: toTryCounts(allItems),
+                onSection: openSection,
+                spaceLabel: spaceLabel,
+                loading: !_loaded,
+                error: _error,
+                header: header,
+                padding: EdgeInsets.fromLTRB(
+                    RbSpace.side, top + 8, RbSpace.side, _pillRoom + 16),
+              )
+            : ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: EdgeInsets.only(top: top + 8, bottom: _pillRoom + 16),
+                children: [
+                  ...header,
+                  if (_error != null)
+                    EmptyState(
+                        title: 'Could not load your saves', body: _error),
+                  if (!_loaded)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: RbSpace.side),
+                      child: SkeletonCard(),
+                    ),
+                  if (_loaded && lanes.isEmpty && _error == null)
+                    const EmptyState(
+                        title: 'Nothing saved yet',
+                        body: 'Share a reel from TikTok, Instagram or YouTube '
+                            'to Reelbrain · Me or Reelbrain · Home.'),
+                  for (final lane in lanes)
+                    LaneView(
+                      lane: lane,
+                      onSeeAll: () => openSection(lane.section),
+                      isNew: _arrived,
+                      extra: lane.section == 'places'
+                          ? TextButton(
+                              onPressed: () => setState(() => _tab = 2),
+                              child: const Text('on the map'))
+                          : null,
+                    ),
+                ],
+              );
+        return Stack(children: [
+          Positioned.fill(
+              child: _Wash(
+                  save: saves
+                      .where((s) => s['key_frame_url'] != null)
+                      .firstOrNull)),
+          NotificationListener<ScrollNotification>(
+            onNotification: (n) {
+              final under =
+                  n.metrics.axis == Axis.vertical && n.metrics.pixels > 4;
+              if (n.depth == 0 && under != _scrolled) {
+                setState(() => _scrolled = under);
+              }
+              return false;
+            },
+            child: RefreshIndicator(
+                onRefresh: _refresh, edgeOffset: top, child: list),
+          ),
+        ]);
+      }),
     );
     // Tabs other than Home end above the pill instead of scrolling under it.
     Widget above(Widget w) =>
@@ -243,6 +330,11 @@ class _FeedScreenState extends State<FeedScreen> {
 
   static const _pillRoom = 88.0;
   int _tab = 0;
+  bool _latest = false, _scrolled = false;
+
+  // Saves on screen when Home first loaded; any later one "arrives" (slides in once).
+  Set<String>? _known;
+  bool _arrived(String id) => _known != null && _known!.add(id);
 
   // "Ready" flash: a save that was processing a moment ago and just finished.
   final _wasProcessing = <String>{};
@@ -298,7 +390,12 @@ class FeedList extends StatelessWidget {
     this.loading = false,
     this.error,
     this.onSection,
+    this.header = const [],
+    this.padding = const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
   });
+
+  final List<Widget> header;
+  final EdgeInsetsGeometry padding;
 
   final List<Map<String, dynamic>> saves;
   final Map<String, int> counts;
@@ -310,6 +407,7 @@ class FeedList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final children = <Widget>[
+      ...header,
       if (error != null) _Note('Could not load your saves. $error'),
       if (counts.isNotEmpty) _Counters(counts, onSection),
       if (loading) ...[const SkeletonCard(), const SkeletonCard()],
@@ -324,7 +422,7 @@ class FeedList extends StatelessWidget {
     // Always scrollable, so pull-to-refresh works on a short or empty feed.
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: padding,
       children: children,
     );
   }
@@ -569,6 +667,72 @@ class _AccountMenu extends StatelessWidget {
           child: photo == null ? Text(initial) : null,
         ),
       ),
+    );
+  }
+}
+
+/// Inbox nudge on Home: only while saves need a look.
+class _NeedsALook extends StatelessWidget {
+  const _NeedsALook({required this.count, required this.onTap});
+  final int count;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.fromLTRB(RbSpace.side, 0, RbSpace.side, 12),
+        child: Pressable(
+          onTap: onTap,
+          child: Card(
+            margin: EdgeInsets.zero,
+            child: ListTile(
+              leading: const Icon(Icons.inbox_outlined),
+              title: Text(count == 1
+                  ? '1 save needs a look'
+                  : '$count saves need a look'),
+              trailing: const Icon(Icons.chevron_right),
+            ),
+          ),
+        ),
+      );
+}
+
+/// Home's background: the newest reel's frame, blurred and dim, so the glass picks up the reels'
+/// own colour (design v3). Flat ground when there's no frame.
+class _Wash extends StatelessWidget {
+  const _Wash({this.save});
+  final Map<String, dynamic>? save;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = RbColors.of(context);
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final url = frameUrl(save?['key_frame_url'] as String?);
+    return ColoredBox(
+      color: c.ground,
+      child: url == null
+          ? const SizedBox.expand()
+          : Stack(fit: StackFit.expand, children: [
+              Opacity(
+                opacity: dark ? 0.35 : 0.25,
+                child: ImageFiltered(
+                  imageFilter: ImageFilter.blur(
+                      sigmaX: 60, sigmaY: 60, tileMode: TileMode.decal),
+                  child: Image.network(url,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => const SizedBox()),
+                ),
+              ),
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [c.ground.withValues(alpha: 0), c.ground],
+                    stops: const [0.2, 0.9],
+                  ),
+                ),
+              ),
+            ]),
     );
   }
 }
