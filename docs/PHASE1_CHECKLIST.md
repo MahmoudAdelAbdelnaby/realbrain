@@ -45,6 +45,7 @@ When a check passes, tell me and I'll tick the ticket.
    both need billing (Blaze). The free alternative is **OpenStreetMap tiles in the app (flutter_map)
    plus free geocoding (Nominatim) on the backend**: pins, a carousel and the Visited toggle, no
    key, no card. Its accuracy for Cairo cafés is below Google's. Pick: OSM now, or wait for Blaze.
+   **Already built on branch `p1-12-osm-map`** (backend 58 tests, app 44, APK builds). Say "OSM" and I merge it; say "wait" and I delete the branch. Note: the APK in `appuild` right now is the branch build, so it includes the map (Places → map icon).
 2. **Search uses a stored `search_text` per save** (summary, transcript, on-screen text, names),
    searched on the phone. This also answers the open question about storing transcripts.
 3. **Fact Check grounding uses Gemini 2.5 Flash-Lite.** It's the only free model left that can
