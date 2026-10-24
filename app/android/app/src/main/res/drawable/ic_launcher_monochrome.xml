@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android" xmlns:aapt="http://schemas.android.com/aapt" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+<group android:translateX="4" android:translateY="4">
+<group android:name="scaled" android:pivotX="50" android:pivotY="50" android:scaleX="0.92" android:scaleY="0.92">
+<group android:name="rays">
+<path android:name="ray0" android:pathData="M50,50 L50,6" android:strokeColor="#FFFFFFFF" android:strokeWidth="3" android:strokeLineCap="round"/>
+<path android:name="ray1" android:pathData="M50,50 L88,18" android:strokeColor="#FFFFFFFF" android:strokeWidth="3" android:strokeLineCap="round"/>
+<path android:name="ray2" android:pathData="M50,50 L95,52" android:strokeColor="#FFFFFFFF" android:strokeWidth="3" android:strokeLineCap="round"/>
+<path android:name="ray3" android:pathData="M50,50 L86,86" android:strokeColor="#FFFFFFFF" android:strokeWidth="3" android:strokeLineCap="round"/>
+<path android:name="ray4" android:pathData="M50,50 L12,86" android:strokeColor="#FFFFFFFF" android:strokeWidth="3" android:strokeLineCap="round"/>
+<path android:name="ray5" android:pathData="M50,50 L6,50" android:strokeColor="#FFFFFFFF" android:strokeWidth="3" android:strokeLineCap="round"/>
+<path android:name="ray6" android:pathData="M50,50 L12,16" android:strokeColor="#FFFFFFFF" android:strokeWidth="3" android:strokeLineCap="round"/>
+</group>
+<group android:name="brain" android:pivotX="53" android:pivotY="51">
+<path android:pathData="M27,44 a15,15 0 1,0 30,0 a15,15 0 1,0 -30,0 M41,38 a16,16 0 1,0 32,0 a16,16 0 1,0 -32,0 M55,51 a13,13 0 1,0 26,0 a13,13 0 1,0 -26,0 M40,60 a15,15 0 1,0 30,0 a15,15 0 1,0 -30,0 M27,59 a12,12 0 1,0 24,0 a12,12 0 1,0 -24,0 M54,64 a10,10 0 1,0 20,0 a10,10 0 1,0 -20,0 " android:fillColor="#FFFFFFFF"/>
+</group>
+</group>
+</group>
+</vector>

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart';
 
-/// Design system v2 tokens (docs/BUILD_PLAN.md "Design system"). Locked: change the doc first.
-/// One accent (signal blue) on data only; sections have no colours; true neutrals.
+/// Design tokens: v2 structure (docs/BUILD_PLAN.md) with the Darkroom brand (docs/BRAND.md):
+/// an ink ground, safelight red as the brand and accent, amber, and one hue per section.
 @immutable
 class RbColors extends ThemeExtension<RbColors> {
   const RbColors({
@@ -22,48 +22,77 @@ class RbColors extends ThemeExtension<RbColors> {
     required this.mixedBg,
     required this.falseFg,
     required this.falseBg,
+    required this.brand,
+    required this.amber,
+    required this.sections,
   });
 
   final Color ground, surface, raised, line, text, muted, faint;
   final Color primaryFill, primaryLabel, accent;
   final Color trueFg, trueBg, mixedFg, mixedBg, falseFg, falseBg;
 
+  /// Darkroom: safelight red (wordmark, primary, processing, selection) and amber.
+  final Color brand, amber;
+
+  /// One hue per section: lane dot, moment ticks, status chips.
+  final Map<String, Color> sections;
+
+  Color section(String? id) => sections[id] ?? accent;
+
   static const dark = RbColors(
-    ground: Color(0xFF0E0E0F),
-    surface: Color(0xFF18181A),
-    raised: Color(0xFF222225),
-    line: Color(0xFF2A2A2D),
+    ground: Color(0xFF0D1214),
+    surface: Color(0xFF162024),
+    raised: Color(0xFF1F2B30),
+    line: Color(0xFF2A383D),
     text: Color(0xFFFFFFFF),
     muted: Color(0xFFB4B4B4),
     faint: Color(0xFF949494),
-    primaryFill: Color(0xFFFFFFFF),
-    primaryLabel: Color(0xFF000000),
-    accent: Color(0xFF6CB8FF),
+    primaryFill: Color(0xFFFF4F3A),
+    primaryLabel: Color(0xFF1A0805),
+    accent: Color(0xFFFF4F3A),
     trueFg: Color(0xFF3FC07A),
     trueBg: Color(0xFF172A1D),
     mixedFg: Color(0xFFE9B44C),
     mixedBg: Color(0xFF2D2516),
     falseFg: Color(0xFFE5566F),
     falseBg: Color(0xFF2C1A20),
+    brand: Color(0xFFFF4F3A),
+    amber: Color(0xFFFFB547),
+    sections: {
+      'fact_check': Color(0xFFFF6B8A),
+      'tools': Color(0xFF3FD0C9),
+      'recipe': Color(0xFFFFB547),
+      'places': Color(0xFF6FA8FF),
+      'workout': Color(0xFFB6E35A),
+    },
   );
 
   static const light = RbColors(
-    ground: Color(0xFFF7F7F5),
+    ground: Color(0xFFF1F4F3),
     surface: Color(0xFFFFFFFF),
-    raised: Color(0xFFF0F0EE),
-    line: Color(0xFFE6E6E3),
+    raised: Color(0xFFEBF0EE),
+    line: Color(0xFFD7DFDC),
     text: Color(0xFF111111),
     muted: Color(0xFF5F6368),
     faint: Color(0xFF6B6B6B),
-    primaryFill: Color(0xFF111111),
+    primaryFill: Color(0xFFD2321F),
     primaryLabel: Color(0xFFFFFFFF),
-    accent: Color(0xFF1F6FD1),
+    accent: Color(0xFFD2321F),
     trueFg: Color(0xFF247B50),
     trueBg: Color(0xFFDCFAE5),
     mixedFg: Color(0xFF92400E),
     mixedBg: Color(0xFFFFFBEB),
     falseFg: Color(0xFF831C1E),
     falseBg: Color(0xFFFFEDEA),
+    brand: Color(0xFFD2321F),
+    amber: Color(0xFFA86A00),
+    sections: {
+      'fact_check': Color(0xFFC2264B),
+      'tools': Color(0xFF0D7A74),
+      'recipe': Color(0xFFA86A00),
+      'places': Color(0xFF2860C4),
+      'workout': Color(0xFF4D7A0E),
+    },
   );
 
   static RbColors of(BuildContext context) =>
@@ -88,6 +117,9 @@ class RbColors extends ThemeExtension<RbColors> {
         'mixed bg': mixedBg,
         'false': falseFg,
         'false bg': falseBg,
+        'brand': brand,
+        'amber': amber,
+        for (final e in sections.entries) 'section ${e.key}': e.value,
       };
 
   @override
@@ -102,6 +134,10 @@ class RbColors extends ThemeExtension<RbColors> {
 /// Two justified exceptions read from a distance: cooking step 28, workout timer digits 96.
 abstract final class RbType {
   static const family = 'IBMPlexSans';
+
+  /// Darkroom display face (wordmark, lane titles, headings); variable, so weight is an axis.
+  static const display = 'ReadexPro';
+  static List<FontVariation> weight(double w) => [FontVariation('wght', w)];
   static const fallback = ['IBMPlexSansArabic'];
   static const sizes = [12.0, 14.0, 16.0, 20.0, 28.0];
   static const cookingStep = 28.0;

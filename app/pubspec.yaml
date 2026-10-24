@@ -26,6 +26,8 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  shaders:
+    - shaders/liquid.frag
   # IBM Plex Sans + Plex Sans Arabic (OFL, assets/fonts/OFL.txt): Design system, P1-01.
   fonts:
     - family: IBMPlexSans
@@ -35,6 +37,9 @@ flutter:
           weight: 500
         - asset: assets/fonts/IBMPlexSans-SemiBold.ttf
           weight: 600
+    - family: ReadexPro
+      fonts:
+        - asset: assets/fonts/ReadexPro.ttf
     - family: IBMPlexSansArabic
       fonts:
         - asset: assets/fonts/IBMPlexSansArabic-Regular.ttf

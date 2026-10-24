@@ -137,6 +137,14 @@ class LaneView extends StatelessWidget {
         Padding(
           padding: const EdgeInsetsDirectional.fromSTEB(RbSpace.side, 0, 4, 4),
           child: Row(children: [
+            // Each section's own hue (docs/BRAND.md).
+            Container(
+              width: 10,
+              height: 10,
+              margin: const EdgeInsetsDirectional.only(end: 10),
+              decoration: BoxDecoration(
+                  color: c.section(lane.section), shape: BoxShape.circle),
+            ),
             Text(sectionLabels[lane.section] ?? lane.section,
                 style: t.titleLarge),
             const SizedBox(width: 8),
@@ -224,7 +232,9 @@ class LaneCard extends StatelessWidget {
                   child: MomentStrip(
                     moments: momentsOf(item),
                     duration: (save['duration_s'] as num?)?.toDouble(),
-                    color: verdict == null ? c.accent : null,
+                    color: verdict == null
+                        ? c.section(item['section'] as String?)
+                        : null,
                     verdict: verdict,
                   ),
                 ),
@@ -247,17 +257,27 @@ class LaneCard extends StatelessWidget {
       ),
     );
     if (!arriving || RbMotion.reduced(context)) return card;
-    // Arrival: rises out of the pill's direction and settles on a spring.
+    // Arrival: rises out of the pill's direction on a spring, then develops from a red-lit
+    // negative to full colour (docs/BRAND.md "Develop").
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: 1),
-      duration: RbMotion.slow,
-      curve: RbMotion.bouncy,
-      builder: (context, v, child) => Transform.translate(
-        offset: Offset(0, (1 - v) * 120),
-        child: Transform.scale(
-            scale: 0.85 + 0.15 * v,
-            child: Opacity(opacity: v.clamp(0, 1), child: child)),
-      ),
+      duration: const Duration(milliseconds: 1600),
+      builder: (context, v, child) {
+        final rise = RbMotion.bouncy.transform((v / 0.35).clamp(0.0, 1.0));
+        final dev =
+            Curves.easeOutCubic.transform(((v - 0.2) / 0.8).clamp(0.0, 1.0));
+        return Transform.translate(
+          offset: Offset(0, (1 - rise) * 120),
+          child: Transform.scale(
+            scale: 0.85 + 0.15 * rise,
+            child: Opacity(
+              opacity: (v / 0.2).clamp(0.0, 1.0),
+              child:
+                  ColorFiltered(colorFilter: developFilter(dev), child: child),
+            ),
+          ),
+        );
+      },
       child: card,
     );
   }
@@ -341,4 +361,40 @@ class MomentStrip extends StatelessWidget {
       }),
     );
   }
+}
+
+/// The darkroom develop: 0 is a red-lit negative (inverted, grey, under safelight), 1 is the
+/// picture as it is. Lerps the colour matrix, so it costs one filter per developing card.
+ColorFilter developFilter(double t) {
+  // Negative: invert, desaturate, tint red.
+  const neg = <double>[
+    -0.30, -0.59, -0.11, 0, 255, //
+    -0.10, -0.20, -0.04, 0, 90, //
+    -0.08, -0.16, -0.03, 0, 70, //
+    0, 0, 0, 1, 0,
+  ];
+  const id = <double>[
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0
+  ];
+  return ColorFilter.matrix(
+      [for (var i = 0; i < 20; i++) neg[i] + (id[i] - neg[i]) * t]);
 }

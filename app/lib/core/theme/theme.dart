@@ -37,14 +37,19 @@ ThemeData rbTheme(Brightness b) {
       fontFeatures: RbType.tabular,
       fontFamily: RbType.family,
       fontFamilyFallback: RbType.fallback);
+  // Darkroom display face for headings and lane titles (docs/BRAND.md); Plex for reading.
+  TextStyle d(double size, double weight) => t(size, FontWeight.w600).copyWith(
+      fontFamily: RbType.display,
+      fontVariations: RbType.weight(weight),
+      letterSpacing: -0.2);
   final text = TextTheme(
-    displayLarge: t(28, FontWeight.w600),
-    displayMedium: t(28, FontWeight.w600),
-    displaySmall: t(28, FontWeight.w600),
-    headlineLarge: t(28, FontWeight.w600),
-    headlineMedium: t(28, FontWeight.w600),
-    headlineSmall: t(20, FontWeight.w600),
-    titleLarge: t(20, FontWeight.w600),
+    displayLarge: d(28, 700),
+    displayMedium: d(28, 700),
+    displaySmall: d(28, 700),
+    headlineLarge: d(28, 700),
+    headlineMedium: d(28, 700),
+    headlineSmall: d(20, 600),
+    titleLarge: d(20, 600),
     titleMedium: t(16, FontWeight.w600),
     titleSmall: t(14, FontWeight.w600),
     bodyLarge: t(16, FontWeight.w400),

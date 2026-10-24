@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui' show ImageFilter;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -11,7 +10,10 @@ import '../../core/theme/gallery.dart';
 import '../../core/liquid_pill.dart';
 import '../../core/widgets.dart';
 import '../places/places_map.dart';
+import '../../core/brain_mark.dart';
 import '../../core/glass.dart';
+import '../../core/liquid.dart';
+import '../../main.dart' show routeObserver;
 import 'lanes.dart';
 import '../factcheck/fact_check_view.dart' show verdictLabels;
 import '../inbox/inbox_screen.dart';
@@ -60,7 +62,7 @@ class FeedScreen extends StatefulWidget {
   State<FeedScreen> createState() => _FeedScreenState();
 }
 
-class _FeedScreenState extends State<FeedScreen> {
+class _FeedScreenState extends State<FeedScreen> with RouteAware {
   final _subs = <StreamSubscription<Object?>>[];
   final _saves = <String, List<Map<String, dynamic>>>{}; // per space
   final _items = <String, List<Map<String, dynamic>>>{}; // per space
@@ -129,6 +131,8 @@ class _FeedScreenState extends State<FeedScreen> {
     _inbox.dispose();
     _allItems.dispose();
     _flashTimer?.cancel();
+    routeObserver.unsubscribe(this);
+    _liquid.dispose();
     super.dispose();
   }
 
@@ -154,6 +158,7 @@ class _FeedScreenState extends State<FeedScreen> {
     });
     final processing =
         saves.where((s) => _processing.contains(s['status'])).toList();
+    _liquid.setHeat(processing.isNotEmpty); // the liquid warms to red
     _trackReady(saves);
     final flash = _flash;
     final PillStatus? status = processing.isNotEmpty
@@ -180,7 +185,7 @@ class _FeedScreenState extends State<FeedScreen> {
         title: GestureDetector(
           onLongPress: () => Navigator.of(context)
               .push(MaterialPageRoute(builder: (_) => const DesignGallery())),
-          child: const Text('Reelbrain'),
+          child: const _Wordmark(),
         ),
         actions: [_AccountMenu(onOpen: _push)],
       ),
@@ -249,11 +254,6 @@ class _FeedScreenState extends State<FeedScreen> {
                 ],
               );
         return Stack(children: [
-          Positioned.fill(
-              child: _Wash(
-                  save: saves
-                      .where((s) => s['key_frame_url'] != null)
-                      .firstOrNull)),
           NotificationListener<ScrollNotification>(
             onNotification: (n) {
               final under =
@@ -281,21 +281,37 @@ class _FeedScreenState extends State<FeedScreen> {
       },
       child: Scaffold(
         extendBody: true,
-        body: IndexedStack(index: _tab, children: [
-          home,
-          above(const LibraryScreen()),
-          above(ValueListenableBuilder<List<Map<String, dynamic>>>(
-            valueListenable: _allItems,
-            builder: (context, all, _) => PlacesMap(items: [
-              for (final i in all)
-                if (i['section'] == 'places') i
+        backgroundColor: Colors.transparent,
+        body: Stack(children: [
+          Positioned.fill(child: LiquidBackground(controller: _liquid)),
+          // Every vertical scroll in the tabs pushes the liquid along.
+          NotificationListener<ScrollUpdateNotification>(
+            onNotification: (n) {
+              if (n.metrics.axis == Axis.vertical && n.scrollDelta != null) {
+                _liquid.scrolled(n.scrollDelta!);
+              }
+              return false;
+            },
+            child: IndexedStack(index: _tab, children: [
+              home,
+              above(const LibraryScreen()),
+              above(ValueListenableBuilder<List<Map<String, dynamic>>>(
+                valueListenable: _allItems,
+                builder: (context, all, _) => PlacesMap(items: [
+                  for (final i in all)
+                    if (i['section'] == 'places') i
+                ]),
+              )),
+              above(InboxScreen(saves: _inbox, spaceLabel: spaceLabel)),
             ]),
-          )),
-          above(InboxScreen(saves: _inbox, spaceLabel: spaceLabel)),
+          ),
         ]),
         bottomNavigationBar: LiquidPill(
           selected: _tab,
-          onSelect: (i) => setState(() => _tab = i),
+          onSelect: (i) {
+            if (i != _tab) _liquid.wave();
+            setState(() => _tab = i);
+          },
           status: status,
           destinations: [
             (
@@ -330,6 +346,18 @@ class _FeedScreenState extends State<FeedScreen> {
 
   static const _pillRoom = 88.0;
   int _tab = 0;
+  final _liquid = LiquidController();
+
+  // Coming back to the shell from any screen rolls a wave across the liquid.
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route is PageRoute) routeObserver.subscribe(this, route);
+  }
+
+  @override
+  void didPopNext() => _liquid.wave();
   bool _latest = false, _scrolled = false;
 
   // Saves on screen when Home first loaded; any later one "arrives" (slides in once).
@@ -365,7 +393,7 @@ class _FeedScreenState extends State<FeedScreen> {
     return (
       key: '${id}_${save['status']}',
       thumb: url == null
-          ? null
+          ? const BrainMark(animate: true)
           : Image.network(url,
               fit: BoxFit.cover,
               errorBuilder: (_, __, ___) => const SizedBox()),
@@ -710,43 +738,19 @@ class _NeedsALook extends StatelessWidget {
       );
 }
 
-/// Home's background: the newest reel's frame, blurred and dim, so the glass picks up the reels'
-/// own colour (design v3). Flat ground when there's no frame.
-class _Wash extends StatelessWidget {
-  const _Wash({this.save});
-  final Map<String, dynamic>? save;
+/// The wordmark: the Glow mark and "reelbrain" in the display face (docs/BRAND.md).
+class _Wordmark extends StatelessWidget {
+  const _Wordmark();
 
   @override
-  Widget build(BuildContext context) {
-    final c = RbColors.of(context);
-    final dark = Theme.of(context).brightness == Brightness.dark;
-    final url = frameUrl(save?['key_frame_url'] as String?);
-    return ColoredBox(
-      color: c.ground,
-      child: url == null
-          ? const SizedBox.expand()
-          : Stack(fit: StackFit.expand, children: [
-              Opacity(
-                opacity: dark ? 0.35 : 0.25,
-                child: ImageFiltered(
-                  imageFilter: ImageFilter.blur(
-                      sigmaX: 60, sigmaY: 60, tileMode: TileMode.decal),
-                  child: Image.network(url,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => const SizedBox()),
-                ),
-              ),
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [c.ground.withValues(alpha: 0), c.ground],
-                    stops: const [0.2, 0.9],
-                  ),
-                ),
-              ),
-            ]),
-    );
-  }
+  Widget build(BuildContext context) =>
+      Row(mainAxisSize: MainAxisSize.min, children: [
+        const BrainMark(size: 28),
+        const SizedBox(width: 10),
+        Text('reelbrain',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontVariations: RbType.weight(700),
+                letterSpacing: -0.6,
+                color: RbColors.of(context).text)),
+      ]);
 }

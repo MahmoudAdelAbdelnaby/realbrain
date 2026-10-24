@@ -85,7 +85,7 @@ class ShareActivity : Activity() {
         val blur = Build.VERSION.SDK_INT >= 31 && windowManager.isCrossWindowBlurEnabled
         val alpha = if (blur) 0x8C else 0xF0
         setColor(if (dark) Color.argb(alpha, 0x0E, 0x0E, 0x0F) else Color.argb(alpha, 0xFF, 0xFF, 0xFF))
-        setStroke(dp(1), if (dark) Color.argb(0x2E, 0xFF, 0xFF, 0xFF) else Color.argb(0x1F, 0, 0, 0))
+        setStroke(dp(1), Color.argb(0x99, 0xFF, 0x4F, 0x3A)) // safelight edge (docs/BRAND.md)
     }
 
     private fun savePill() = TextView(this).apply {
