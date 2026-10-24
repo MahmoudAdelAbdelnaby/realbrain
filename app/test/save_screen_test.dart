@@ -53,10 +53,12 @@ void main() {
       ),
     ));
     expect(find.text('Recipes'), findsOneWidget);
-    expect(find.text('Koshari · serves 4'), findsOneWidget);
+    expect(find.text('Koshari'), findsOneWidget);
+    expect(find.text('Serves'), findsOneWidget);
     expect(find.text('• 200 g lentils'), findsOneWidget);
-    expect(find.text('• salt (estimated)'), findsOneWidget);
-    expect(find.text('1. Boil the lentils  (0:41)'), findsOneWidget);
+    expect(find.text('• ≈ salt'), findsOneWidget);
+    expect(find.text('1. Boil the lentils'), findsOneWidget);
+    expect(find.text('Cook'), findsOneWidget);
     expect(find.text('• Abou Tarek, Downtown, Cairo  (0:08)'), findsOneWidget);
   });
 }

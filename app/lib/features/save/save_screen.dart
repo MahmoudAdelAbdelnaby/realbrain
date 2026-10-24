@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 
 import '../../core/native.dart';
 import '../factcheck/fact_check_view.dart';
+import '../recipes/recipe_view.dart';
+import '../workouts/workout_view.dart';
 import '../feed/feed_screen.dart' show sectionLabels;
 import '../inbox/inbox_screen.dart' show fileUnder;
 
@@ -145,7 +147,13 @@ class SaveDetail extends StatelessWidget {
           Text(sectionLabels[item['section']] ?? '${item['section']}',
               style: t.titleSmall),
           const SizedBox(height: 8),
-          if (item['section'] == 'fact_check')
+          if (item['section'] == 'workout')
+            WorkoutView(item: item)
+          else if (item['section'] == 'recipe')
+            RecipeView(
+                data:
+                    (item['data'] as Map?)?.cast<String, dynamic>() ?? const {})
+          else if (item['section'] == 'fact_check')
             FactCheckView(
               saveId: save['save_id'] as String?,
               data: (item['data'] as Map?)?.cast<String, dynamic>() ?? const {},

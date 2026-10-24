@@ -52,6 +52,10 @@ class Recipe(BaseModel):
     total_min: int | None = None
     ingredients: list[Ingredient]
     steps: list[Step]
+    tags: list[str] = Field(
+        default_factory=list,
+        description="2-4 short tags: cuisine, meal, diet, e.g. Egyptian, dinner, vegetarian",
+    )
 
 
 class Place(BaseModel):
@@ -165,3 +169,8 @@ class Me(BaseModel):
 
 class CreateHousehold(BaseModel):
     name: str = Field("Home", min_length=1, max_length=60)
+
+
+class CreateList(BaseModel):
+    section: Literal["fact_check", "tools", "recipe", "places", "workout"]
+    name: str = Field(min_length=1, max_length=60)

@@ -75,3 +75,12 @@ def test_missing_name_is_filled_in_later():
     client.post("/v1/me", json={}, headers=first)
     client.post("/v1/me", json={"name": "Sara"}, headers=first)
     assert store.doc_get("users/late-name")["name"] == "Sara"
+
+
+def test_lists_are_created_in_your_space_only():
+    me = {"Authorization": "Bearer dev:lister"}
+    r = client.post("/v1/spaces/me/lists", json={"section": "workout", "name": "Morning"}, headers=me).json()
+    lst = store.doc_get(f"spaces/{r['space_id']}/lists/{r['list_id']}")
+    assert r["space_id"] == "p_lister" and lst["item_refs"] == [] and lst["section"] == "workout"
+    bad = client.post("/v1/spaces/p_mahmoud/lists", json={"section": "workout", "name": "x"}, headers=me)
+    assert bad.status_code == 404

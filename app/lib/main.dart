@@ -30,6 +30,9 @@ ThemeData _theme(Brightness b) {
   );
 }
 
+/// Light theme on its own, for cooking mode (always light: bright kitchen).
+final lightTheme = _theme(Brightness.light);
+
 class ReelbrainApp extends StatelessWidget {
   const ReelbrainApp({super.key, this.home = const AuthGate()});
   final Widget home;

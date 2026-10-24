@@ -3,9 +3,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../core/native.dart';
+
 import '../factcheck/fact_check_view.dart';
+import '../recipes/recipe_math.dart';
+import '../recipes/recipe_view.dart';
 import '../feed/feed_screen.dart' show sectionLabels;
 import '../save/save_screen.dart';
+import '../workouts/workout_view.dart';
 
 /// Status choices per section (Backend contract user_state values).
 const statusChoices = {
@@ -72,16 +77,64 @@ class SectionList extends StatefulWidget {
 }
 
 class _SectionListState extends State<SectionList> {
-  String? _kind; // tools filter
+  String? _kind; // tools: category filter; recipes: tag filter
+  final _picked = <String>{}; // recipes picked for the grocery list (item keys)
+
+  String _key(Map<String, dynamic> i) => '${i['save_id']}/${i['item_id']}';
+
+  Future<void> _makeRoutine(BuildContext context) async {
+    final name = TextEditingController(text: 'My routine');
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Name the routine'),
+        content: TextField(controller: name, autofocus: true),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel')),
+          FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Create')),
+        ],
+      ),
+    );
+    if (ok != true || !context.mounted) return;
+    try {
+      final r = await api('POST', '/v1/spaces/me/lists',
+          {'section': 'workout', 'name': name.text.trim()});
+      await FirebaseFirestore.instance
+          .doc('spaces/${r['space_id']}/lists/${r['list_id']}')
+          .update({'item_refs': _picked.toList()});
+      setState(_picked.clear);
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(apiError(e))));
+      }
+    }
+  }
+
+  List<String> _tags(Map<String, dynamic> i) =>
+      (((i['data'] as Map?)?['tags'] as List?) ?? const []).cast<String>();
 
   @override
   Widget build(BuildContext context) {
     final tools = widget.section == 'tools';
+    final recipes = widget.section == 'recipe';
+    final workouts = widget.section == 'workout';
     final kinds = {
       if (tools)
         for (final i in widget.items)
           for (final t in _tools(i)) (t['kind'] as String?) ?? 'other',
+      if (recipes)
+        for (final i in widget.items) ..._tags(i),
     };
+    bool shown(Map<String, dynamic> i) => _kind == null
+        ? true
+        : tools
+            ? _tools(i).any((t) => ((t['kind'] as String?) ?? 'other') == _kind)
+            : !recipes || _tags(i).contains(_kind);
     if (widget.items.isEmpty) {
       return const Padding(
         padding: EdgeInsets.all(16),
@@ -92,7 +145,33 @@ class _SectionListState extends State<SectionList> {
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       children: [
-        if (tools && kinds.length > 1)
+        if (workouts) ...[
+          RoutinesBar(
+            spaceIds: {for (final i in widget.items) i['space_id'] as String}
+                .toList(),
+            items: widget.items,
+          ),
+          if (_picked.isNotEmpty)
+            FilledButton.icon(
+              onPressed: () => _makeRoutine(context),
+              icon: const Icon(Icons.playlist_add),
+              label: Text('Make routine (${_picked.length})'),
+            ),
+        ],
+        if (recipes && _picked.isNotEmpty)
+          FilledButton.icon(
+            onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+              builder: (_) => GroceryScreen(
+                recipes: [
+                  for (final i in widget.items)
+                    if (_picked.contains(_key(i))) i
+                ],
+              ),
+            )),
+            icon: const Icon(Icons.shopping_basket_outlined),
+            label: Text('Grocery list (${_picked.length})'),
+          ),
+        if ((tools || recipes) && kinds.length > 1)
           Wrap(spacing: 8, children: [
             ChoiceChip(
                 label: const Text('All'),
@@ -100,17 +179,27 @@ class _SectionListState extends State<SectionList> {
                 onSelected: (_) => setState(() => _kind = null)),
             for (final k in kinds)
               ChoiceChip(
-                label: Text(toolKinds[k] ?? 'Other'),
+                label: Text(tools ? toolKinds[k] ?? 'Other' : k),
                 selected: _kind == k,
                 onSelected: (_) => setState(() => _kind = k),
               ),
           ]),
         for (final item in widget.items)
-          if (!tools ||
-              _kind == null ||
-              _tools(item)
-                  .any((t) => ((t['kind'] as String?) ?? 'other') == _kind))
-            _ItemCard(item: item, kind: _kind),
+          if (shown(item))
+            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              if (recipes || workouts)
+                CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  controlAffinity: ListTileControlAffinity.leading,
+                  title: Text(
+                      recipes ? 'Add to grocery list' : 'Add to a routine'),
+                  value: _picked.contains(_key(item)),
+                  onChanged: (on) => setState(() => on == true
+                      ? _picked.add(_key(item))
+                      : _picked.remove(_key(item))),
+                ),
+              _ItemCard(item: item, kind: tools ? _kind : null),
+            ]),
       ],
     );
   }
@@ -143,7 +232,11 @@ class _ItemCard extends StatelessWidget {
               for (final t in _tools(item))
                 if (kind == null || ((t['kind'] as String?) ?? 'other') == kind)
                   ToolTile(tool: t),
-            ] else if (section == 'fact_check')
+            ] else if (section == 'recipe')
+              RecipeView(data: data)
+            else if (section == 'workout')
+              WorkoutView(item: item)
+            else if (section == 'fact_check')
               FactCheckView(saveId: item['save_id'] as String?, data: data)
             else
               ...SaveDetail.itemLines(item).map((l) => Padding(
@@ -258,6 +351,55 @@ class ToolTile extends StatelessWidget {
                 icon: const Icon(Icons.open_in_new, size: 18),
                 label: Text(Uri.tryParse(url)?.host ?? url),
               ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Everything to buy for the picked recipes (at their own servings), merged and shareable.
+class GroceryScreen extends StatelessWidget {
+  const GroceryScreen({super.key, required this.recipes});
+  final List<Map<String, dynamic>> recipes;
+
+  @override
+  Widget build(BuildContext context) {
+    final lines = groceries([
+      for (final r in recipes)
+        (
+          title: '${(r['data'] as Map?)?['title'] ?? 'Recipe'}',
+          ingredients: [
+            for (final i
+                in (((r['data'] as Map?)?['ingredients'] as List?) ?? const []))
+              (i as Map).cast<String, dynamic>(),
+          ],
+          from: ((r['data'] as Map?)?['servings'] as num?)?.toInt(),
+          to: ((r['data'] as Map?)?['servings'] as num?)?.toInt() ?? 1,
+        ),
+    ]);
+    final text = lines.map((l) => '- ${l.text}').join('\n');
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Grocery list'),
+        actions: [
+          IconButton(
+              tooltip: 'Share',
+              icon: const Icon(Icons.share),
+              onPressed: () => shareText(text)),
+        ],
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          for (final l in lines)
+            CheckboxListTile(
+              value: false,
+              onChanged: null,
+              controlAffinity: ListTileControlAffinity.leading,
+              title: Text(l.text),
+              subtitle:
+                  l.recipes.length > 1 ? Text(l.recipes.join(' · ')) : null,
             ),
         ],
       ),

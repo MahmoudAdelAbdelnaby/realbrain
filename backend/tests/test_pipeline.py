@@ -108,6 +108,10 @@ def test_save_upload_process_ready(monkeypatch, tiny_mp4):
     items = store.get_items(save)
     assert [i["section"] for i in items] == ["fact_check", "tools", "recipe", "places", "workout"]
     assert items[2]["data"]["steps"][0]["timer_s"] == 600
+    # A frame at each recipe step and workout exercise (t past the 1 s clip falls back to the first frame).
+    step_frame = items[2]["data"]["steps"][0]["frame"]
+    assert step_frame.endswith(f"{save_id}-steps-0.jpg") and client.get(step_frame).status_code == 200
+    assert items[4]["data"]["exercises"][0]["frame"].endswith(f"{save_id}-exercises-0.jpg")
     assert {i["space_id"] for i in items} == {"p_dev"} and items[0]["save_id"] == save_id
     assert save["sections"] == ["fact_check", "tools", "recipe", "places", "workout"]
     assert save["space_id"] == "p_dev", "share target 'me' resolves to the personal space"

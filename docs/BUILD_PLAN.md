@@ -187,7 +187,8 @@ spaces/{spaceId}/saves/{saveId}     source_url, platform, creator, caption,
 spaces/{spaceId}/saves/{saveId}/items/{itemId}
                                     section, confidence, data{...typed},
                                     user_state (to_try|tried|visited|cooked|done|using|not_useful; the last two added in P1-09 for tools)
-spaces/{spaceId}/lists/{listId}     section, name, item_refs[]
+spaces/{spaceId}/lists/{listId}     section, name, item_refs[], overrides{} (P1-13: per-exercise edits;
+                                    created via POST /v1/spaces/{id}/lists, members edit item_refs/overrides)
 ```
 
 `items` is queried as a collection group by `section`, so each section tab is one query.

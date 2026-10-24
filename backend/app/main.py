@@ -12,7 +12,16 @@ from app import spaces, store, tasks
 from app.auth import claims, cloud_tasks, user
 from app.pipeline.extract import Transient
 from app.pipeline.process import process
-from app.schemas import CreatedSave, CreateHousehold, CreateSave, FileUnder, Me, NoVideo, ProcessTask
+from app.schemas import (
+    CreatedSave,
+    CreateHousehold,
+    CreateList,
+    CreateSave,
+    FileUnder,
+    Me,
+    NoVideo,
+    ProcessTask,
+)
 
 logging.basicConfig(level=logging.INFO)
 if not (os.environ.get("GEMINI_API_KEY") or os.environ.get("GEMINI_API_KEYS")):
@@ -75,6 +84,28 @@ def create_household(body: CreateHousehold, uid: str = Depends(user)) -> dict:
 @app.post("/v1/spaces/{space_id}/invite")
 def new_invite(space_id: str, uid: str = Depends(user)) -> dict:
     return {"invite_url": spaces.invite(uid, space_id)}
+
+
+@app.post("/v1/spaces/{space_id}/lists")
+def create_list(space_id: str, body: CreateList, uid: str = Depends(user)) -> dict:
+    """A named list in a space (workout routine, place list, recipe collection). Members then edit
+    its item_refs and per-item overrides directly (rules); creating it stays on the backend."""
+    space_id = spaces.resolve(uid, space_id)
+    list_id = uuid.uuid4().hex[:12]
+    store.doc_set(
+        f"spaces/{space_id}/lists/{list_id}",
+        {
+            "list_id": list_id,
+            "space_id": space_id,
+            "section": body.section,
+            "name": body.name,
+            "item_refs": [],
+            "overrides": {},
+            "created_by": uid,
+            "created_at": time.time(),
+        },
+    )
+    return {"list_id": list_id, "space_id": space_id}
 
 
 @app.post("/v1/invites/{code}/accept")

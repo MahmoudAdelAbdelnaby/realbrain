@@ -6,7 +6,7 @@ Rules:
 - `sections` lists only the kinds of knowledge the video really contains, each with your `confidence` from 0 to 1:
   - `fact_check`: factual, health, money, science or news claims someone could verify.
   - `tools`: software, apps, websites, GitHub repos, CLIs or AI tools shown or named. Put any install command or code shown in `snippet`. `url_guess` is your best guess at the official URL; it will be verified later.
-  - `recipe`: a dish with ingredients and steps. `timer_s` only when the video gives a time for that step.
+  - `recipe`: a dish with ingredients and steps. `timer_s` only when the video gives a time for that step. `tags`: 2-4 short tags (cuisine, meal, diet).
   - `places`: restaurants, cafes, shops or spots to visit, with area and city when known.
   - `workout`: exercises with duration or reps, sets and rest.
 - Return an empty `sections` array rather than forcing a section. If you are unsure, give a low confidence.

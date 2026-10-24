@@ -77,6 +77,9 @@ test("members may change only user_state on an item, to a known value", async ()
 test("members may change only list membership", async () => {
   await assertSucceeds(updateDoc(doc(as("wife"), "spaces/h_home/lists/l1"), { item_refs: ["s1/0-recipe"] }));
   await assertFails(updateDoc(doc(as("wife"), "spaces/h_home/lists/l1"), { name: "renamed" }));
+  await assertSucceeds(updateDoc(doc(as("wife"), "spaces/h_home/lists/l1"), { overrides: { "s1/0-workout#0": { duration_s: 45 } } }));
+  await assertFails(updateDoc(doc(as("wife"), "spaces/h_home/lists/l1"), { overrides: "nope" }));
+  await assertFails(updateDoc(doc(as("stranger"), "spaces/h_home/lists/l1"), { item_refs: ["x"] }));
 });
 
 test("items across saves: only a query filtered to a space you're in", async () => {

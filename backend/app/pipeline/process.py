@@ -6,7 +6,7 @@ import tempfile
 import time
 from pathlib import Path
 
-from app import notify, store
+from app import notify, search, store
 from app.pipeline import enrich, frames, tools
 from app.pipeline.extract import Transient, extract
 from app.pipeline.fetch import fallback
@@ -67,6 +67,8 @@ def process(save_id: str, attempt: int = 0, max_attempts: int = 3) -> str:
                 status = "partial"
             items = [_item(s) for s in result.sections]
             _verify_tools(items)
+            if video is not None:
+                _moment_frames(save, items, video, Path(tmp))
             verdict = _check_claims(save, items, result.language) if status in ("ready", "partial") else None
             store.put_items(save, items)
             store.update_save(
@@ -74,6 +76,7 @@ def process(save_id: str, attempt: int = 0, max_attempts: int = 3) -> str:
                 {
                     "status": status,
                     "verdict": verdict and verdict["overall"],  # feed card, P1-08
+                    "search_text": search.search_text(save, result, items),  # library search, P1-15
                     "step_text": None,
                     "language": result.language,
                     "summary": result.summary,
@@ -109,6 +112,22 @@ def process(save_id: str, attempt: int = 0, max_attempts: int = 3) -> str:
             log.exception("save=%s failed", save_id)
             return _fail(save, str(e))
     return status
+
+
+MAX_MOMENTS = 15  # per item; a reel rarely has more steps or exercises
+
+
+def _moment_frames(save: dict, items: list[dict], video: Path, tmp: Path) -> None:
+    """P1-11/P1-13: a frame at each recipe step and workout exercise (cooking mode's "jump to
+    moment" shows it; workouts show the pose)."""
+    for item in items:
+        key = {"recipe": "steps", "workout": "exercises"}.get(item["section"])
+        for n, moment in enumerate((item["data"].get(key) or [])[:MAX_MOMENTS] if key else []):
+            if moment.get("t") is None:
+                continue
+            jpg = frames.key_frame(video, moment["t"], tmp / f"m-{item['section']}-{n}.jpg")
+            if jpg:
+                moment["frame"] = store.put_frame(save["space_id"], f"{save['save_id']}-{key}-{n}", jpg)
 
 
 def _verify_tools(items: list[dict]) -> None:

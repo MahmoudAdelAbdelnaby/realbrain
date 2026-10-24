@@ -50,8 +50,10 @@ service cloud.firestore {
 
       match /lists/{listId} {
         allow read: if member(spaceId);
-        allow update: if member(spaceId) && onlyChanges(['item_refs'])
-          && request.resource.data.item_refs is list;
+        // Membership, plus per-item overrides (a routine's edited durations, P1-13).
+        allow update: if member(spaceId) && onlyChanges(['item_refs', 'overrides'])
+          && request.resource.data.item_refs is list
+          && request.resource.data.get('overrides', {}) is map;
       }
     }
   }
