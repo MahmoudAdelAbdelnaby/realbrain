@@ -293,6 +293,7 @@ _24 Oct: P1-01 and P1-02 are deferred by owner decision (the plan was approved, 
   - Full-screen steps, swipe navigation, inline timers in a pinned pill, screen stays on, "jump to moment" plays nothing but shows the key frame.
 - [ ] **P1-12 · Places + map**
   - Backend Places lookup with a picker when several matches; dark custom map, section-coloured pins, bottom carousel, Visited toggle, lists.
+  - _24 Oct, partly built without billing: place details, Open in Maps (search link, no key), Visited. Blocked: the map and Places lookup need Blaze (Places API, Maps SDK). Proposed instead: OpenStreetMap tiles (flutter_map) + Nominatim geocoding on the backend, free. Decision 1 in docs/PHASE1_CHECKLIST.md._
 - [ ] **P1-13 · Workouts**
   - Exercise list with a pose frame per exercise (cut at each `t`); edit durations; combine saves into a routine.
 - [ ] **P1-14 · Workout mode**

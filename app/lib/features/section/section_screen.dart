@@ -10,6 +10,7 @@ import '../recipes/recipe_math.dart';
 import '../recipes/recipe_view.dart';
 import '../feed/feed_screen.dart' show sectionLabels;
 import '../save/save_screen.dart';
+import '../places/places_view.dart';
 import '../workouts/workout_view.dart';
 
 /// Status choices per section (Backend contract user_state values).
@@ -236,6 +237,8 @@ class _ItemCard extends StatelessWidget {
               RecipeView(data: data)
             else if (section == 'workout')
               WorkoutView(item: item)
+            else if (section == 'places')
+              PlacesView(data: data)
             else if (section == 'fact_check')
               FactCheckView(saveId: item['save_id'] as String?, data: data)
             else

@@ -59,6 +59,8 @@ void main() {
     expect(find.text('• ≈ salt'), findsOneWidget);
     expect(find.text('1. Boil the lentils'), findsOneWidget);
     expect(find.text('Cook'), findsOneWidget);
-    expect(find.text('• Abou Tarek, Downtown, Cairo  (0:08)'), findsOneWidget);
+    expect(find.text('Abou Tarek'), findsOneWidget);
+    expect(find.text('Downtown, Cairo'), findsOneWidget);
+    expect(find.text('Open in Maps'), findsOneWidget);
   });
 }
