@@ -43,12 +43,13 @@ def rows(text: str) -> list[dict]:
 
 
 def judge(expected: str, sections: list[tuple[str, float]], review_below: float = 0.6) -> bool:
-    """Correct when the expected section is the most confident one (and confident enough);
+    """Correct when the expected section is (joint) most confident and confident enough;
     `none` is correct when nothing clears the bar (it would go to review)."""
     confident = [s for s in sections if s[1] >= review_below]
     if expected == "none":
         return not confident
-    return bool(confident) and max(confident, key=lambda s: s[1])[0] == expected
+    top = max((c for _, c in confident), default=None)
+    return top is not None and any(t == expected and c == top for t, c in confident)
 
 
 def main() -> int:

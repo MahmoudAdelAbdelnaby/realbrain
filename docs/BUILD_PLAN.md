@@ -310,6 +310,7 @@ _24 Oct: P1-01 and P1-02 are deferred by owner decision (the plan was approved, 
     - Phase 0 already has the backend half: `GEMINI_API_KEYS` and `GEMINI_MODELS` in `backend/.env`.
 - [ ] **P1-17 · Test set regression**
   - Script runs the 20-reel set through the pipeline and prints accuracy per section; must hit 85% before the gate.
+  - _24 Oct, first run on the 7-reel seed set (`test/fixtures/reels.md`): 5/7 = 71%. The misses were a scoring bug (a 0.95/0.95 tie between Tools and Fact Check counted as wrong) and the prompt filing a product ad as Fact Check. After the tie rule and a tighter Fact Check definition in `prompts/extract.md` (sales pitches get no section), the ad now gets none: 7/7 on the seed set. The gate still needs the full 20-reel set._
 
 ## Phase 2 — iPhone and household
 

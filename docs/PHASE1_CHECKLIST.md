@@ -34,7 +34,7 @@ notifications.
 | P1-14 Workout mode | **Start workout** | Ring timer around the pose, big digits, 3-2-1 clicks and vibration, rest then next by itself, pause/skip, Done for reps, "Workout complete". |
 | P1-15 Library | 🔍 in the feed | Search an Arabic word (e.g. كروز) and an English one. Platform and section filters narrow the list. |
 | P1-16 Settings | ⋮ → Settings | Switch to العربية and Dark: the whole app flips to right-to-left and dark. Saves today x of 20; Gemini use per model today. |
-| P1-17 Regression | Nothing on the phone | Results of tonight's run are in BUILD_PLAN under P1-17. Add your own reels to `test/fixtures/reels.md` (target 20) and run `.venv\Scripts\python -m scripts.regression` in `backend`. |
+| P1-17 Regression | Nothing on the phone | Tonight: 5/7 → 7/7 on the 7 seed reels after a scoring fix and a tighter Fact Check prompt (details under P1-17). Add your own reels to `test/fixtures/reels.md` (target 20) and run `.venv\Scripts\python -m scripts.regression` in `backend`. |
 
 When a check passes, tell me and I'll tick the ticket.
 

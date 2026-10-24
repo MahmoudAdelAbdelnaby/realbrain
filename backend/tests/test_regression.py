@@ -17,6 +17,7 @@ def test_rows_skip_header_and_placeholder_lines():
 def test_judging():
     assert judge("tools", [("tools", 0.95), ("fact_check", 0.85)])
     assert not judge("fact_check", [("tools", 0.95), ("fact_check", 0.85)]), "the top section must match"
+    assert judge("tools", [("fact_check", 0.95), ("tools", 0.95)]), "a tie for top counts"
     assert not judge("recipe", [("recipe", 0.4)]), "too unsure: it would go to review"
     assert judge("none", [("fact_check", 0.5)])
     assert not judge("none", [("fact_check", 0.9)])
