@@ -39,6 +39,20 @@ notifications.
 
 When a check passes, tell me and I'll tick the ticket.
 
+## Design v3 (liquid): phone checks
+
+Built 25 Oct in 5 commits (`docs/DESIGN_V3_PROPOSAL.md`). Try in dark and light, and in Arabic.
+
+| Step | Try this | Expect |
+| --- | --- | --- |
+| 1 Glass | Long-press **Reelbrain** → Glass | A blurred pill and panel over a colour field; hold the card: it shrinks a little and springs back |
+| 2 Pill | Look at the bottom; share a reel from TikTok | Floating glass pill with Home, Search, Map, Inbox (only the selected one shows its name). While it processes, the pill grows to show the thumbnail and step, then flashes the result. Over TikTok, the share pill blurs what's behind it |
+| 3 Lanes | Home | One row per section, swipe sideways; each card shows its own line (claims, time, stars, area, exercises) and a strip of moments along the frame. **Sections / Latest** switches to the old list. The newest reel's colours tint the background; the top bar turns to glass when you scroll |
+| 4 Motion | Tap a card, then Back | The frame grows into the save screen and shrinks back; a new save slides into its row |
+| 5 Chrome | Change section; Places → Map; Cook with a timer; Start workout | Glass sheet floating off the edges; glass place cards; the cooking timers and workout controls sit in the pill |
+
+With **Remove animations** on (Android accessibility), glass turns solid and motion becomes quick fades.
+
 ## Decisions (answered 25 Oct)
 
 All approved, except the daily cap, which is removed. Recorded in `BUILD_PLAN.md`.
