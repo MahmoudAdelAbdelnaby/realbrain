@@ -45,14 +45,14 @@
             <meta-data android:name="flutter_deeplinking_enabled" android:value="false" />
         </activity>
         <!-- Share targets: two aliases of one activity, the alias picks the space.
-             NoDisplay + finish() in onCreate keeps it under 1 s and never starts Flutter. -->
+             A translucent window shows the save pill for 1 s, then finishes; never starts Flutter. -->
         <activity
             android:name=".ShareActivity"
             android:exported="false"
             android:excludeFromRecents="true"
             android:noHistory="true"
             android:taskAffinity=""
-            android:theme="@android:style/Theme.NoDisplay" />
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
         <activity-alias
             android:name=".ShareMe"
             android:targetActivity=".ShareActivity"

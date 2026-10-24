@@ -25,7 +25,7 @@ notifications.
 
 | Ticket | Try this | Expect |
 | --- | --- | --- |
-| P1-01/02 Design | Long-press **Reelbrain** in the feed | Design gallery: every colour with its contrast, the type scale in Plex Sans and Plex Arabic, radii, chips, pills, cards, empty state, bottom sheet. The sun/moon and RTL buttons flip theme and direction. The rest of the app now uses the same tokens (cards with a 1 px edge, round buttons). |
+| P1-01/02 Design | Long-press **Reelbrain** in the feed | Design gallery: every colour with its contrast, the type scale in Plex Sans and Plex Arabic, radii, chips, pills, cards, empty state, bottom sheet. The sun/moon and RTL buttons flip theme and direction. The rest of the app now uses the same tokens (cards with a 1 px edge, round buttons). Sharing a reel now shows a round ✓ **Saving to Me** pill for 1 s over TikTok instead of the plain toast. |
 | P1-08 Fact Check | Share a reel making health or money claims | Notification starting with the verdict ("Mostly false: …"). The save shows "AI-generated · checked <date>", a verdict pill per claim, a correction, sources. **Dive deeper** writes an explainer in a few seconds. |
 | P1-09 Tools | Tap **Dev and Tools** in the feed's counter row | Each tool shows ★ stars and last update (GitHub) or "Link checked". **Copy** copies the snippet. Status chips To try / Tried / Using / Not useful stick. Category filter works. |
 | P1-10 Recipes | Share a recipe reel, open it | **Serves − / +** rescales amounts; "≈" marks guesses; tags. In **Recipes**, tick two recipes → **Grocery list** merges the same ingredients; Share works. |

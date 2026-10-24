@@ -261,7 +261,7 @@ _24 Oct: P1-01 and P1-02 are deferred by owner decision (the plan was approved, 
   - A hidden "Design gallery" screen shows every token and component.
 - [ ] **P1-02 · Core components**
   - SaveCard, SectionChip, StatusPill, SkeletonCard, EmptyState, BottomSheet built and shown in the gallery in both themes and both directions.
-  - _24 Oct night: P1-01 and P1-02 built (`lib/core/theme/{tokens,theme,gallery}.dart`, `lib/core/widgets.dart`); every screen now takes the token theme. Contrast ≥ 4.5:1 checked in tests for every text and verdict pair. Gallery: long-press "Reelbrain" in the feed. Not yet seen on the phone, so unticked. Icons are Material outlined, not Phosphor (proposed: keep, one fewer dependency). The styled save toast (P1-04) is still the plain one._
+  - _24 Oct night: P1-01 and P1-02 built (`lib/core/theme/{tokens,theme,gallery}.dart`, `lib/core/widgets.dart`); every screen now takes the token theme. Contrast ≥ 4.5:1 checked in tests for every text and verdict pair. Gallery: long-press "Reelbrain" in the feed. Not yet seen on the phone, so unticked. Icons are Material outlined, not Phosphor (proposed: keep, one fewer dependency). The share now shows the save pill (round, primary fill, ✓ "Saving to Me/Home", 1 s, touches pass through to the app underneath); no thumbnail, since the frame only exists after the download._
 - [x] **P1-03 · Auth and spaces**
   - Google sign-in; on first launch a personal space is created; "Create household" generates an invite link; joining adds the uid to `members`.
   - Security rules deployed and covered by emulator tests.
