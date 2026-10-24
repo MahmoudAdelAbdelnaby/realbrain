@@ -76,6 +76,9 @@ class MainActivity : FlutterActivity() {
                 runOnUiThread { result.error("HTTP_${e.code}", e.message, null) }
             } catch (e: IOException) {
                 runOnUiThread { result.error("BACKEND_UNREACHABLE", e.message, null) }
+            } catch (e: Exception) {
+                // Anything else is reported to Flutter too: an uncaught throw here kills the app.
+                runOnUiThread { result.error("FAILED", e.message ?: e.javaClass.simpleName, null) }
             }
         }
     }

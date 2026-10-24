@@ -40,7 +40,16 @@ object Backend {
 
     private fun token(): String {
         val user = FirebaseAuth.getInstance().currentUser ?: throw NotSignedIn()
-        return Tasks.await(user.getIdToken(false), 30, TimeUnit.SECONDS).token ?: throw NotSignedIn()
+        // A token refresh needs the network: offline it fails like any other request (IOException,
+        // so callers retry or report it) instead of escaping as an ExecutionException.
+        val result = try {
+            Tasks.await(user.getIdToken(false), 30, TimeUnit.SECONDS)
+        } catch (e: java.util.concurrent.ExecutionException) {
+            throw IOException("Could not refresh sign-in: ${e.cause?.message ?: e.message}", e)
+        } catch (e: java.util.concurrent.TimeoutException) {
+            throw IOException("Sign-in refresh timed out", e)
+        }
+        return result.token ?: throw NotSignedIn()
     }
 
     /** POST /v1/saves -> (save_id, upload_url). */
