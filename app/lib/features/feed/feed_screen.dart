@@ -10,6 +10,7 @@ import '../../core/theme/gallery.dart';
 import '../../core/liquid_pill.dart';
 import '../../core/widgets.dart';
 import '../places/places_map.dart';
+import '../reels/reels_screen.dart';
 import '../../core/brain_mark.dart';
 import '../../core/glass.dart';
 import '../../core/liquid.dart';
@@ -185,7 +186,7 @@ class _FeedScreenState extends State<FeedScreen> with RouteAware {
         title: GestureDetector(
           onLongPress: () => Navigator.of(context)
               .push(MaterialPageRoute(builder: (_) => const DesignGallery())),
-          child: const _Wordmark(),
+          child: const Wordmark(),
         ),
         actions: [_AccountMenu(onOpen: _push)],
       ),
@@ -194,7 +195,7 @@ class _FeedScreenState extends State<FeedScreen> with RouteAware {
         final header = <Widget>[
           if (inbox.isNotEmpty)
             _NeedsALook(
-                count: inbox.length, onTap: () => setState(() => _tab = 3)),
+                count: inbox.length, onTap: () => setState(() => _tab = 4)),
           Padding(
             padding:
                 const EdgeInsets.fromLTRB(RbSpace.side, 4, RbSpace.side, 16),
@@ -247,7 +248,7 @@ class _FeedScreenState extends State<FeedScreen> with RouteAware {
                       isNew: _arrived,
                       extra: lane.section == 'places'
                           ? TextButton(
-                              onPressed: () => setState(() => _tab = 2),
+                              onPressed: () => setState(() => _tab = 3),
                               child: const Text('on the map'))
                           : null,
                     ),
@@ -294,6 +295,8 @@ class _FeedScreenState extends State<FeedScreen> with RouteAware {
             },
             child: IndexedStack(index: _tab, children: [
               home,
+              // Full screen under the pill, like the apps the reels came from.
+              ReelsView(saves: saves, items: allItems),
               above(const LibraryScreen()),
               above(ValueListenableBuilder<List<Map<String, dynamic>>>(
                 valueListenable: _allItems,
@@ -318,6 +321,12 @@ class _FeedScreenState extends State<FeedScreen> with RouteAware {
               icon: Icons.home_outlined,
               selectedIcon: Icons.home,
               label: 'Home',
+              badge: 0
+            ),
+            (
+              icon: Icons.slow_motion_video_outlined,
+              selectedIcon: Icons.slow_motion_video,
+              label: 'Reels',
               badge: 0
             ),
             (
@@ -736,21 +745,4 @@ class _NeedsALook extends StatelessWidget {
           ),
         ),
       );
-}
-
-/// The wordmark: the Glow mark and "reelbrain" in the display face (docs/BRAND.md).
-class _Wordmark extends StatelessWidget {
-  const _Wordmark();
-
-  @override
-  Widget build(BuildContext context) =>
-      Row(mainAxisSize: MainAxisSize.min, children: [
-        const BrainMark(size: 28),
-        const SizedBox(width: 10),
-        Text('reelbrain',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontVariations: RbType.weight(700),
-                letterSpacing: -0.6,
-                color: RbColors.of(context).text)),
-      ]);
 }

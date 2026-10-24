@@ -148,3 +148,69 @@ class _MarkPainter extends CustomPainter {
   @override
   bool shouldRepaint(_MarkPainter old) => old.glow != glow;
 }
+
+/// The wordmark (docs/BRAND.md): the Glow mark and "reelbrain" set wide and heavy in Readex Pro,
+/// lit by the safelight: a warm gradient across the whole word and a red glow under it. The mark
+/// breathes for its first two seconds on screen, then rests.
+class Wordmark extends StatefulWidget {
+  const Wordmark({super.key, this.size = 24});
+  final double size;
+
+  @override
+  State<Wordmark> createState() => _WordmarkState();
+}
+
+class _WordmarkState extends State<Wordmark> {
+  bool _waking = true;
+
+  @override
+  void initState() {
+    super.initState();
+    Future<void>.delayed(const Duration(seconds: 2), () {
+      if (mounted) setState(() => _waking = false);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = RbColors.of(context);
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final colors = dark
+        ? const [Color(0xFFFFF4EC), Color(0xFFFFB547), Color(0xFFFF4F3A)]
+        : [c.text, c.brand, c.brand];
+    return Semantics(
+      label: 'Reelbrain',
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        BrainMark(size: widget.size * 1.3, animate: _waking),
+        SizedBox(width: widget.size * 0.4),
+        ExcludeSemantics(
+          child: ShaderMask(
+            blendMode: BlendMode.srcIn,
+            shaderCallback: (r) =>
+                LinearGradient(colors: colors, stops: const [0, 0.6, 1])
+                    .createShader(r),
+            child: Text(
+              'reelbrain',
+              style: TextStyle(
+                fontFamily: RbType.display,
+                fontSize: widget.size,
+                height: 1,
+                letterSpacing: -0.04 * widget.size,
+                // Heavy and wide: the HEXP axis stretches the letters.
+                fontVariations: const [
+                  FontVariation('wght', 800),
+                  FontVariation('HEXP', 70)
+                ],
+                shadows: [
+                  Shadow(
+                      color: c.brand.withValues(alpha: dark ? 0.55 : 0.25),
+                      blurRadius: 18),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ]),
+    );
+  }
+}

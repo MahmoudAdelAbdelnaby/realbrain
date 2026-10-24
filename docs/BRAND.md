@@ -48,3 +48,13 @@ Plex Sans Arabic stay for everything you read.
 - **Predictive back:** the screen shrinks and follows your finger on Android's back swipe.
 - **Develop:** a card that just arrived comes up from a red-lit negative to full colour.
 - **The mark breathes** wherever something is processing.
+
+## Reels view (approved 25 Oct)
+
+A fifth pill destination after Home. Your read saves full screen, swiped up and down; swiping
+sideways steps through the moments Reelbrain extracted (claims with verdicts, steps with timers,
+tools, places, exercises), each over its own frame (the backend now cuts a frame at every moment,
+not only steps and exercises). The moment strip runs full width; tap a tick to jump. "Play
+original" opens the reel in its own app: videos are not kept or re-hosted. Frames drift slowly
+closer while on screen (still with Remove animations on). The wordmark is now Readex 800, wide
+(HEXP 70), in a paper-to-safelight gradient with a red glow; the mark breathes for its first 2 s.

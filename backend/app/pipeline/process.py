@@ -120,16 +120,19 @@ MAX_MOMENTS = 15  # per item; a reel rarely has more steps or exercises
 
 
 def _moment_frames(save: dict, items: list[dict], video: Path, tmp: Path) -> None:
-    """P1-11/P1-13: a frame at each recipe step and workout exercise (cooking mode's "jump to
-    moment" shows it; workouts show the pose)."""
+    """A frame at every extracted moment: recipe steps (cooking mode), exercises (the pose), and
+    claims, tools and places (the Reels view shows each moment over its own frame)."""
+    lists = {"recipe": "steps", "workout": "exercises", "fact_check": "claims", "tools": "items", "places": "items"}
     for item in items:
-        key = {"recipe": "steps", "workout": "exercises"}.get(item["section"])
+        key = lists.get(item["section"])
         for n, moment in enumerate((item["data"].get(key) or [])[:MAX_MOMENTS] if key else []):
             if moment.get("t") is None:
                 continue
             jpg = frames.key_frame(video, moment["t"], tmp / f"m-{item['section']}-{n}.jpg")
             if jpg:
-                moment["frame"] = store.put_frame(save["space_id"], f"{save['save_id']}-{key}-{n}", jpg)
+                # Tools and places both keep their list in "items": name the file by section.
+                name = item["section"] if key == "items" else key
+                moment["frame"] = store.put_frame(save["space_id"], f"{save['save_id']}-{name}-{n}", jpg)
 
 
 def _verify_tools(items: list[dict]) -> None:
