@@ -47,7 +47,7 @@ def key_line(result: ExtractResult, partial: bool = False) -> tuple[str, str]:
     return _cut(title, TITLE_MAX), body
 
 
-def send(save: dict, result: ExtractResult, partial: bool = False) -> int:
+def send(save: dict, result: ExtractResult, partial: bool = False, title: str | None = None) -> int:
     """Notifies the person who saved it; drops tokens FCM says are gone. Never raises."""
     try:
         user = store.doc_get(f"users/{save['created_by']}") or {}
@@ -58,7 +58,8 @@ def send(save: dict, result: ExtractResult, partial: bool = False) -> int:
 
         from app.auth import firebase_app
 
-        title, body = key_line(result, partial)
+        line, body = key_line(result, partial)
+        title = _cut(title, TITLE_MAX) if title else line  # Fact Check: the grounded verdict line
         # users.fcm_tokens holds Firebase installation IDs (FIDs), FCM's current send target.
         msg = messaging.MulticastMessage(
             fids=tokens,

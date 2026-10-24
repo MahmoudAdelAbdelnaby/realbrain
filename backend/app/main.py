@@ -5,7 +5,7 @@ import uuid
 from typing import Annotated
 from urllib.parse import urlparse
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Request, Response
+from fastapi import BackgroundTasks, Depends, FastAPI, Header, HTTPException, Request, Response
 from fastapi.responses import FileResponse
 
 from app import spaces, store, tasks
@@ -160,6 +160,42 @@ def file_under(save_id: str, body: FileUnder, uid: str = Depends(user)) -> dict:
     )
     tasks.enqueue(save_id)
     return {"save_id": save_id}
+
+
+@app.post("/v1/saves/{save_id}/deep-dive", status_code=202)
+def deep_dive(save_id: str, background: BackgroundTasks, uid: str = Depends(user)) -> dict:
+    """P1-08 "Dive deeper": a grounded explainer for the save's Fact Check claims, written into
+    the item when ready (the app listens). Also checks the claims if that failed at save time."""
+    save = owned_save(save_id, uid)
+    item = next((i for i in store.get_items(save) if i.get("section") == "fact_check"), None)
+    if item is None:
+        raise HTTPException(404, "no fact check on this save")
+    background.add_task(_deep_dive, save, item)
+    return {"save_id": save_id}
+
+
+def _deep_dive(save: dict, item: dict) -> None:
+    # ponytail: FastAPI background task; on Cloud Run this belongs on the Tasks queue (CPU after response).
+    from app.pipeline import enrich
+
+    path = f"spaces/{save['space_id']}/saves/{save['save_id']}/items/{_item_id(save, item)}"
+    try:
+        data = dict(item["data"])
+        if not any("verdict" in c for c in data.get("claims", [])):
+            data.update(enrich.check(data["claims"], save.get("language")))
+        data.update(enrich.explain(data["claims"], save.get("language")))
+        data.pop("explain_error", None)
+    except Exception as e:  # noqa: BLE001 - shown to the user instead of an explainer
+        logging.getLogger("reelbrain").warning("save=%s deep dive failed: %s", save["save_id"], e)
+        data = {**item["data"], "explain_error": "Couldn't build the explainer right now. Try again later."}
+    store.doc_update(path, {"data": data})
+
+
+def _item_id(save: dict, item: dict) -> str:
+    if item.get("item_id"):
+        return item["item_id"]
+    sections = [i.get("section") for i in store.get_items(save)]  # items written before item_id existed
+    return f"{sections.index(item['section'])}-{item['section']}"
 
 
 @app.post("/internal/process", dependencies=[Depends(cloud_tasks)])

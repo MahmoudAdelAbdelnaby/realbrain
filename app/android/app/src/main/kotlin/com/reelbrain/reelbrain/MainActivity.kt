@@ -39,6 +39,10 @@ class MainActivity : FlutterActivity() {
                     "api" -> background(result) {
                         Backend.call(call.argument<String>("method")!!, call.argument<String>("path")!!, call.argument<String>("body"))
                     }
+                    "openUrl" -> {
+                        startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(call.argument<String>("url"))))
+                        result.success(null)
+                    }
                     "share" -> {
                         val send = Intent(Intent.ACTION_SEND).setType("text/plain")
                             .putExtra(Intent.EXTRA_TEXT, call.argument<String>("text"))

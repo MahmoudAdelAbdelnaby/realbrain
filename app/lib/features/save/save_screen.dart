@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/native.dart';
+import '../factcheck/fact_check_view.dart';
 import '../feed/feed_screen.dart' show sectionLabels;
 import '../inbox/inbox_screen.dart' show fileUnder;
 
@@ -144,8 +145,14 @@ class SaveDetail extends StatelessWidget {
           Text(sectionLabels[item['section']] ?? '${item['section']}',
               style: t.titleSmall),
           const SizedBox(height: 8),
-          ..._lines(item).map((l) => Padding(
-              padding: const EdgeInsets.only(bottom: 6), child: Text(l))),
+          if (item['section'] == 'fact_check')
+            FactCheckView(
+              saveId: save['save_id'] as String?,
+              data: (item['data'] as Map?)?.cast<String, dynamic>() ?? const {},
+            )
+          else
+            ..._lines(item).map((l) => Padding(
+                padding: const EdgeInsets.only(bottom: 6), child: Text(l))),
         ],
       ],
     );

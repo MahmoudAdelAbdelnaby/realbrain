@@ -1,12 +1,13 @@
 """One save through the pipeline: video -> Extract -> key frame -> Firestore. Idempotent, safe to retry."""
 
 import logging
+import os
 import tempfile
 import time
 from pathlib import Path
 
 from app import notify, store
-from app.pipeline import frames
+from app.pipeline import enrich, frames, tools
 from app.pipeline.extract import Transient, extract
 from app.pipeline.fetch import fallback
 from app.schemas import needs_review
@@ -64,11 +65,15 @@ def process(save_id: str, attempt: int = 0, max_attempts: int = 3) -> str:
                 status = "needs_review" if needs_review(result) else "ready"
             if caption_only:
                 status = "partial"
-            store.put_items(save, [_item(s) for s in result.sections])
+            items = [_item(s) for s in result.sections]
+            _verify_tools(items)
+            verdict = _check_claims(save, items, result.language) if status in ("ready", "partial") else None
+            store.put_items(save, items)
             store.update_save(
                 save,
                 {
                     "status": status,
+                    "verdict": verdict and verdict["overall"],  # feed card, P1-08
                     "step_text": None,
                     "language": result.language,
                     "summary": result.summary,
@@ -81,7 +86,9 @@ def process(save_id: str, attempt: int = 0, max_attempts: int = 3) -> str:
             if status != "needs_review":
                 store.delete_video(save_id)
             if status in ("ready", "partial"):
-                notify.send(save, result, partial=status == "partial")
+                notify.send(
+                    save, result, partial=status == "partial", title=verdict and verdict["notification"]
+                )
             log.info(
                 "save=%s status=%s sections=%s in %.1fs",
                 save_id,
@@ -102,6 +109,30 @@ def process(save_id: str, attempt: int = 0, max_attempts: int = 3) -> str:
             log.exception("save=%s failed", save_id)
             return _fail(save, str(e))
     return status
+
+
+def _verify_tools(items: list[dict]) -> None:
+    """P1-09: check tool links (and GitHub repos) before the save lands."""
+    if os.environ.get("VERIFY_TOOLS", "1") != "1":
+        return
+    for item in items:
+        if item["section"] == "tools" and item["data"].get("items"):
+            item["data"]["items"] = tools.verify(item["data"]["items"])
+
+
+def _check_claims(save: dict, items: list[dict], language: str | None) -> dict | None:
+    """P1-08: ground the Fact Check claims. A failure leaves them unchecked; the save still lands."""
+    fact = next((i for i in items if i["section"] == "fact_check" and i["data"].get("claims")), None)
+    if fact is None:
+        return None
+    store.update_save(save, {"status": "enriching", "step_text": "Checking the claims"})
+    try:
+        fact["data"].update(enrich.check(fact["data"]["claims"], language))
+        return fact["data"]
+    except Exception as e:  # noqa: BLE001 - grounding is a bonus on top of a finished save
+        log.warning("save=%s fact check failed: %s", save["save_id"], e)
+        fact["data"]["check_error"] = str(e)[:200]
+        return None
 
 
 def _item(section) -> dict:

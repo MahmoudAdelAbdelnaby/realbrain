@@ -139,7 +139,7 @@ Two Gemini calls per save at most: one **Extract** call that watches the video a
 }
 ```
 
-**Call 2 — Fact Check grounding** (gemini-2.5-flash + Google Search tool; ⚠ 24 Oct: the API now refuses gemini-2.5-flash for new keys, and AI Studio lists search grounding at 0/day for Gemini 3 and newer, so P1-08 has to pick a new grounding route): input = the claims list; output = per-claim verdict, one-line correction, 2-3 source URLs, plus an overall label and a notification line of at most 60 characters.
+**Call 2 — Fact Check grounding** (gemini-2.5-flash-lite + Google Search tool; changed 24 Oct in P1-08: the API refuses gemini-2.5-flash for new keys and Gemini 3+ grounding is 0/day on the free tier, while 2.5 Flash-Lite grounding works, about 2 s a call). The reply is JSON in text (search can't be combined with JSON mode); sources come from the search citations, or the search queries themselves when there are none: input = the claims list; output = per-claim verdict, one-line correction, 2-3 source URLs, plus an overall label and a notification line of at most 60 characters.
 
 **Prompt rules** (in every prompt file):
 
@@ -166,7 +166,7 @@ The app talks to a small authenticated API; the backend alone writes AI results 
 | POST /v1/saves/{id}/no-video | reason | 202 | Phone couldn't fetch; backend tries the fallback chain |
 | POST /v1/saves/{id}/retry | — | 202 | From Inbox |
 | POST /v1/saves/{id}/section | section | 200 | User correction; logged for prompt tuning (`corrections/{id}`, backend-only). P1-07: Extract re-runs with the section as a hint, on the kept video (`needs_review` saves keep theirs until resolved) or through the fallback chain |
-| POST /v1/items/{id}/deep-dive | — | 202 | Fact Check explainer on demand |
+| POST /v1/saves/{id}/deep-dive | — | 202 | Fact Check explainer on demand (P1-08: per save, one Fact Check item each); written into the item's `explainer` |
 | POST /internal/process | save\_id | 200 | Called by Cloud Tasks only (OIDC-verified) |
 | POST /v1/me | name?, lang?, fcm\_token? | uid, spaces{me, home?} | Added in P1-03: creates `users/{uid}` and the personal space on first call; idempotent. P1-06: `fcm_token` adds this phone's push target (a Firebase installation ID, FCM's current send target) to `fcm_tokens` |
 | POST /v1/spaces/household | name | space\_id, invite\_url | Added in P1-03: one household per user; the creator is the first member |

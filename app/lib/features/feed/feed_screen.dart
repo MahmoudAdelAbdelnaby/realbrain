@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/native.dart';
+import '../factcheck/fact_check_view.dart' show verdictLabels;
 import '../inbox/inbox_screen.dart';
 import '../save/save_screen.dart';
 import '../save/saves_screen.dart';
@@ -308,7 +309,10 @@ class SaveCard extends StatelessWidget {
                         const SizedBox(height: 6),
                         Text(
                             sections
-                                .map((s) => sectionLabels[s] ?? s)
+                                .map((s) => s == 'fact_check' &&
+                                        save['verdict'] != null
+                                    ? 'Fact Check: ${verdictLabels[save['verdict']] ?? save['verdict']}'
+                                    : sectionLabels[s] ?? s)
                                 .join(' · '),
                             style: TextStyle(color: muted, fontSize: 12)),
                       ],
