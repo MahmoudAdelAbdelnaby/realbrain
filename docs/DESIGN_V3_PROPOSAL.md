@@ -1,6 +1,6 @@
 # Design system v3 (liquid): proposal, 25 Oct
 
-Status: **approved 25 Oct**, being built in the 7 steps below. Replaces parts of "Design system (v2)" in
+Status: **approved 25 Oct**, being built in the 5 steps below. Replaces parts of "Design system (v2)" in
 `BUILD_PLAN.md`.
 
 Asked for: a liquid design, organised into sections, with very fluid motion. Built with the
