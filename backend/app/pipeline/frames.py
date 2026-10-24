@@ -22,3 +22,18 @@ def key_frame(video: Path, t: float, out: Path) -> Path | None:
             return key_frame(video, 0, out)
         return None
     return out
+
+
+def duration(video: Path) -> float | None:
+    """Length in seconds (for the moment strip, design v3); None if ffprobe can't read it."""
+    done = subprocess.run(
+        ["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", str(video)],
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    try:
+        return round(float(done.stdout.strip()), 1)
+    except ValueError:
+        return None

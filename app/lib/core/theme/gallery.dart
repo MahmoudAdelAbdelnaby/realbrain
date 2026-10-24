@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../features/factcheck/fact_check_view.dart'
     show VerdictPill, verdictLabels;
 import '../../features/feed/feed_screen.dart' show SaveCard, SkeletonCard;
+import '../glass.dart';
 import '../widgets.dart';
 import 'theme.dart';
 
@@ -76,9 +77,61 @@ class _DesignGalleryState extends State<DesignGallery> {
                 ]),
                 const SizedBox(height: 8),
                 Text(
-                    'Motion ${RbMotion.fast.inMilliseconds} / ${RbMotion.base.inMilliseconds} / '
-                    '${RbMotion.slow.inMilliseconds} ms, ease-out, state changes only',
+                    'Springs: content settles in ${RbMotion.base.inMilliseconds} ms with no bounce, '
+                    'the pill and sheets overshoot a little. Reduced motion: ${RbMotion.fast.inMilliseconds} ms eases.',
                     style: t.bodySmall),
+                _h(t, 'Glass'),
+                // Stand-in for a reel frame: glass only reads over colour.
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(RbSpace.cardRadius),
+                  child: Container(
+                    height: 220,
+                    decoration: const BoxDecoration(
+                      gradient: SweepGradient(colors: [
+                        Color(0xFFE76F51),
+                        Color(0xFFF4A261),
+                        Color(0xFF2A9D8F),
+                        Color(0xFF264653),
+                        Color(0xFFE76F51),
+                      ]),
+                    ),
+                    alignment: Alignment.center,
+                    child: Column(mainAxisSize: MainAxisSize.min, children: [
+                      Glass(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 14),
+                        child: Text('Glass pill on a reel frame',
+                            style: t.labelLarge),
+                      ),
+                      const SizedBox(height: 16),
+                      Glass(
+                        radius: RbSpace.panelRadius,
+                        padding: const EdgeInsets.all(16),
+                        child:
+                            Text('Glass panel, radius 16', style: t.bodyMedium),
+                      ),
+                    ]),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                    Glass.solid(context)
+                        ? 'Solid fallback on (high contrast or reduced motion)'
+                        : 'Live blur',
+                    style: t.bodySmall),
+                const SizedBox(height: 12),
+                Pressable(
+                  onTap: () {},
+                  child: Card(
+                    margin: EdgeInsets.zero,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Text(
+                          'Press and hold: scales to 0.97, springs back',
+                          style: t.bodyMedium),
+                    ),
+                  ),
+                ),
                 _h(t, 'Components'),
                 Wrap(spacing: 8, runSpacing: 8, children: [
                   for (final e in sectionIcons.keys)

@@ -1,7 +1,7 @@
 # Design system v3 (liquid): proposal, 25 Oct
 
-Status: **proposed, waiting for approval.** Replaces parts of "Design system (v2)" in
-`BUILD_PLAN.md`. Nothing is built yet.
+Status: **approved 25 Oct**, being built in the 7 steps below. Replaces parts of "Design system (v2)" in
+`BUILD_PLAN.md`.
 
 Asked for: a liquid design, organised into sections, with very fluid motion. Built with the
 frontend-design and Taste skills.

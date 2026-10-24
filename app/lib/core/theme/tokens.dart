@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/physics.dart';
 
 /// Design system v2 tokens (docs/BUILD_PLAN.md "Design system"). Locked: change the doc first.
 /// One accent (signal blue) on data only; sections have no colours; true neutrals.
@@ -108,20 +109,63 @@ abstract final class RbType {
   static const tabular = [FontFeature.tabularFigures()];
 }
 
-/// 4 pt grid, 16 side margins, 48 dp touch targets; radii chosen once.
+/// 4 pt grid, 16 side margins, 48 dp touch targets; radii 24 / 16 / round (design v3: corners
+/// nest evenly inside 8 px of glass padding).
 abstract final class RbSpace {
   static const unit = 4.0;
   static const side = 16.0;
   static const touch = 48.0;
-  static const cardRadius = 20.0;
-  static const panelRadius = 12.0;
+  static const cardRadius = 24.0;
+  static const panelRadius = 16.0;
   static const pill = 999.0;
+  static const glassPad = 8.0;
 }
 
-/// Motion 150-250 ms, state changes only (toast, a card arriving, a timer tick, a step advancing).
+/// A spring as a Curve over a fixed duration, so implicit animations (AnimatedContainer,
+/// AnimatedSize, AnimatedScale) move on springs. Overshoots past 1 when under-damped: use it on
+/// size, position and scale, never on opacity.
+class SpringCurve extends Curve {
+  const SpringCurve(
+      {this.stiffness = 180, this.dampingRatio = 1, this.settle = 1.0});
+  final double stiffness, dampingRatio;
+
+  /// Seconds of spring time mapped onto the animation's 0..1.
+  final double settle;
+
+  @override
+  double transformInternal(double t) {
+    final sim = SpringSimulation(
+      SpringDescription.withDampingRatio(
+          mass: 1, stiffness: stiffness, ratio: dampingRatio),
+      0,
+      1,
+      0,
+    );
+    return sim.x(t * settle);
+  }
+}
+
+/// Design v3 motion: springs that answer an action; nothing moves on its own. Under reduced motion
+/// everything becomes a 150 ms fade-speed ease (see [RbMotion.of]).
 abstract final class RbMotion {
   static const fast = Duration(milliseconds: 150);
-  static const base = Duration(milliseconds: 200);
-  static const slow = Duration(milliseconds: 250);
-  static const curve = Curves.easeOutCubic;
+  static const base = Duration(milliseconds: 350);
+  static const slow = Duration(milliseconds: 500);
+
+  /// Content: critically damped, no bounce, settles in about 350 ms.
+  static const curve =
+      SpringCurve(stiffness: 180, dampingRatio: 1, settle: 0.6);
+
+  /// The pill and sheets: a small overshoot.
+  static const bouncy =
+      SpringCurve(stiffness: 260, dampingRatio: 0.8, settle: 0.7);
+
+  static bool reduced(BuildContext context) =>
+      MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+
+  /// (duration, curve) for a content move, or a quick ease when reduced motion is on.
+  static (Duration, Curve) of(BuildContext context, {bool bounce = false}) =>
+      reduced(context)
+          ? (fast, Curves.easeOut)
+          : (bounce ? slow : base, bounce ? bouncy : curve);
 }

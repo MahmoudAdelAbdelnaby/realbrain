@@ -83,6 +83,7 @@ def process(save_id: str, attempt: int = 0, max_attempts: int = 3) -> str:
                     "summary": result.summary,
                     "sections": [s.type for s in result.sections],  # feed card chips without reading items
                     "key_frame_url": frame_url,
+                    "duration_s": frames.duration(video) if video is not None else None,  # moment strip
                     "extract_ms": extract_ms,  # spike report (P0-07)
                 },
             )

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:reelbrain/core/glass.dart';
 import 'package:reelbrain/core/theme/gallery.dart';
 import 'package:reelbrain/core/theme/theme.dart';
 import 'package:reelbrain/core/widgets.dart';
@@ -76,5 +77,35 @@ void main() {
     await tester.tap(find.text('Open bottom sheet'));
     await tester.pumpAndSettle();
     expect(find.text('Bottom sheet'), findsOneWidget);
+  });
+
+  test('springs end exactly at 1; the bouncy one overshoots, content does not',
+      () {
+    expect(RbMotion.curve.transform(1), 1);
+    expect(RbMotion.bouncy.transform(1), 1);
+    final content = [
+      for (var i = 1; i < 100; i++) RbMotion.curve.transform(i / 100)
+    ];
+    final bouncy = [
+      for (var i = 1; i < 100; i++) RbMotion.bouncy.transform(i / 100)
+    ];
+    expect(content.every((v) => v <= 1.0001), isTrue);
+    expect(bouncy.any((v) => v > 1.001), isTrue);
+    expect(RbMotion.curve.transform(0.95), closeTo(1, 0.01));
+  });
+
+  testWidgets('glass blurs normally and turns solid under high contrast',
+      (tester) async {
+    Widget app(bool high) => MaterialApp(
+          theme: rbTheme(Brightness.dark),
+          home: MediaQuery(
+            data: MediaQueryData(highContrast: high),
+            child: const Glass(child: Text('pill')),
+          ),
+        );
+    await tester.pumpWidget(app(false));
+    expect(find.byType(BackdropFilter), findsOneWidget);
+    await tester.pumpWidget(app(true));
+    expect(find.byType(BackdropFilter), findsNothing);
   });
 }
