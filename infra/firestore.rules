@@ -44,7 +44,7 @@ service cloud.firestore {
         match /items/{itemId} {
           allow read: if member(spaceId);
           allow update: if member(spaceId) && onlyChanges(['user_state'])
-            && request.resource.data.user_state in [null, 'to_try', 'tried', 'visited', 'cooked', 'done'];
+            && request.resource.data.user_state in [null, 'to_try', 'tried', 'visited', 'cooked', 'done', 'using', 'not_useful'];
         }
       }
 

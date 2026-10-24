@@ -69,6 +69,7 @@ test("members may change only the note on a save", async () => {
 
 test("members may change only user_state on an item, to a known value", async () => {
   await assertSucceeds(updateDoc(doc(as("me"), `${SAVE}/items/0-recipe`), { user_state: "cooked" }));
+  await assertSucceeds(updateDoc(doc(as("me"), `${SAVE}/items/0-recipe`), { user_state: "not_useful" }));
   await assertFails(updateDoc(doc(as("me"), `${SAVE}/items/0-recipe`), { user_state: "eaten" }));
   await assertFails(updateDoc(doc(as("me"), `${SAVE}/items/0-recipe`), { data: { title: "x" } }));
 });

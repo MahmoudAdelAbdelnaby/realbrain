@@ -186,7 +186,7 @@ spaces/{spaceId}/saves/{saveId}     source_url, platform, creator, caption,
                                     language, summary, created_by, created_at
 spaces/{spaceId}/saves/{saveId}/items/{itemId}
                                     section, confidence, data{...typed},
-                                    user_state (to_try|tried|visited|cooked|done)
+                                    user_state (to_try|tried|visited|cooked|done|using|not_useful; the last two added in P1-09 for tools)
 spaces/{spaceId}/lists/{listId}     section, name, item_refs[]
 ```
 

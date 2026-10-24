@@ -8,6 +8,7 @@ import '../../core/native.dart';
 import '../factcheck/fact_check_view.dart' show verdictLabels;
 import '../inbox/inbox_screen.dart';
 import '../save/save_screen.dart';
+import '../section/section_screen.dart';
 import '../save/saves_screen.dart';
 import '../spaces/household_screen.dart';
 
@@ -57,6 +58,7 @@ class _FeedScreenState extends State<FeedScreen> {
   String? _error;
   bool _loaded = false;
   final _inbox = ValueNotifier<List<Map<String, dynamic>>>(const []);
+  final _allItems = ValueNotifier<List<Map<String, dynamic>>>(const []);
 
   @override
   void initState() {
@@ -115,6 +117,7 @@ class _FeedScreenState extends State<FeedScreen> {
       s.cancel();
     }
     _inbox.dispose();
+    _allItems.dispose();
     super.dispose();
   }
 
@@ -133,7 +136,11 @@ class _FeedScreenState extends State<FeedScreen> {
     String spaceLabel(String id) => labelOf[id] == 'home' ? 'Home' : 'Me';
     final inbox = saves.where(inInbox).toList();
     // The Inbox screen listens to this, so it stays live while open.
-    WidgetsBinding.instance.addPostFrameCallback((_) => _inbox.value = inbox);
+    final allItems = [for (final list in _items.values) ...list];
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _inbox.value = inbox;
+      _allItems.value = allItems;
+    });
     return Scaffold(
       appBar: AppBar(
         title: const Text('Reelbrain'),
@@ -169,7 +176,9 @@ class _FeedScreenState extends State<FeedScreen> {
         onRefresh: _refresh,
         child: FeedList(
           saves: saves,
-          counts: toTryCounts([for (final list in _items.values) ...list]),
+          counts: toTryCounts(allItems),
+          onSection: (section) =>
+              _push(SectionScreen(section: section, items: _allItems)),
           spaceLabel: spaceLabel,
           loading: !_loaded,
           error: _error,
@@ -191,6 +200,7 @@ class FeedList extends StatelessWidget {
     required this.spaceLabel,
     this.loading = false,
     this.error,
+    this.onSection,
   });
 
   final List<Map<String, dynamic>> saves;
@@ -198,12 +208,13 @@ class FeedList extends StatelessWidget {
   final String Function(String spaceId) spaceLabel;
   final bool loading;
   final String? error;
+  final void Function(String section)? onSection;
 
   @override
   Widget build(BuildContext context) {
     final children = <Widget>[
       if (error != null) _Note('Could not load your saves. $error'),
-      if (counts.isNotEmpty) _Counters(counts),
+      if (counts.isNotEmpty) _Counters(counts, onSection),
       if (loading) ...[const SkeletonCard(), const SkeletonCard()],
       if (!loading && saves.isEmpty && error == null)
         const _Note(
@@ -222,8 +233,9 @@ class FeedList extends StatelessWidget {
 }
 
 class _Counters extends StatelessWidget {
-  const _Counters(this.counts);
+  const _Counters(this.counts, this.onSection);
   final Map<String, int> counts;
+  final void Function(String section)? onSection;
 
   @override
   Widget build(BuildContext context) {
@@ -236,7 +248,9 @@ class _Counters extends StatelessWidget {
         runSpacing: 8,
         children: [
           for (final e in entries)
-            Chip(label: Text('${sectionLabels[e.key] ?? e.key} ${e.value}')),
+            ActionChip(
+                label: Text('${sectionLabels[e.key] ?? e.key} ${e.value}'),
+                onPressed: onSection == null ? null : () => onSection!(e.key)),
         ],
       ),
     );

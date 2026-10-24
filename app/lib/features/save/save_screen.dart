@@ -151,7 +151,7 @@ class SaveDetail extends StatelessWidget {
               data: (item['data'] as Map?)?.cast<String, dynamic>() ?? const {},
             )
           else
-            ..._lines(item).map((l) => Padding(
+            ...itemLines(item).map((l) => Padding(
                 padding: const EdgeInsets.only(bottom: 6), child: Text(l))),
         ],
       ],
@@ -166,7 +166,7 @@ class SaveDetail extends StatelessWidget {
   }
 
   /// One readable line per extracted thing, with the second it appears in the reel.
-  static List<String> _lines(Map<String, dynamic> item) {
+  static List<String> itemLines(Map<String, dynamic> item) {
     final d = (item['data'] as Map?)?.cast<String, dynamic>() ?? {};
     List<Map<String, dynamic>> list(String k) => [
           for (final x in (d[k] as List?) ?? const [])
