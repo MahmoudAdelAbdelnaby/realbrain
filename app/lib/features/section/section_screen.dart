@@ -10,6 +10,7 @@ import '../recipes/recipe_math.dart';
 import '../recipes/recipe_view.dart';
 import '../feed/feed_screen.dart' show sectionLabels;
 import '../save/save_screen.dart';
+import '../places/places_map.dart';
 import '../places/places_view.dart';
 import '../workouts/workout_view.dart';
 
@@ -52,7 +53,24 @@ class SectionScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(sectionLabels[section] ?? section)),
+      appBar: AppBar(title: Text(sectionLabels[section] ?? section), actions: [
+        if (section == 'places')
+          IconButton(
+            tooltip: 'Map',
+            icon: const Icon(Icons.map_outlined),
+            // Live, so Visited on a map card updates the chip at once.
+            onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+              builder: (_) =>
+                  ValueListenableBuilder<List<Map<String, dynamic>>>(
+                valueListenable: items,
+                builder: (context, all, _) => PlacesMap(items: [
+                  for (final i in all)
+                    if (i['section'] == 'places') i,
+                ]),
+              ),
+            )),
+          ),
+      ]),
       body: ValueListenableBuilder<List<Map<String, dynamic>>>(
         valueListenable: items,
         builder: (context, all, _) => SectionList(

@@ -7,7 +7,7 @@ import time
 from pathlib import Path
 
 from app import notify, search, store
-from app.pipeline import enrich, frames, tools
+from app.pipeline import enrich, frames, geo, tools
 from app.pipeline.extract import Transient, extract
 from app.pipeline.fetch import fallback
 from app.schemas import needs_review
@@ -67,6 +67,7 @@ def process(save_id: str, attempt: int = 0, max_attempts: int = 3) -> str:
                 status = "partial"
             items = [_item(s) for s in result.sections]
             _verify_tools(items)
+            _locate_places(items)
             if video is not None:
                 _moment_frames(save, items, video, Path(tmp))
             verdict = _check_claims(save, items, result.language) if status in ("ready", "partial") else None
@@ -137,6 +138,15 @@ def _verify_tools(items: list[dict]) -> None:
     for item in items:
         if item["section"] == "tools" and item["data"].get("items"):
             item["data"]["items"] = tools.verify(item["data"]["items"])
+
+
+def _locate_places(items: list[dict]) -> None:
+    """P1-12: map pins from OpenStreetMap (no billing)."""
+    if os.environ.get("GEOCODE", "1") != "1":
+        return
+    for item in items:
+        if item["section"] == "places" and item["data"].get("items"):
+            geo.locate(item["data"]["items"])
 
 
 def _check_claims(save: dict, items: list[dict], language: str | None) -> dict | None:
