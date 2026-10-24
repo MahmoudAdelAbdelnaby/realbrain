@@ -7,6 +7,7 @@ import time
 from functools import cache
 from pathlib import Path
 
+from app import usage
 from app.schemas import ExtractResult, gemini_schema
 
 log = logging.getLogger("reelbrain.extract")
@@ -137,6 +138,7 @@ def _with_key(
         )
         for model in MODELS:
             _pace()
+            usage.count_model(model)
             try:
                 response = c.models.generate_content(model=model, contents=parts, config=config)
             except errors.APIError as e:

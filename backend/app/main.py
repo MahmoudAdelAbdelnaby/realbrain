@@ -8,7 +8,7 @@ from urllib.parse import urlparse
 from fastapi import BackgroundTasks, Depends, FastAPI, Header, HTTPException, Request, Response
 from fastapi.responses import FileResponse
 
-from app import spaces, store, tasks
+from app import spaces, store, tasks, usage
 from app.auth import claims, cloud_tasks, user
 from app.pipeline.extract import Transient
 from app.pipeline.process import process
@@ -21,6 +21,7 @@ from app.schemas import (
     Me,
     NoVideo,
     ProcessTask,
+    Settings,
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -75,6 +76,33 @@ def me(body: Me, token: Annotated[dict, Depends(claims)]) -> dict:
     return {"uid": uid, "spaces": u["spaces"]}
 
 
+@app.get("/v1/settings")
+def get_settings(uid: str = Depends(user)) -> dict:
+    """P1-16: your settings, today's saves against the cap, and Gemini use against free limits."""
+    u = spaces.ensure_user(uid)
+    s = u.get("settings") or {}
+    used = u.get("saves_today") or {}
+    from app.pipeline.extract import MODELS, keys
+
+    return {
+        "settings": {"lang": s.get("lang", "system"), "theme": s.get("theme", "system")},
+        "daily_cap": int(s.get("daily_cap") or usage.DEFAULT_CAP),
+        "saves_today": used.get("count", 0) if used.get("date") == usage.today() else 0,
+        "gemini": {"keys": len(keys()), "models": MODELS, "usage_today": usage.model_usage()},
+        "billing": "Spark plan: $0, no billing account"
+        if not store.BUCKET
+        else "Blaze: check the $1 budget alert",
+    }
+
+
+@app.patch("/v1/settings")
+def patch_settings(body: Settings, uid: str = Depends(user)) -> dict:
+    u = spaces.ensure_user(uid)
+    merged = {**(u.get("settings") or {}), **body.model_dump(exclude_none=True)}
+    store.doc_update(f"users/{uid}", {"settings": merged})
+    return {"settings": merged}
+
+
 @app.post("/v1/spaces/household")
 def create_household(body: CreateHousehold, uid: str = Depends(user)) -> dict:
     space_id, url = spaces.create_household(uid, body.name)
@@ -115,13 +143,15 @@ def accept_invite(code: str, uid: str = Depends(user)) -> dict:
 
 @app.post("/v1/saves", response_model=CreatedSave)
 def create_save(body: CreateSave, uid: str = Depends(user)) -> CreatedSave:
+    space_id = spaces.resolve(uid, body.space_id)
+    usage.check_and_count_save(uid)  # P1-16 daily cap (429 past it)
     save_id = uuid.uuid4().hex
     store.create_save(
         save_id,
         {
             "source_url": body.source_url,
             "platform": platform(body.source_url),
-            "space_id": spaces.resolve(uid, body.space_id),
+            "space_id": space_id,
             "note": body.note,
             "caption": body.caption,
             "creator": body.creator,

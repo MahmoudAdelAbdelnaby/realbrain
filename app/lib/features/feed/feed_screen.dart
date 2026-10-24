@@ -7,8 +7,10 @@ import 'package:flutter/material.dart';
 import '../../core/native.dart';
 import '../factcheck/fact_check_view.dart' show verdictLabels;
 import '../inbox/inbox_screen.dart';
+import '../library/library_screen.dart';
 import '../save/save_screen.dart';
 import '../section/section_screen.dart';
+import '../settings/settings_screen.dart';
 import '../save/saves_screen.dart';
 import '../spaces/household_screen.dart';
 
@@ -146,6 +148,11 @@ class _FeedScreenState extends State<FeedScreen> {
         title: const Text('Reelbrain'),
         actions: [
           IconButton(
+            tooltip: 'Search',
+            icon: const Icon(Icons.search),
+            onPressed: () => _push(const LibraryScreen()),
+          ),
+          IconButton(
             tooltip: 'Inbox',
             icon: Badge(
               isLabelVisible: inbox.isNotEmpty,
@@ -166,9 +173,13 @@ class _FeedScreenState extends State<FeedScreen> {
             onPressed: () => _push(const HouseholdScreen()),
           ),
           PopupMenuButton<String>(
-            onSelected: (_) => FirebaseAuth.instance.signOut(),
-            itemBuilder: (_) =>
-                const [PopupMenuItem(value: 'out', child: Text('Sign out'))],
+            onSelected: (v) => v == 'out'
+                ? FirebaseAuth.instance.signOut()
+                : _push(const SettingsScreen()),
+            itemBuilder: (_) => const [
+              PopupMenuItem(value: 'settings', child: Text('Settings')),
+              PopupMenuItem(value: 'out', child: Text('Sign out')),
+            ],
           ),
         ],
       ),

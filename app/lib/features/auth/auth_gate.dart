@@ -9,6 +9,7 @@ import 'package:flutter/services.dart';
 import '../../core/native.dart';
 import '../feed/feed_screen.dart';
 import '../save/save_screen.dart';
+import '../settings/settings_screen.dart';
 import '../spaces/household_screen.dart';
 
 /// Signed out: the sign-in screen. Signed in: make sure the user and personal space exist,
@@ -101,6 +102,19 @@ class _AuthGateState extends State<AuthGate> {
   }
 
   StreamSubscription<Object?>? _config;
+  StreamSubscription<Object?>? _prefs;
+
+  /// users/{uid}.settings -> app language and theme.
+  void _followPrefs(String uid) {
+    _prefs ??=
+        FirebaseFirestore.instance.doc('users/$uid').snapshots().listen((snap) {
+      final s = (snap.data()?['settings'] as Map?) ?? const {};
+      appPrefs.value = (
+        lang: s['lang'] as String? ?? 'system',
+        theme: s['theme'] as String? ?? 'system'
+      );
+    }, onError: (_) {});
+  }
 
   /// The backend publishes its address (it changes with each tunnel start); follow it.
   void _followBackend() {
@@ -123,12 +137,14 @@ class _AuthGateState extends State<AuthGate> {
   @override
   void dispose() {
     _config?.cancel();
+    _prefs?.cancel();
     _tokenRefresh?.cancel();
     super.dispose();
   }
 
   Future<void> _bootstrap(User user) async {
     _followBackend();
+    _followPrefs(user.uid);
     // Wait for the backend's address from Firestore; the listener calls back here.
     if (backendUrl.value == null || _bootstrapped == user.uid) return;
     _bootstrapped = user.uid;

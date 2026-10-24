@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'features/auth/auth_gate.dart';
+import 'features/settings/settings_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,13 +40,19 @@ class ReelbrainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Reelbrain',
-      theme: _theme(Brightness.light),
-      darkTheme: _theme(Brightness.dark),
-      supportedLocales: const [Locale('en'), Locale('ar')],
-      localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      home: home,
+    // Language and theme from Settings (P1-16); "system" follows the phone.
+    return ValueListenableBuilder(
+      valueListenable: appPrefs,
+      builder: (context, prefs, _) => MaterialApp(
+        title: 'Reelbrain',
+        theme: _theme(Brightness.light),
+        darkTheme: _theme(Brightness.dark),
+        themeMode: themeModeOf(prefs.theme),
+        locale: localeOf(prefs.lang),
+        supportedLocales: const [Locale('en'), Locale('ar')],
+        localizationsDelegates: GlobalMaterialLocalizations.delegates,
+        home: home,
+      ),
     );
   }
 }

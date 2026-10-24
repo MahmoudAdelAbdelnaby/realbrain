@@ -176,12 +176,14 @@ The app talks to a small authenticated API; the backend alone writes AI results 
 **Firestore collections**
 
 ```
-users/{uid}                         name, lang, fcm_tokens[], default_space,
+users/{uid}                         name, lang, fcm_tokens[], default_space, settings{lang, theme,
+                                    daily_cap}, saves_today (P1-16),
                                     spaces{me, home} (P1-03: maps the share targets to space ids)
 invites/{code}                      space_id, created_by, expires_at (backend only)
 config/backend                      url, started_at (P1-06: the backend's current address; signed-in users read it)
 spaces/{spaceId}                    name, type: personal|household, members[]
-spaces/{spaceId}/saves/{saveId}     source_url, platform, creator, caption,
+spaces/{spaceId}/saves/{saveId}     source_url, platform, creator, caption, search_text (P1-15:
+                                    normalised summary+transcript+names, searched on the phone),
                                     thumb_url, key_frame_url, status, step_text,
                                     language, summary, created_by, created_at
 spaces/{spaceId}/saves/{saveId}/items/{itemId}
@@ -273,8 +275,9 @@ _24 Oct: P1-01 and P1-02 are deferred by owner decision (the plan was approved, 
 - [x] **P1-06 · Push notifications**
   - FCM message on `ready` with the key result in the text; tapping opens the item; Fact Check notifications carry the verdict line.
   - _24 Oct, on the S22: a TikTok share processed through the tunnel and the phone showed "Tool saved: hairline +1 more" with the summary (the Fact Check verdict line comes with P1-08). Tapping opens the save; also reachable by tapping a feed card. Away from home: `backend/scripts/serve.py` starts a Cloudflare quick tunnel and publishes its address to `config/backend`, and the app follows it._
-- [ ] **P1-07 · Inbox and section correction**
+- [x] **P1-07 · Inbox and section correction**
   - `needs_review`, `partial` and `failed` saves listed with one-tap filing and retry; corrections call `/section`.
+  - _Used on the S22, 24 Oct: "Change section" on the AirPods save re-fetched it (TikWM, video was gone), re-read it with the hint and notified; the correction was logged._
   - _24 Oct: built and tested (backend: re-read with hint, kept video, correction log, retry; app: Inbox with badge, File as chips, Retry, "Wrong section?" on the save screen). Seen live: with both Flash models at 503, 3.5 Flash-Lite filed an AirPods sale ad as Fact Check, which Flash had sent to review; worth watching in P1-17._
 
 **Sections**

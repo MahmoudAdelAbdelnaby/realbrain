@@ -174,3 +174,9 @@ class CreateHousehold(BaseModel):
 class CreateList(BaseModel):
     section: Literal["fact_check", "tools", "recipe", "places", "workout"]
     name: str = Field(min_length=1, max_length=60)
+
+
+class Settings(BaseModel):
+    lang: Literal["system", "en", "ar"] | None = None
+    theme: Literal["system", "light", "dark"] | None = None
+    daily_cap: int | None = Field(None, ge=1, le=100)

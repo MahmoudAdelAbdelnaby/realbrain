@@ -13,6 +13,7 @@ from urllib.parse import quote_plus
 
 from pydantic import BaseModel, Field, ValidationError
 
+from app import usage
 from app.pipeline.extract import TRANSIENT, Transient, _pace, client, keys
 
 log = logging.getLogger("reelbrain.enrich")
@@ -96,6 +97,7 @@ def _grounded(prompt: str):
     for key in keys():
         for model in MODELS:
             _pace()
+            usage.count_model(model)
             try:
                 return client(key).models.generate_content(model=model, contents=prompt, config=config)
             except errors.APIError as e:
