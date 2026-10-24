@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/native.dart';
+import '../../core/theme/tokens.dart';
 
 /// Verdict words (Design system: the verdict is words plus pills, no ring).
 const verdictLabels = {
@@ -15,22 +16,12 @@ const verdictLabels = {
 
 /// Verdict pill colours from the Design system tokens (text on fill), per theme.
 (Color, Color) verdictColors(String verdict, Brightness b) {
-  final dark = b == Brightness.dark;
-  final kind = switch (verdict) {
-    'true' || 'mostly_true' => 0,
-    'mixed' => 1,
-    'false' || 'mostly_false' => 2,
-    _ => 3,
-  };
-  return switch ((kind, dark)) {
-    (0, true) => (const Color(0xFF3FC07A), const Color(0xFF172A1D)),
-    (1, true) => (const Color(0xFFE9B44C), const Color(0xFF2D2516)),
-    (2, true) => (const Color(0xFFE5566F), const Color(0xFF2C1A20)),
-    (0, false) => (const Color(0xFF247B50), const Color(0xFFDCFAE5)),
-    (1, false) => (const Color(0xFF92400E), const Color(0xFFFFFBEB)),
-    (2, false) => (const Color(0xFF831C1E), const Color(0xFFFFEDEA)),
-    (_, true) => (const Color(0xFFB4B4B4), const Color(0xFF222225)),
-    (_, false) => (const Color(0xFF5F6368), const Color(0xFFF0F0EE)),
+  final c = b == Brightness.dark ? RbColors.dark : RbColors.light;
+  return switch (verdict) {
+    'true' || 'mostly_true' => (c.trueFg, c.trueBg),
+    'mixed' => (c.mixedFg, c.mixedBg),
+    'false' || 'mostly_false' => (c.falseFg, c.falseBg),
+    _ => (c.muted, c.raised),
   };
 }
 

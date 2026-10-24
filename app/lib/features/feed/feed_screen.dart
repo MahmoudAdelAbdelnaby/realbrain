@@ -5,6 +5,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/native.dart';
+import '../../core/theme/gallery.dart';
+import '../../core/widgets.dart';
 import '../factcheck/fact_check_view.dart' show verdictLabels;
 import '../inbox/inbox_screen.dart';
 import '../library/library_screen.dart';
@@ -145,7 +147,12 @@ class _FeedScreenState extends State<FeedScreen> {
     });
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Reelbrain'),
+        // Long-press the title for the hidden design gallery (P1-01).
+        title: GestureDetector(
+          onLongPress: () => Navigator.of(context)
+              .push(MaterialPageRoute(builder: (_) => const DesignGallery())),
+          child: const Text('Reelbrain'),
+        ),
         actions: [
           IconButton(
             tooltip: 'Search',
@@ -228,9 +235,10 @@ class FeedList extends StatelessWidget {
       if (counts.isNotEmpty) _Counters(counts, onSection),
       if (loading) ...[const SkeletonCard(), const SkeletonCard()],
       if (!loading && saves.isEmpty && error == null)
-        const _Note(
-            'Nothing saved yet. Share a reel from TikTok, Instagram or YouTube '
-            'to Reelbrain · Me or Reelbrain · Home.'),
+        const EmptyState(
+            title: 'Nothing saved yet',
+            body: 'Share a reel from TikTok, Instagram or YouTube '
+                'to Reelbrain · Me or Reelbrain · Home.'),
       for (final s in saves)
         SaveCard(save: s, space: spaceLabel(s['space_id'] as String? ?? '')),
     ];
@@ -259,9 +267,11 @@ class _Counters extends StatelessWidget {
         runSpacing: 8,
         children: [
           for (final e in entries)
-            ActionChip(
-                label: Text('${sectionLabels[e.key] ?? e.key} ${e.value}'),
-                onPressed: onSection == null ? null : () => onSection!(e.key)),
+            SectionChip(
+                section: e.key,
+                label: sectionLabels[e.key] ?? e.key,
+                count: e.value,
+                onTap: onSection == null ? null : () => onSection!(e.key)),
         ],
       ),
     );

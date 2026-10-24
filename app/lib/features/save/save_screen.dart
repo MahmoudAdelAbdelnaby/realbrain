@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/native.dart';
+import '../../core/widgets.dart';
 import '../factcheck/fact_check_view.dart';
 import '../recipes/recipe_view.dart';
 import '../places/places_view.dart';
@@ -66,31 +67,27 @@ const _processing = {'received', 'uploaded', 'fetching', 'extracting'};
 Future<void> changeSection(
     BuildContext context, Map<String, dynamic> save) async {
   final current = (save['sections'] as List?)?.cast<String>() ?? const [];
-  final section = await showModalBottomSheet<String>(
-    context: context,
-    builder: (context) => SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const ListTile(
-            title: Text('File this under'),
-            subtitle: Text('Reelbrain re-reads the video for that section.'),
-          ),
-          for (final e in sectionLabels.entries)
-            ListTile(
-              title: Text(e.value),
-              trailing:
-                  current.contains(e.key) ? const Icon(Icons.check) : null,
-              onTap: () => Navigator.pop(context, e.key),
-            ),
-          ListTile(
-            title: const Text('None of these'),
-            subtitle: const Text('Keep it as a plain save'),
-            onTap: () => Navigator.pop(context, 'none'),
-          ),
-        ],
+  final section = await showRbSheet<String>(
+    context,
+    title: 'File this under',
+    children: [
+      const ListTile(
+          dense: true,
+          title: Text('Reelbrain re-reads the video for that section.')),
+      for (final e in sectionLabels.entries)
+        ListTile(
+          leading: Icon(sectionIcons[e.key]),
+          title: Text(e.value),
+          trailing: current.contains(e.key) ? const Icon(Icons.check) : null,
+          onTap: () => Navigator.pop(context, e.key),
+        ),
+      ListTile(
+        leading: const Icon(Icons.bookmark_outline),
+        title: const Text('None of these'),
+        subtitle: const Text('Keep it as a plain save'),
+        onTap: () => Navigator.pop(context, 'none'),
       ),
-    ),
+    ],
   );
   if (section != null && context.mounted) {
     await fileUnder(context, save, section);
