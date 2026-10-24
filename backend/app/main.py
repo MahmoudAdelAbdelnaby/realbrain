@@ -1,3 +1,4 @@
+import hashlib
 import logging
 import os
 import time
@@ -143,8 +144,18 @@ def accept_invite(code: str, uid: str = Depends(user)) -> dict:
 @app.post("/v1/saves", response_model=CreatedSave)
 def create_save(body: CreateSave, uid: str = Depends(user)) -> CreatedSave:
     space_id = spaces.resolve(uid, body.space_id)
+    if body.client_id:
+        # Idempotent per share: a retry after a failed upload gets the same save and a fresh
+        # upload URL (the tunnel's address may have changed since).
+        save_id = hashlib.sha256(f"{uid}:{body.client_id}".encode()).hexdigest()[:32]
+        existing = store.get_save(save_id)
+        if existing is not None:
+            return CreatedSave(
+                save_id=save_id, upload_url=store.upload_url(save_id), status=existing.get("status", "received")
+            )
+    else:
+        save_id = uuid.uuid4().hex
     usage.count_save(uid)  # P1-16, shown in Settings
-    save_id = uuid.uuid4().hex
     store.create_save(
         save_id,
         {

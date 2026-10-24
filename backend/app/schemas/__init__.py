@@ -141,11 +141,16 @@ class CreateSave(BaseModel):
     # Optional, from the phone's yt-dlp metadata; fill the save doc's caption/creator fields.
     caption: str | None = Field(None, max_length=5000)
     creator: str | None = Field(None, max_length=200)
+    # The phone's own id for this share. Retries send the same one and get the same save back,
+    # so a failed upload can't leave an orphan behind.
+    client_id: str | None = Field(None, pattern=r"^[A-Za-z0-9-]{8,64}$")
 
 
 class CreatedSave(BaseModel):
     save_id: str
     upload_url: str
+    # "received" means upload now; anything else means this share already went through.
+    status: str = "received"
 
 
 class FileUnder(BaseModel):

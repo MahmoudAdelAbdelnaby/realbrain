@@ -148,11 +148,14 @@ class SaveWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ctx, 
         try {
             Saves.upsert(ctx, id, mapOf("status" to "uploading"))
             val saved = Saves.get(ctx, id)!!
-            val (saveId, uploadUrl) = Backend.createSave(
-                url, save.getString("space"), saved.str("caption") ?: save.str("shared_text"), saved.str("creator"),
+            val (saveId, uploadUrl, fresh) = Backend.createSave(
+                url, save.getString("space"), saved.str("caption") ?: save.str("shared_text"), saved.str("creator"), id,
             )
-            Backend.upload(uploadUrl, file!!)
-            Backend.uploaded(saveId)
+            // A retry after the backend already has the video: nothing left to send.
+            if (fresh) {
+                Backend.upload(uploadUrl, file!!)
+                Backend.uploaded(saveId)
+            }
             file!!.delete()
             Saves.upsert(ctx, id, mapOf("status" to "uploaded", "save_id" to saveId, "path" to null, "error" to null, "error_detail" to null))
             Log.i(ShareActivity.TAG, "uploaded id=$id save=$saveId")
@@ -186,8 +189,8 @@ class SaveWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ctx, 
     private fun sendWithoutVideo(id: String, save: JSONObject, reason: String): Result {
         if (!Backend.configured) return Result.failure()
         return try {
-            val (saveId, _) = Backend.createSave(save.getString("url"), save.getString("space"), save.str("shared_text"), null)
-            Backend.noVideo(saveId, reason)
+            val (saveId, _, fresh) = Backend.createSave(save.getString("url"), save.getString("space"), save.str("shared_text"), null, id)
+            if (fresh) Backend.noVideo(saveId, reason)
             Saves.upsert(ctx, id, mapOf("status" to "sent_without_video", "save_id" to saveId))
             Result.success()
         } catch (e: Rejected) {
