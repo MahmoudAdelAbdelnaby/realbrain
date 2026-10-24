@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'glass.dart';
 import 'theme/tokens.dart';
 
 /// Section icons: one grey outline icon per section, named in words (no section colours).
@@ -101,28 +102,39 @@ class EmptyState extends StatelessWidget {
   }
 }
 
-/// The app's bottom sheet: themed (radius 20, drag handle, the only shadow), safe-area padded,
-/// with an optional title line.
+/// The app's bottom sheet (design v3): a glass panel floating 8 px from the edges, radius 24,
+/// that settles on a spring; safe-area padded, with an optional title line.
 Future<T?> showRbSheet<T>(BuildContext context,
     {String? title, required List<Widget> children}) {
+  final (d, curve) = RbMotion.of(context, bounce: true);
   return showModalBottomSheet<T>(
     context: context,
     isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    elevation: 0,
+    showDragHandle: false,
+    sheetAnimationStyle: AnimationStyle(
+        duration: d, curve: curve, reverseDuration: RbMotion.fast),
     builder: (context) => SafeArea(
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (title != null)
-              Padding(
-                padding:
-                    const EdgeInsets.fromLTRB(RbSpace.side, 0, RbSpace.side, 8),
-                child:
-                    Text(title, style: Theme.of(context).textTheme.titleMedium),
-              ),
-            ...children,
-          ],
+      minimum: const EdgeInsets.all(RbSpace.glassPad),
+      child: Glass(
+        radius: RbSpace.cardRadius,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: 8),
+              if (title != null)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                      RbSpace.side, 8, RbSpace.side, 8),
+                  child: Text(title,
+                      style: Theme.of(context).textTheme.titleMedium),
+                ),
+              ...children,
+            ],
+          ),
         ),
       ),
     ),

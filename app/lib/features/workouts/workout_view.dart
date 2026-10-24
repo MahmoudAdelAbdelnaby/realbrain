@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
+import '../../core/liquid_pill.dart';
 import '../../core/native.dart';
 import '../recipes/cook_timers.dart' show clock;
 import 'workout_plan.dart';
@@ -227,32 +228,43 @@ class _WorkoutModeState extends State<WorkoutMode> {
             if (left == null && p.reps != null)
               Text('reps', style: t.titleMedium),
             const Spacer(),
-            if (next != null) Text('Next: $next', style: t.bodyLarge),
-            const SizedBox(height: 16),
-            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-              if (p.seconds != null)
-                IconButton.filledTonal(
-                  iconSize: 32,
-                  tooltip: _run.paused ? 'Resume' : 'Pause',
-                  onPressed: () => setState(() => _run.paused
-                      ? _run.resume(DateTime.now())
-                      : _run.pause(DateTime.now())),
-                  icon: Icon(_run.paused ? Icons.play_arrow : Icons.pause),
-                )
-              else
-                FilledButton(
-                    onPressed: () => setState(() => _run.done(DateTime.now())),
-                    child: const Text('Done')),
-              const SizedBox(width: 16),
-              IconButton.outlined(
-                iconSize: 32,
-                tooltip: 'Skip',
-                onPressed: () => setState(() => _run.skip(DateTime.now())),
-                icon: const Icon(Icons.skip_next),
-              ),
-            ]),
           ]),
         ),
+      ),
+      // Design v3: the pill becomes the workout's controls.
+      bottomNavigationBar: LiquidPill(
+        replace: Row(mainAxisSize: MainAxisSize.min, children: [
+          if (next != null)
+            Flexible(
+              child: Padding(
+                padding: const EdgeInsetsDirectional.only(start: 12, end: 8),
+                child: Text('Next: $next',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: t.labelLarge),
+              ),
+            ),
+          if (p.seconds != null)
+            IconButton.filledTonal(
+              iconSize: 32,
+              tooltip: _run.paused ? 'Resume' : 'Pause',
+              onPressed: () => setState(() => _run.paused
+                  ? _run.resume(DateTime.now())
+                  : _run.pause(DateTime.now())),
+              icon: Icon(_run.paused ? Icons.play_arrow : Icons.pause),
+            )
+          else
+            FilledButton(
+                onPressed: () => setState(() => _run.done(DateTime.now())),
+                child: const Text('Done')),
+          const SizedBox(width: 8),
+          IconButton.outlined(
+            iconSize: 32,
+            tooltip: 'Skip',
+            onPressed: () => setState(() => _run.skip(DateTime.now())),
+            icon: const Icon(Icons.skip_next),
+          ),
+        ]),
       ),
     );
   }

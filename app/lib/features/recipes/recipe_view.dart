@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
+import '../../core/liquid_pill.dart';
 import '../../core/native.dart';
 import '../../main.dart' show lightTheme;
 import 'cook_timers.dart';
@@ -209,10 +210,13 @@ class _CookingModeState extends State<CookingMode> {
                   },
                 ),
               ),
-              if (active.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                  child: Wrap(spacing: 8, runSpacing: 8, children: [
+            ]),
+          ),
+          // Design v3: running timers ride in the pill, pinned while you swipe steps.
+          bottomNavigationBar: active.isEmpty
+              ? null
+              : LiquidPill(
+                  replace: Wrap(spacing: 8, runSpacing: 8, children: [
                     for (final (step, left, paused) in active)
                       InputChip(
                         avatar: Icon(paused ? Icons.play_arrow : Icons.pause,
@@ -228,8 +232,6 @@ class _CookingModeState extends State<CookingMode> {
                       ),
                   ]),
                 ),
-            ]),
-          ),
         );
       }),
     );

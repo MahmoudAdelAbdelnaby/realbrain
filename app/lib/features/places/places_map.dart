@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../core/glass.dart';
 import '../../core/theme/tokens.dart';
 import '../factcheck/fact_check_view.dart' show openUrl;
 import '../section/section_screen.dart' show setItemState;
@@ -141,45 +142,50 @@ class _PlaceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = pin.place;
     final t = Theme.of(context).textTheme;
-    final muted = RbColors.of(context).muted;
+    // Text on glass uses the full text colour (design v3).
+    final ink = RbColors.of(context).text;
     final visited = pin.item['user_state'] == 'visited';
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 6),
-      elevation: 4, // floats over the map
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 8, 4),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('${p['name']}',
-              style: t.titleMedium,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis),
-          Text(
-              [
-                if ((p['geo'] as Map)['matched'] == 'area') 'Area only',
-                p['area'],
-                p['city']
-              ].whereType<String>().join(' · '),
-              style: t.bodySmall),
-          if (p['why_go'] != null)
-            Text('${p['why_go']}',
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(color: muted)),
-          const Spacer(),
-          Row(children: [
-            FilterChip(
-              label: const Text('Visited'),
-              selected: visited,
-              onSelected: pin.item['item_id'] == null
-                  ? null
-                  : (v) => setItemState(pin.item, v ? 'visited' : 'to_try'),
-            ),
+    // ponytail: up to 2 cards plus the pill blur at once here; fine on the S22, go solid if it drops frames.
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 6),
+      child: Glass(
+        radius: RbSpace.cardRadius,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 8, 4),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('${p['name']}',
+                style: t.titleMedium,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis),
+            Text(
+                [
+                  if ((p['geo'] as Map)['matched'] == 'area') 'Area only',
+                  p['area'],
+                  p['city']
+                ].whereType<String>().join(' · '),
+                style: t.bodySmall?.copyWith(color: ink)),
+            if (p['why_go'] != null)
+              Text('${p['why_go']}',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: ink)),
             const Spacer(),
-            TextButton(
-                onPressed: () => openUrl(context, mapsUrl(p)),
-                child: const Text('Open in Maps')),
+            Row(children: [
+              FilterChip(
+                label: const Text('Visited'),
+                selected: visited,
+                onSelected: pin.item['item_id'] == null
+                    ? null
+                    : (v) => setItemState(pin.item, v ? 'visited' : 'to_try'),
+              ),
+              const Spacer(),
+              TextButton(
+                  onPressed: () => openUrl(context, mapsUrl(p)),
+                  child: const Text('Open in Maps')),
+            ]),
           ]),
-        ]),
+        ),
       ),
     );
   }
