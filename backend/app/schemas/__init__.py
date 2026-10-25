@@ -122,6 +122,11 @@ class ExtractResult(BaseModel):
     effort_min: int | None = Field(None, ge=0, description="Minutes it takes to try, cook, do or use it")
     difficulty: Literal["easy", "medium", "hard"] | None = None
     impact: Literal["low", "medium", "high"] | None = Field(None, description="How much it could change the viewer's day or work")
+    # Design v4 step 5 (Threads): what connects this save to others, across sections.
+    topics: list[str] = Field(
+        default_factory=list,
+        description="2-4 short topics in English, lowercase, whatever the video's language, e.g. meal prep, ai agents, cairo cafes",
+    )
 
 
 REVIEW_BELOW = 0.6

@@ -98,6 +98,7 @@ def process(save_id: str, attempt: int = 0, max_attempts: int = 3) -> str:
                     "effort_min": result.effort_min,
                     "difficulty": result.difficulty,
                     "impact": result.impact,
+                    "topics": [t.strip().lower() for t in result.topics if t.strip()][:4],  # Threads
                     "extract_ms": extract_ms,  # spike report (P0-07)
                 },
             )

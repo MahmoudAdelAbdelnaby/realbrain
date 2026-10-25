@@ -58,3 +58,10 @@ def test_memory_card_fields_are_optional_and_checked():
     assert (r.good_for, r.effort_min, r.difficulty, r.impact) == ("Quick weeknight dinner", 35, "easy", "high")
     with pytest.raises(ValidationError):
         ExtractResult.model_validate({**data, "difficulty": "brutal"})
+
+
+def test_topics_are_optional():
+    data = json.loads(SAMPLE)
+    assert ExtractResult.model_validate(data).topics == []
+    # A fifth topic must not fail the whole extraction; the save keeps the first four.
+    assert len(ExtractResult.model_validate({**data, "topics": list("abcde")}).topics) == 5

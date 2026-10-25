@@ -147,7 +147,8 @@ Two Gemini calls per save at most: one **Extract** call that watches the video a
   "good_for": "Quick weeknight dinner",
   "effort_min": 35,
   "difficulty": "easy",
-  "impact": "medium"
+  "impact": "medium",
+  "topics": ["egyptian food", "meal prep"]
 }
 ```
 
@@ -155,6 +156,10 @@ The last four (design v4 §5.1, added 25 Oct) are optional and describe the save
 `good_for` is one line of at most 60 characters in the video's language, shown as "Why you saved
 this" until the user writes their own; `effort_min` is the minutes it takes to try or use;
 `difficulty` is easy, medium or hard; `impact` is low, medium or high.
+
+`topics` (design v4 step 5, added 25 Oct) are 2-4 short topics for the save as a whole, in
+English and lowercase whatever the video's language, so Threads can connect memories across
+sections (a recipe and a workout both about "protein"). Optional; older saves have none.
 
 The `ideas` section (design v4 §5.4, added 25 Oct) holds a thought worth keeping: a short `title`,
 the `idea` in a sentence or two, and 1-3 concrete `next_steps`. It is offered for typed ideas and for

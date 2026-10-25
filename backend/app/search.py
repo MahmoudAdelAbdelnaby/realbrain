@@ -20,7 +20,7 @@ def normalise(text: str) -> str:
 def search_text(save: dict, result: ExtractResult | None, items: list[dict]) -> str:
     parts = [save.get("caption"), save.get("creator"), save.get("source_url")]
     if result:
-        parts += [result.summary, result.summary_en]
+        parts += [result.summary, result.summary_en, *result.topics]
         parts += [line.text for line in result.transcript] + [line.text for line in result.on_screen_text]
     for item in items:
         d = item.get("data", {})

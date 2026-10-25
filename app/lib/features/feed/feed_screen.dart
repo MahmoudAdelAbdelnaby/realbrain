@@ -25,6 +25,7 @@ import '../save/saves_screen.dart';
 import '../section/section_screen.dart';
 import '../settings/settings_screen.dart';
 import '../spaces/household_screen.dart';
+import '../threads/threads.dart';
 import 'lanes.dart';
 
 /// Section ids from the AI contract, named in words.
@@ -188,7 +189,10 @@ class _FeedScreenState extends State<FeedScreen> {
           plan: recall,
           padding: pad,
           onSection: (s) => _push(SectionScreen(section: s, items: _allItems))),
-      _threads(context, allItems, pad),
+      ThreadsView(
+          model: threadsOf(allItems, saves),
+          padding: pad,
+          onSection: (s) => _push(SectionScreen(section: s, items: _allItems))),
     ];
     return PopScope(
       canPop: _tab == 0,
@@ -431,72 +435,6 @@ class _FeedScreenState extends State<FeedScreen> {
       ),
       Expanded(child: IndexedStack(index: _memView, children: views)),
     ]);
-  }
-
-  /// Threads: your interests, each with its hue and count. The lite version: the constellation
-  /// comes with design v4 step 5.
-  Widget _threads(BuildContext context, List<Map<String, dynamic>> allItems,
-      EdgeInsets pad) {
-    final t = Theme.of(context).textTheme;
-    final c = RbColors.of(context);
-    final counts = <String, int>{};
-    for (final i in allItems) {
-      final s = i['section'] as String?;
-      if (sectionLabels.containsKey(s)) counts[s!] = (counts[s] ?? 0) + 1;
-    }
-    final entries = counts.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
-    return ListView(
-      padding: pad.add(const EdgeInsets.symmetric(horizontal: RbSpace.side)),
-      children: [
-        Text('Threads', style: t.headlineMedium),
-        const SizedBox(height: 6),
-        Text('Your interests, connected.',
-            style: t.bodyMedium?.copyWith(color: c.muted)),
-        const SizedBox(height: 20),
-        if (entries.isEmpty)
-          const EmptyState(
-              icon: Icons.hub_outlined,
-              title: 'No threads yet',
-              body: 'Your interests show up here as you save.'),
-        for (final e in entries)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: Pressable(
-              onTap: () =>
-                  _push(SectionScreen(section: e.key, items: _allItems)),
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: c.surface,
-                  borderRadius: BorderRadius.circular(RbSpace.cardRadius),
-                  border: Border.all(color: c.line),
-                ),
-                child: Row(children: [
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: c.section(e.key).withValues(alpha: 0.18),
-                      border: Border.all(color: c.section(e.key)),
-                    ),
-                    child: Icon(sectionIcons[e.key],
-                        size: 18, color: c.section(e.key)),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                      child: Text(sectionLabels[e.key]!, style: t.titleMedium)),
-                  Text('${e.value}',
-                      style: t.titleMedium?.copyWith(color: c.muted)),
-                  const SizedBox(width: 4),
-                  Icon(Icons.chevron_right, color: c.faint),
-                ]),
-              ),
-            ),
-          ),
-      ],
-    );
   }
 
   /// Room the tab bar takes at the bottom of each tab.
