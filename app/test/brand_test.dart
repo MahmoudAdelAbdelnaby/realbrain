@@ -1,81 +1,95 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:reelbrain/core/brain_mark.dart';
-import 'package:reelbrain/core/liquid.dart';
+import 'package:reelbrain/core/surface.dart';
 import 'package:reelbrain/core/theme/theme.dart';
-import 'package:reelbrain/features/feed/lanes.dart';
 
 void main() {
-  test('every section has its own hue in both themes, distinct from each other',
+  const sections = [
+    'fact_check',
+    'tools',
+    'recipe',
+    'places',
+    'workout',
+    'learning',
+    'ideas'
+  ];
+
+  test('every interest has its own hue in both themes, distinct from each other',
       () {
     for (final c in [RbColors.dark, RbColors.light]) {
-      final hues = [
-        for (final s in ['fact_check', 'tools', 'recipe', 'places', 'workout'])
-          c.section(s)
-      ];
-      expect(hues.toSet(), hasLength(5));
+      final hues = [for (final s in sections) c.section(s)];
+      expect(hues.toSet(), hasLength(sections.length));
       expect(c.section('unknown'), c.accent);
     }
   });
 
-  test('the brand fill keeps its label readable', () {
+  test('hues stay readable as text on cards (chip labels)', () {
     for (final c in [RbColors.dark, RbColors.light]) {
-      expect(
-          contrast(c.primaryLabel, c.primaryFill), greaterThanOrEqualTo(4.5));
+      for (final s in sections) {
+        expect(contrast(c.section(s), c.surface), greaterThanOrEqualTo(4.5),
+            reason: '$s in ${c == RbColors.dark ? 'dark' : 'light'}');
+      }
     }
   });
 
-  test('develop goes from a negative to the picture unchanged', () {
-    expect(
-        developFilter(1),
-        const ColorFilter.matrix(<double>[
-          1,
-          0,
-          0,
-          0,
-          0,
-          0,
-          1,
-          0,
-          0,
-          0,
-          0,
-          0,
-          1,
-          0,
-          0,
-          0,
-          0,
-          0,
-          1,
-          0
-        ]));
-    expect(developFilter(0), isNot(developFilter(1)));
+  test('pill and action labels stay readable on both gradient ends', () {
+    for (final c in [RbColors.dark, RbColors.light]) {
+      for (final fill in [c.pill.$1, c.pill.$2, c.primaryFill]) {
+        expect(contrast(c.primaryLabel, fill), greaterThanOrEqualTo(4.5));
+      }
+    }
   });
 
-  testWidgets('the mark paints still and breathing', (tester) async {
+  test('the mesh is one connected drawing: every edge joins known points', () {
+    const o = BrainMesh.outline, i = BrainMesh.inner;
+    for (final (a, b) in BrainMesh.spokes) {
+      expect(a, lessThan(o.length));
+      expect(b, lessThan(i.length));
+    }
+    for (final (a, b) in [...BrainMesh.mesh, ...BrainMesh.simple]) {
+      expect(a, lessThan(i.length));
+      expect(b, lessThan(i.length));
+    }
+    // Every inner point is reached by some line.
+    final touched = {
+      for (final (_, b) in BrainMesh.spokes) b,
+      for (final (a, b) in BrainMesh.mesh) ...[a, b],
+    };
+    expect(touched, hasLength(i.length));
+  });
+
+  testWidgets('the mark paints full, simplified and working', (tester) async {
     await tester.pumpWidget(MaterialApp(
       theme: rbTheme(Brightness.dark),
-      home: const Row(
-          children: [BrainMark(), BrainMark(animate: true, size: 48)]),
+      home: const Haze(
+        child: Row(children: [
+          BrainMark(size: 120),
+          BrainMark(),
+          BrainMark(animate: true, size: 48),
+        ]),
+      ),
     ));
     await tester.pump(const Duration(milliseconds: 700));
+    expect(tester.takeException(), isNull);
     expect(find.bySemanticsLabel('Working'), findsOneWidget);
-    expect(find.bySemanticsLabel('Reelbrain'), findsOneWidget);
+    expect(find.bySemanticsLabel('Realbrain'), findsNWidgets(2));
   });
 
-  testWidgets('the liquid shows the plain ground until its shader is ready',
+  testWidgets('pill buttons fire, and a disabled one does not',
       (tester) async {
-    final liquid = LiquidController();
+    var taps = 0;
     await tester.pumpWidget(MaterialApp(
       theme: rbTheme(Brightness.dark),
-      home: LiquidBackground(controller: liquid),
+      home: Column(children: [
+        PillButton(label: 'Cook now', onPressed: () => taps++),
+        PillButton(label: 'Start cooking', action: true, onPressed: () => taps++),
+        const PillButton(label: 'Off', onPressed: null),
+      ]),
     ));
-    liquid
-      ..scrolled(40)
-      ..wave()
-      ..setHeat(true);
-    await tester.pump(const Duration(milliseconds: 100));
-    expect(tester.takeException(), isNull);
+    await tester.tap(find.text('Cook now'));
+    await tester.tap(find.text('Start cooking'));
+    await tester.tap(find.text('Off'));
+    expect(taps, 2);
   });
 }

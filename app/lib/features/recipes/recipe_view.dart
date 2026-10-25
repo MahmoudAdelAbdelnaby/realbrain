@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
-import '../../core/liquid_pill.dart';
+import '../../core/nav_bar.dart';
 import '../../core/native.dart';
 import '../../main.dart' show lightTheme;
 import 'cook_timers.dart';
@@ -212,10 +212,10 @@ class _CookingModeState extends State<CookingMode> {
               ),
             ]),
           ),
-          // Design v3: running timers ride in the pill, pinned while you swipe steps.
+          // Running timers float above the steps, pinned while you swipe.
           bottomNavigationBar: active.isEmpty
               ? null
-              : LiquidPill(
+              : NavBar(
                   replace: Wrap(spacing: 8, runSpacing: 8, children: [
                     for (final (step, left, paused) in active)
                       InputChip(

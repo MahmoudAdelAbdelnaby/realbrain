@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'glass.dart';
+import 'surface.dart';
 import 'theme/tokens.dart';
 
 /// Section icons: one grey outline icon per section, named in words (no section colours).
@@ -102,7 +102,7 @@ class EmptyState extends StatelessWidget {
   }
 }
 
-/// The app's bottom sheet (design v3): a glass panel floating 8 px from the edges, radius 24,
+/// The app's bottom sheet: a solid panel floating 8 px from the edges, radius 20,
 /// that settles on a spring; safe-area padded, with an optional title line.
 Future<T?> showRbSheet<T>(BuildContext context,
     {String? title, required List<Widget> children}) {
@@ -116,8 +116,8 @@ Future<T?> showRbSheet<T>(BuildContext context,
     sheetAnimationStyle: AnimationStyle(
         duration: d, curve: curve, reverseDuration: RbMotion.fast),
     builder: (context) => SafeArea(
-      minimum: const EdgeInsets.all(RbSpace.glassPad),
-      child: Glass(
+      minimum: const EdgeInsets.all(8),
+      child: Panel(
         radius: RbSpace.cardRadius,
         child: SingleChildScrollView(
           child: Column(

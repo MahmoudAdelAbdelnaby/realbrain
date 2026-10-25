@@ -1,18 +1,64 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import 'theme/tokens.dart';
 
-/// The Glow mark (docs/BRAND.md): a pale brain shining seven rays on a safelight glow. The same
-/// drawing as the launcher icon (android res/drawable/ic_launcher_*). With [animate], the rays
-/// breathe: used wherever something is processing.
+/// The polygonal brain (docs/DESIGN_V4_PROPOSAL.md §3): a side-view brain drawn as a low-poly
+/// mesh, on a 100 × 100 grid. The launcher icon and splash (android res/drawable) are drawn from
+/// the same points by tool/brain_mesh.py; change both together.
+abstract final class BrainMesh {
+  /// The outline, clockwise from the front of the brain.
+  static const outline = [
+    Offset(14, 52), Offset(12, 40), Offset(18, 29), Offset(28, 21), //
+    Offset(41, 16), Offset(55, 15), Offset(68, 18), Offset(79, 25),
+    Offset(87, 35), Offset(89, 47), Offset(85, 58), Offset(76, 64),
+    Offset(68, 72), Offset(60, 80), Offset(54, 70), Offset(44, 66),
+    Offset(32, 64), Offset(22, 60),
+  ];
+
+  static const inner = [
+    Offset(25, 42), Offset(36, 32), Offset(50, 27), Offset(63, 28), //
+    Offset(75, 36), Offset(40, 47), Offset(55, 41), Offset(68, 48),
+    Offset(80, 47), Offset(30, 54), Offset(47, 57), Offset(62, 58),
+    Offset(74, 56),
+  ];
+
+  /// Outline point to inner point.
+  static const spokes = [
+    (1, 0), (0, 0), (2, 0), (2, 1), (3, 1), (4, 1), (4, 2), (5, 2), //
+    (5, 3), (6, 3), (7, 3), (7, 4), (8, 4), (9, 8), (8, 8), (10, 8),
+    (10, 12), (11, 12), (12, 11), (12, 12), (13, 11), (14, 11), (14, 10),
+    (15, 10), (16, 9), (16, 10), (17, 9), (0, 9),
+  ];
+
+  /// Inner point to inner point.
+  static const mesh = [
+    (0, 1), (1, 2), (2, 3), (3, 4), (4, 8), (0, 5), (1, 5), (2, 5), //
+    (2, 6), (3, 6), (3, 7), (4, 7), (6, 5), (6, 7), (7, 8), (7, 12),
+    (8, 12), (0, 9), (5, 9), (5, 10), (9, 10), (6, 10), (6, 11),
+    (10, 11), (7, 11), (11, 12),
+  ];
+
+  /// The larger nodes of the full mesh (inner indexes).
+  static const big = [2, 5, 7, 11, 9];
+
+  /// Small sizes: the outline, these inner nodes and the lines between them.
+  static const simpleNodes = [1, 3, 5, 7, 9, 11];
+  static const simple = [
+    (1, 3), (1, 5), (3, 7), (5, 7), (5, 9), (5, 11), (7, 11), (9, 11), //
+  ];
+}
+
+/// The mark. Below 80 px it draws the simplified mesh so it stays sharp (§3). With [animate] a
+/// light runs through the nodes: used wherever something is processing.
 class BrainMark extends StatefulWidget {
-  const BrainMark(
-      {super.key, this.size = 32, this.animate = false, this.glow = true});
+  const BrainMark({super.key, this.size = 32, this.animate = false, this.color});
   final double size;
   final bool animate;
 
-  /// The red glow disc behind the brain; off for the bare mark on a coloured ground.
-  final bool glow;
+  /// Defaults to the text colour.
+  final Color? color;
 
   @override
   State<BrainMark> createState() => _BrainMarkState();
@@ -21,7 +67,7 @@ class BrainMark extends StatefulWidget {
 class _BrainMarkState extends State<BrainMark>
     with SingleTickerProviderStateMixin {
   late final AnimationController _c = AnimationController(
-      vsync: this, duration: const Duration(milliseconds: 1400));
+      vsync: this, duration: const Duration(milliseconds: 1600));
 
   @override
   void didChangeDependencies() {
@@ -37,8 +83,8 @@ class _BrainMarkState extends State<BrainMark>
 
   void _sync() {
     final run = widget.animate && !RbMotion.reduced(context);
-    if (run && !_c.isAnimating) _c.repeat(reverse: true);
-    if (!run) _c.value = 1; // still: rays at full length
+    if (run && !_c.isAnimating) _c.repeat();
+    if (!run) _c.stop();
   }
 
   @override
@@ -49,168 +95,97 @@ class _BrainMarkState extends State<BrainMark>
 
   @override
   Widget build(BuildContext context) => Semantics(
-        label: widget.animate ? 'Working' : 'Reelbrain',
+        label: widget.animate ? 'Working' : 'Realbrain',
         child: SizedBox.square(
           dimension: widget.size,
-          child: CustomPaint(painter: _MarkPainter(_c, widget.glow)),
+          child: CustomPaint(
+              painter: _MeshPainter(
+                  _c,
+                  widget.color ?? RbColors.of(context).text,
+                  widget.animate,
+                  full: widget.size >= 80)),
         ),
       );
 }
 
-class _MarkPainter extends CustomPainter {
-  _MarkPainter(this.t, this.glow) : super(repaint: t);
+class _MeshPainter extends CustomPainter {
+  _MeshPainter(this.t, this.color, this.animate, {required this.full})
+      : super(repaint: t);
   final Animation<double> t;
-  final bool glow;
-
-  static const _paper = Color(0xFFFFF4EC);
-  static const _red = Color(0xFFFF4F3A);
-  static const _lobes = [
-    (42.0, 44.0, 15.0),
-    (57.0, 38.0, 16.0),
-    (68.0, 51.0, 13.0),
-    (55.0, 60.0, 15.0),
-    (39.0, 59.0, 12.0),
-    (64.0, 64.0, 10.0),
-  ];
-  static const _ends = [
-    Offset(50, 6),
-    Offset(88, 18),
-    Offset(95, 52),
-    Offset(86, 86),
-    Offset(12, 86),
-    Offset(6, 50),
-    Offset(12, 16),
-  ];
+  final Color color;
+  final bool animate, full;
 
   @override
   void paint(Canvas canvas, Size size) {
-    canvas.scale(size.width / 100);
-    const centre = Offset(50, 50);
-    if (glow) {
-      canvas.drawCircle(
-        centre,
-        50,
-        Paint()
-          ..shader = const RadialGradient(
-            colors: [Color(0xFFFFB547), _red, Color(0xFF3A0D0B)],
-            stops: [0, 0.45, 1],
-          ).createShader(Rect.fromCircle(center: centre, radius: 50)),
-      );
-    }
-    // Rays: grow and fade with the breath.
-    final v = Curves.easeInOut.transform(t.value);
-    final ray = Paint()
-      ..color = _paper.withValues(alpha: 0.55 + 0.4 * v)
-      ..strokeWidth = 3
-      ..strokeCap = StrokeCap.round;
-    for (final e in _ends) {
-      final len = 0.7 + 0.3 * v;
-      canvas.drawLine(centre, centre + (e - centre) * len, ray);
-    }
-    // Brain: the lobes swell a little on the in-breath.
-    canvas.save();
-    canvas.translate(53, 51);
-    canvas.scale(0.96 + 0.04 * v);
-    canvas.translate(-53, -51);
-    final fill = Paint()..color = _paper;
-    for (final (x, y, r) in _lobes) {
-      canvas.drawCircle(Offset(x, y), r, fill);
-    }
-    final fold = Paint()
-      ..color = _red
+    final px = size.width / 100; // one grid unit in pixels
+    canvas.scale(px);
+    canvas.translate(0, 2.5); // the brain spans y 15..80: centre it
+    const o = BrainMesh.outline, i = BrainMesh.inner;
+    final lineW = (full ? math.max(0.8, size.width / 110) : math.max(1.5, size.width * 0.045)) / px;
+    final line = Paint()
+      ..color = color
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.6
-      ..strokeCap = StrokeCap.round;
+      ..strokeWidth = lineW
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    final edges = Path()..addPolygon(o, true);
+    if (full) {
+      for (final (a, b) in BrainMesh.spokes) {
+        edges
+          ..moveTo(o[a].dx, o[a].dy)
+          ..lineTo(i[b].dx, i[b].dy);
+      }
+    }
+    for (final (a, b) in full ? BrainMesh.mesh : BrainMesh.simple) {
+      edges
+        ..moveTo(i[a].dx, i[a].dy)
+        ..lineTo(i[b].dx, i[b].dy);
+    }
     canvas.drawPath(
-        Path()
-          ..moveTo(54, 25)
-          ..cubicTo(49, 36, 58, 44, 52, 54)
-          ..cubicTo(48, 62, 56, 68, 54, 74),
-        fold);
-    canvas.drawPath(
-        Path()
-          ..moveTo(38, 44)
-          ..cubicTo(43, 42, 46, 47, 44, 51),
-        fold);
-    canvas.drawPath(
-        Path()
-          ..moveTo(63, 42)
-          ..cubicTo(67, 44, 66, 49, 70, 50),
-        fold);
-    canvas.drawPath(
-        Path()
-          ..moveTo(60, 62)
-          ..cubicTo(63, 58, 67, 60, 68, 57),
-        fold);
-    canvas.restore();
+        edges, full ? (line..color = color.withValues(alpha: 0.85)) : line);
+    // Nodes; while animating a light travels through them in turn.
+    final nodes = full ? [...o, ...i] : [for (final k in BrainMesh.simpleNodes) i[k]];
+    final bigs = full ? {for (final k in BrainMesh.big) i[k]} : nodes.toSet();
+    final r = (full ? size.width * 0.012 : size.width * 0.05) / px;
+    final rBig = (full ? size.width * 0.022 : size.width * 0.05) / px;
+    final dot = Paint();
+    for (final (n, p) in nodes.indexed) {
+      var alpha = 1.0;
+      if (animate) {
+        final d = (t.value - n / nodes.length).abs();
+        alpha = 0.35 + 0.65 * math.max(0, 1 - math.min(d, 1 - d) * 5);
+      }
+      canvas.drawCircle(p, bigs.contains(p) ? rBig : r,
+          dot..color = color.withValues(alpha: alpha));
+    }
   }
 
   @override
-  bool shouldRepaint(_MarkPainter old) => old.glow != glow;
+  bool shouldRepaint(_MeshPainter old) =>
+      old.color != color || old.full != full || old.animate != animate;
 }
 
-/// The wordmark (docs/BRAND.md): the Glow mark and "reelbrain" set wide and heavy in Readex Pro,
-/// lit by the safelight: a warm gradient across the whole word and a red glow under it. The mark
-/// breathes for its first two seconds on screen, then rests.
-class Wordmark extends StatefulWidget {
-  const Wordmark({super.key, this.size = 24});
+/// The wordmark: the mark and "Realbrain" in Inter Bold, tight, in the text colour.
+class Wordmark extends StatelessWidget {
+  const Wordmark({super.key, this.size = 22});
   final double size;
 
   @override
-  State<Wordmark> createState() => _WordmarkState();
-}
-
-class _WordmarkState extends State<Wordmark> {
-  bool _waking = true;
-
-  @override
-  void initState() {
-    super.initState();
-    Future<void>.delayed(const Duration(seconds: 2), () {
-      if (mounted) setState(() => _waking = false);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final c = RbColors.of(context);
-    final dark = Theme.of(context).brightness == Brightness.dark;
-    final colors = dark
-        ? const [Color(0xFFFFF4EC), Color(0xFFFFB547), Color(0xFFFF4F3A)]
-        : [c.text, c.brand, c.brand];
-    return Semantics(
-      label: 'Reelbrain',
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        BrainMark(size: widget.size * 1.3, animate: _waking),
-        SizedBox(width: widget.size * 0.4),
-        ExcludeSemantics(
-          child: ShaderMask(
-            blendMode: BlendMode.srcIn,
-            shaderCallback: (r) =>
-                LinearGradient(colors: colors, stops: const [0, 0.6, 1])
-                    .createShader(r),
-            child: Text(
-              'reelbrain',
-              style: TextStyle(
-                fontFamily: RbType.display,
-                fontSize: widget.size,
-                height: 1,
-                letterSpacing: -0.04 * widget.size,
-                // Heavy and wide: the HEXP axis stretches the letters.
-                fontVariations: const [
-                  FontVariation('wght', 800),
-                  FontVariation('HEXP', 70)
-                ],
-                shadows: [
-                  Shadow(
-                      color: c.brand.withValues(alpha: dark ? 0.55 : 0.25),
-                      blurRadius: 18),
-                ],
-              ),
-            ),
+  Widget build(BuildContext context) => Semantics(
+        label: 'Realbrain',
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          BrainMark(size: size * 1.4),
+          SizedBox(width: size * 0.35),
+          ExcludeSemantics(
+            child: Text('Realbrain',
+                style: TextStyle(
+                    fontFamily: RbType.family,
+                    fontSize: size,
+                    height: 1,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.03 * size,
+                    color: RbColors.of(context).text)),
           ),
-        ),
-      ]),
-    );
-  }
+        ]),
+      );
 }

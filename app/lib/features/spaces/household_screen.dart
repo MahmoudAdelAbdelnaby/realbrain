@@ -184,7 +184,7 @@ class _JoinScreenState extends State<JoinScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const Text(
-                'Join this Home space? Reels shared to Reelbrain · Home will be saved there for both of you.'),
+                'Join this Home space? Reels shared to Realbrain · Home will be saved there for both of you.'),
             const SizedBox(height: 16),
             FilledButton(
                 onPressed: _busy ? null : _join, child: const Text('Join')),

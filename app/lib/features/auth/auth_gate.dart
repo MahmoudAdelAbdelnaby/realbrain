@@ -6,7 +6,10 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../core/brain_mark.dart';
 import '../../core/native.dart';
+import '../../core/surface.dart';
+import '../../core/theme/tokens.dart';
 import '../feed/feed_screen.dart';
 import '../save/save_screen.dart';
 import '../settings/settings_screen.dart';
@@ -214,29 +217,39 @@ class _SignInScreenState extends State<SignInScreen> {
   @override
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
+    final c = RbColors.of(context);
     return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text('Reelbrain', style: t.headlineMedium),
-              const SizedBox(height: 8),
-              const Text('Sign in to keep your saves and share a Home space.'),
-              const SizedBox(height: 24),
-              FilledButton(
-                onPressed: _busy ? null : _signIn,
-                child: Text(_busy ? 'Signing in…' : 'Sign in with Google'),
-              ),
-              if (_error != null) ...[
+      body: Haze(
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(RbSpace.side),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Spacer(),
+                const Center(child: BrainMark(size: 160)),
+                const SizedBox(height: 28),
+                Text('Realbrain',
+                    textAlign: TextAlign.center, style: t.headlineLarge),
+                const SizedBox(height: 8),
+                Text('The things you discover.\nFinally part of your life.',
+                    textAlign: TextAlign.center,
+                    style: t.bodyLarge?.copyWith(color: c.muted)),
+                const Spacer(),
+                PillButton(
+                  label: _busy ? 'Signing in…' : 'Sign in with Google',
+                  onPressed: _busy ? null : _signIn,
+                ),
+                if (_error != null) ...[
+                  const SizedBox(height: 12),
+                  Text(_error!,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                          color: Theme.of(context).colorScheme.error)),
+                ],
                 const SizedBox(height: 12),
-                Text(_error!,
-                    style:
-                        TextStyle(color: Theme.of(context).colorScheme.error)),
               ],
-            ],
+            ),
           ),
         ),
       ),

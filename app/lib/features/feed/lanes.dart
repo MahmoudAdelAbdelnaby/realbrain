@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../core/glass.dart';
+import '../../core/surface.dart';
 import '../../core/native.dart';
 import '../../core/theme/tokens.dart';
 import '../factcheck/fact_check_view.dart' show VerdictPill;
@@ -8,7 +8,7 @@ import '../save/save_screen.dart';
 import '../workouts/workout_plan.dart';
 import 'feed_screen.dart' show sectionLabels;
 
-/// One section lane on Home (design v3): its items newest first, each with its save.
+/// One section lane on Brain (Home): its items newest first, each with its save.
 typedef Lane = ({
   String section,
   List<({Map<String, dynamic> item, Map<String, dynamic> save})> cards
@@ -124,7 +124,7 @@ class LaneView extends StatelessWidget {
   /// A second action next to the title (Places: "on the map").
   final Widget? extra;
 
-  /// Saves that arrived while Home was open: they slide in (design v3 arrival).
+  /// Saves that arrived while Brain was open: they slide in.
   final bool Function(String saveId)? isNew;
 
   @override
@@ -137,7 +137,7 @@ class LaneView extends StatelessWidget {
         Padding(
           padding: const EdgeInsetsDirectional.fromSTEB(RbSpace.side, 0, 4, 4),
           child: Row(children: [
-            // Each section's own hue (docs/BRAND.md).
+            // Each section's own hue (design v4).
             Container(
               width: 10,
               height: 10,
@@ -257,27 +257,15 @@ class LaneCard extends StatelessWidget {
       ),
     );
     if (!arriving || RbMotion.reduced(context)) return card;
-    // Arrival: rises out of the pill's direction on a spring, then develops from a red-lit
-    // negative to full colour (docs/BRAND.md "Develop").
+    // Arrival: rises from the tab bar's direction on a spring and fades in.
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: 1),
-      duration: const Duration(milliseconds: 1600),
-      builder: (context, v, child) {
-        final rise = RbMotion.bouncy.transform((v / 0.35).clamp(0.0, 1.0));
-        final dev =
-            Curves.easeOutCubic.transform(((v - 0.2) / 0.8).clamp(0.0, 1.0));
-        return Transform.translate(
-          offset: Offset(0, (1 - rise) * 120),
-          child: Transform.scale(
-            scale: 0.85 + 0.15 * rise,
-            child: Opacity(
-              opacity: (v / 0.2).clamp(0.0, 1.0),
-              child:
-                  ColorFiltered(colorFilter: developFilter(dev), child: child),
-            ),
-          ),
-        );
-      },
+      duration: RbMotion.slow,
+      curve: RbMotion.bouncy,
+      builder: (context, v, child) => Transform.translate(
+        offset: Offset(0, (1 - v) * 120),
+        child: Opacity(opacity: v.clamp(0.0, 1.0), child: child),
+      ),
       child: card,
     );
   }
@@ -363,38 +351,130 @@ class MomentStrip extends StatelessWidget {
   }
 }
 
-/// The darkroom develop: 0 is a red-lit negative (inverted, grey, under safelight), 1 is the
-/// picture as it is. Lerps the colour matrix, so it costs one filter per developing card.
-ColorFilter developFilter(double t) {
-  // Negative: invert, desaturate, tint red.
-  const neg = <double>[
-    -0.30, -0.59, -0.11, 0, 255, //
-    -0.10, -0.20, -0.04, 0, 90, //
-    -0.08, -0.16, -0.03, 0, 70, //
-    0, 0, 0, 1, 0,
-  ];
-  const id = <double>[
-    1,
-    0,
-    0,
-    0,
-    0,
-    0,
-    1,
-    0,
-    0,
-    0,
-    0,
-    0,
-    1,
-    0,
-    0,
-    0,
-    0,
-    0,
-    1,
-    0
-  ];
-  return ColorFilter.matrix(
-      [for (var i = 0; i < 20; i++) neg[i] + (id[i] - neg[i]) * t]);
+typedef WaitingCard = ({Map<String, dynamic> item, Map<String, dynamic> save});
+
+/// Items still waiting for you (no state, or "to try") whose save is loaded and readable,
+/// newest first; with [olderThan], only those saved before it (Recall).
+List<WaitingCard> waiting(Iterable<Map<String, dynamic>> items,
+    Iterable<Map<String, dynamic>> saves,
+    {Duration? olderThan, DateTime? now}) {
+  final byId = {for (final s in saves) s['save_id']: s};
+  final cutoff = olderThan == null
+      ? null
+      : (now ?? DateTime.now()).subtract(olderThan).millisecondsSinceEpoch / 1000;
+  final out = <WaitingCard>[];
+  for (final item in items) {
+    final save = byId[item['save_id']];
+    final state = item['user_state'];
+    final at = (save?['created_at'] ?? 0) as num;
+    if (save == null ||
+        !sectionLabels.containsKey(item['section']) ||
+        (state != null && state != 'to_try') ||
+        !(save['status'] == 'ready' || save['status'] == 'partial') ||
+        (cutoff != null && at > cutoff)) {
+      continue;
+    }
+    out.add((item: item, save: save));
+  }
+  num at(WaitingCard c) => (c.save['created_at'] ?? 0) as num;
+  return out..sort((a, b) => at(b).compareTo(at(a)));
+}
+
+/// One section's item, named as a thing (Ready for you cards).
+const kindLabels = {
+  'fact_check': 'Fact check',
+  'tools': 'Tool',
+  'recipe': 'Recipe',
+  'places': 'Place',
+  'workout': 'Workout',
+};
+
+/// The card's one action, per section.
+const actionLabels = {
+  'fact_check': 'Read',
+  'tools': 'Try now',
+  'recipe': 'Cook now',
+  'places': 'Go',
+  'workout': 'Start',
+};
+
+/// A Ready for you card (design v4): the frame, a wash of the section's hue in the corner, the
+/// kind, title and one line, and a pill with the section's action. [note] replaces the line
+/// (Recall: "Saved 47 days ago").
+class ReadyCard extends StatelessWidget {
+  const ReadyCard({super.key, required this.item, required this.save, this.note});
+  final Map<String, dynamic> item, save;
+  final String? note;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = Theme.of(context).textTheme;
+    final c = RbColors.of(context);
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final section = item['section'] as String?;
+    final hue = c.section(section);
+    final (title, detail) = cardFace(item, save);
+    final saveId = save['save_id'] as String?, spaceId = save['space_id'] as String?;
+    final hero = 'frame-$saveId-ready-$section';
+    void open() => Navigator.of(context).push(MaterialPageRoute(
+        builder: (_) => SaveScreen(
+            spaceId: spaceId!, saveId: saveId!, initial: save, heroTag: hero)));
+    final canOpen = saveId != null && spaceId != null;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Pressable(
+        onTap: canOpen ? open : null,
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(RbSpace.cardRadius),
+            border: Border.all(color: c.line),
+            color: c.surface,
+            gradient: RadialGradient(
+              center: AlignmentDirectional.bottomEnd.resolve(Directionality.of(context)),
+              radius: 1.3,
+              colors: [hue.withValues(alpha: dark ? 0.22 : 0.12), c.surface],
+            ),
+          ),
+          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Hero(
+              tag: hero,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(RbSpace.photoRadius),
+                child: SizedBox(width: 92, height: 108, child: FrameImage(save: save)),
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: SizedBox(
+                height: 108,
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Row(children: [
+                    Container(
+                        width: 6,
+                        height: 6,
+                        decoration: BoxDecoration(color: hue, shape: BoxShape.circle)),
+                    const SizedBox(width: 6),
+                    Text(kindLabels[section] ?? '',
+                        style: t.labelMedium?.copyWith(color: hue)),
+                  ]),
+                  const SizedBox(height: 4),
+                  Text(title,
+                      maxLines: 2, overflow: TextOverflow.ellipsis, style: t.titleMedium),
+                  if ((note ?? detail).isNotEmpty)
+                    Text(note ?? detail,
+                        maxLines: 1, overflow: TextOverflow.ellipsis, style: t.bodySmall),
+                  const Spacer(),
+                  PillButton(
+                      small: true,
+                      label: actionLabels[section] ?? 'Open',
+                      onPressed: canOpen ? open : null),
+                ]),
+              ),
+            ),
+          ]),
+        ),
+      ),
+    );
+  }
 }

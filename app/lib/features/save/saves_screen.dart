@@ -96,7 +96,7 @@ class _SavesScreenState extends State<SavesScreen> {
                 (null, _) => const Center(child: CircularProgressIndicator()),
                 (final List<Map<String, dynamic>> s, _) when s.isEmpty =>
                   const _Message(
-                    'No saves yet. Share a reel to Reelbrain · Me or Home.',
+                    'No saves yet. Share a reel to Realbrain · Me or Home.',
                   ),
                 (final List<Map<String, dynamic>> s, _) => ListView.separated(
                     itemCount: s.length,

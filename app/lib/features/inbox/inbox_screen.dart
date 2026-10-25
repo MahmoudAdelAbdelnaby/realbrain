@@ -46,7 +46,7 @@ class InboxScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.transparent, // the liquid shows through
+      backgroundColor: Colors.transparent, // the haze shows through
       appBar: AppBar(
           backgroundColor: Colors.transparent, title: const Text('Inbox')),
       body: ValueListenableBuilder<List<Map<String, dynamic>>>(

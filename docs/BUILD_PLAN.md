@@ -70,7 +70,9 @@ Environments: `dev` only until Phase 2 gate, then add `prod` as a second Firebas
 
 ## Design system (v2, after Impeccable and Taste review)
 
-> **25 Oct: brand "Darkroom" approved** (`docs/BRAND.md`): Glow icon, ink ground, safelight red, section hues, Readex Pro headings, liquid background. Where it differs from v2/v3 on colour or motion, BRAND.md wins.
+> **25 Oct: design v4 (Realbrain) approved and replaces Darkroom and the visual parts of v3** (`docs/DESIGN_V4_PROPOSAL.md`): the app is renamed Realbrain; navy haze, lavender, pill and action gradients, Inter, the polygonal brain mark, a 5-slot tab bar (Brain, Memories, +, Recall, Threads), no frosted glass. Where it differs from anything below, v4 wins. Step 1 (foundation) built 25 Oct.
+>
+> *Superseded:* **25 Oct: brand "Darkroom" approved** (`docs/BRAND.md`): Glow icon, ink ground, safelight red, section hues, Readex Pro headings, liquid background. Where it differs from v2/v3 on colour or motion, BRAND.md wins.
 >
 > **25 Oct: v3 (liquid) approved and replaces parts of v2:** glass on floating chrome, the liquid pill, Home as section lanes, spring motion, radii 24/16. See `docs/DESIGN_V3_PROPOSAL.md`; where they differ, v3 wins.
 

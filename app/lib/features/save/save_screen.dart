@@ -85,7 +85,7 @@ Future<void> changeSection(
     children: [
       const ListTile(
           dense: true,
-          title: Text('Reelbrain re-reads the video for that section.')),
+          title: Text('Realbrain re-reads the video for that section.')),
       for (final e in sectionLabels.entries)
         ListTile(
           leading: Icon(sectionIcons[e.key]),

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart';
 
-/// Design tokens: v2 structure (docs/BUILD_PLAN.md) with the Darkroom brand (docs/BRAND.md):
-/// an ink ground, safelight red as the brand and accent, amber, and one hue per section.
+/// Design tokens: design v4 (docs/DESIGN_V4_PROPOSAL.md §2): a navy ground under a soft haze,
+/// lavender as the brand, pill and action gradients, and one hue per interest.
 @immutable
 class RbColors extends ThemeExtension<RbColors> {
   const RbColors({
@@ -23,7 +23,9 @@ class RbColors extends ThemeExtension<RbColors> {
     required this.falseFg,
     required this.falseBg,
     required this.brand,
-    required this.amber,
+    required this.haze,
+    required this.pill,
+    required this.action,
     required this.sections,
   });
 
@@ -31,67 +33,84 @@ class RbColors extends ThemeExtension<RbColors> {
   final Color primaryFill, primaryLabel, accent;
   final Color trueFg, trueBg, mixedFg, mixedBg, falseFg, falseBg;
 
-  /// Darkroom: safelight red (wordmark, primary, processing, selection) and amber.
-  final Color brand, amber;
+  /// Lavender: the mark, selection, links.
+  final Color brand;
 
-  /// One hue per section: lane dot, moment ticks, status chips.
+  /// The two glows behind every screen: top right, bottom left.
+  final (Color, Color) haze;
+
+  /// Pill buttons (Cook now, Try now, the + button): top to bottom.
+  final (Color, Color) pill;
+
+  /// The one main action on a screen (Start cooking): start to end.
+  final (Color, Color) action;
+
+  /// One hue per interest: chip dot, card wash, thread node.
   final Map<String, Color> sections;
 
   Color section(String? id) => sections[id] ?? accent;
 
   static const dark = RbColors(
-    ground: Color(0xFF0D1214),
-    surface: Color(0xFF162024),
-    raised: Color(0xFF1F2B30),
-    line: Color(0xFF2A383D),
+    ground: Color(0xFF080A14),
+    surface: Color(0xFF111528),
+    raised: Color(0xFF1A1F38),
+    line: Color(0xFF24294A),
     text: Color(0xFFFFFFFF),
-    muted: Color(0xFFB4B4B4),
-    faint: Color(0xFF949494),
-    primaryFill: Color(0xFFFF4F3A),
-    primaryLabel: Color(0xFF1A0805),
-    accent: Color(0xFFFF4F3A),
+    muted: Color(0xFFA7ACBF),
+    faint: Color(0xFF8A8FA3),
+    primaryFill: Color(0xFFECE9FF),
+    primaryLabel: Color(0xFF12142A),
+    accent: Color(0xFF9C8CFF),
     trueFg: Color(0xFF3FC07A),
     trueBg: Color(0xFF172A1D),
     mixedFg: Color(0xFFE9B44C),
     mixedBg: Color(0xFF2D2516),
     falseFg: Color(0xFFE5566F),
     falseBg: Color(0xFF2C1A20),
-    brand: Color(0xFFFF4F3A),
-    amber: Color(0xFFFFB547),
+    brand: Color(0xFF9C8CFF),
+    haze: (Color(0xFF1B1F3D), Color(0xFF141A33)),
+    pill: (Color(0xFFFFFFFF), Color(0xFFE6E2FF)),
+    action: (Color(0xFFFF9A5A), Color(0xFFFF6B8B)),
     sections: {
-      'fact_check': Color(0xFFFF6B8A),
-      'tools': Color(0xFF3FD0C9),
-      'recipe': Color(0xFFFFB547),
-      'places': Color(0xFF6FA8FF),
-      'workout': Color(0xFFB6E35A),
+      'fact_check': Color(0xFFFF6B8B),
+      'tools': Color(0xFF8FB8FF),
+      'recipe': Color(0xFFFFB27A),
+      'places': Color(0xFF6FE0C8),
+      'workout': Color(0xFF9BE38A),
+      'learning': Color(0xFF9C8CFF),
+      'ideas': Color(0xFFFFD66B),
     },
   );
 
   static const light = RbColors(
-    ground: Color(0xFFF1F4F3),
+    ground: Color(0xFFF4F4FA),
     surface: Color(0xFFFFFFFF),
-    raised: Color(0xFFEBF0EE),
-    line: Color(0xFFD7DFDC),
-    text: Color(0xFF111111),
-    muted: Color(0xFF5F6368),
-    faint: Color(0xFF6B6B6B),
-    primaryFill: Color(0xFFD2321F),
+    raised: Color(0xFFECEBF6),
+    line: Color(0xFFDAD9E8),
+    text: Color(0xFF0E1024),
+    muted: Color(0xFF5B5F75),
+    faint: Color(0xFF63677D),
+    primaryFill: Color(0xFF0E1024),
     primaryLabel: Color(0xFFFFFFFF),
-    accent: Color(0xFFD2321F),
+    accent: Color(0xFF5B4FD6),
     trueFg: Color(0xFF247B50),
     trueBg: Color(0xFFDCFAE5),
     mixedFg: Color(0xFF92400E),
     mixedBg: Color(0xFFFFFBEB),
     falseFg: Color(0xFF831C1E),
     falseBg: Color(0xFFFFEDEA),
-    brand: Color(0xFFD2321F),
-    amber: Color(0xFFA86A00),
+    brand: Color(0xFF5B4FD6),
+    haze: (Color(0xFFE4E1FA), Color(0xFFE9EDFA)),
+    pill: (Color(0xFF1B1E3A), Color(0xFF0E1024)),
+    action: (Color(0xFFE0641F), Color(0xFFD62C5A)),
     sections: {
       'fact_check': Color(0xFFC2264B),
-      'tools': Color(0xFF0D7A74),
-      'recipe': Color(0xFFA86A00),
-      'places': Color(0xFF2860C4),
-      'workout': Color(0xFF4D7A0E),
+      'tools': Color(0xFF2D63C8),
+      'recipe': Color(0xFFA2520C),
+      'places': Color(0xFF0F7A68),
+      'workout': Color(0xFF3F7A1E),
+      'learning': Color(0xFF5B4FD6),
+      'ideas': Color(0xFF7F6200),
     },
   );
 
@@ -118,7 +137,12 @@ class RbColors extends ThemeExtension<RbColors> {
         'false': falseFg,
         'false bg': falseBg,
         'brand': brand,
-        'amber': amber,
+        'haze top': haze.$1,
+        'haze bottom': haze.$2,
+        'pill top': pill.$1,
+        'pill bottom': pill.$2,
+        'action start': action.$1,
+        'action end': action.$2,
         for (final e in sections.entries) 'section ${e.key}': e.value,
       };
 
@@ -130,31 +154,28 @@ class RbColors extends ThemeExtension<RbColors> {
       t < 0.5 || other == null ? this : other;
 }
 
-/// Type: IBM Plex Sans + IBM Plex Sans Arabic, one family; 12/14/16/20/28; weights 400/500/600.
-/// Two justified exceptions read from a distance: cooking step 28, workout timer digits 96.
+/// Type (design v4): Inter, with IBM Plex Sans Arabic for Arabic; 12/13/15/16/19/28; weights
+/// 400/500/600/700. Two justified exceptions read from a distance: cooking step 28, workout
+/// timer digits 96.
 abstract final class RbType {
-  static const family = 'IBMPlexSans';
-
-  /// Darkroom display face (wordmark, lane titles, headings); variable, so weight is an axis.
-  static const display = 'ReadexPro';
-  static List<FontVariation> weight(double w) => [FontVariation('wght', w)];
+  static const family = 'Inter';
   static const fallback = ['IBMPlexSansArabic'];
-  static const sizes = [12.0, 14.0, 16.0, 20.0, 28.0];
+  static const sizes = [12.0, 13.0, 15.0, 16.0, 19.0, 28.0];
   static const cookingStep = 28.0;
   static const timerDigits = 96.0;
   static const tabular = [FontFeature.tabularFigures()];
 }
 
-/// 4 pt grid, 16 side margins, 48 dp touch targets; radii 24 / 16 / round (design v3: corners
-/// nest evenly inside 8 px of glass padding).
+/// 4 pt grid, 20 side margins, 48 dp touch targets; radii 20 cards / 16 panels / 14 photos in a
+/// card / round pills.
 abstract final class RbSpace {
   static const unit = 4.0;
-  static const side = 16.0;
+  static const side = 20.0;
   static const touch = 48.0;
-  static const cardRadius = 24.0;
+  static const cardRadius = 20.0;
   static const panelRadius = 16.0;
+  static const photoRadius = 14.0;
   static const pill = 999.0;
-  static const glassPad = 8.0;
 }
 
 /// A spring as a Curve over a fixed duration, so implicit animations (AnimatedContainer,
@@ -181,7 +202,7 @@ class SpringCurve extends Curve {
   }
 }
 
-/// Design v3 motion: springs that answer an action; nothing moves on its own. Under reduced motion
+/// Motion: springs that answer an action; nothing moves on its own. Under reduced motion
 /// everything becomes a 150 ms fade-speed ease (see [RbMotion.of]).
 abstract final class RbMotion {
   static const fast = Duration(milliseconds: 150);

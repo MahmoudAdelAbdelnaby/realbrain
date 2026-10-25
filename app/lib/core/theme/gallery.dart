@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import '../../features/factcheck/fact_check_view.dart'
     show VerdictPill, verdictLabels;
 import '../../features/feed/feed_screen.dart' show SaveCard, SkeletonCard;
-import '../glass.dart';
+import '../brain_mark.dart';
+import '../surface.dart';
 import '../widgets.dart';
 import 'theme.dart';
 
@@ -53,15 +54,15 @@ class _DesignGalleryState extends State<DesignGallery> {
                   _Swatch(name: e.key, color: e.value, on: c.ground),
                 _h(t, 'Type'),
                 for (final (name, style) in [
-                  ('28 · 600', t.headlineLarge),
-                  ('20 · 600', t.titleLarge),
+                  ('28 · 700', t.headlineLarge),
+                  ('19 · 600', t.titleLarge),
                   ('16 · 400', t.bodyLarge),
-                  ('14 · 400', t.bodyMedium),
-                  ('12 · 400', t.bodySmall),
+                  ('15 · 400', t.bodyMedium),
+                  ('13 · 400', t.bodySmall),
                 ])
                   Padding(
                     padding: const EdgeInsets.only(bottom: 8),
-                    child: Text('$name  Reelbrain ريل برين 0123456789',
+                    child: Text('$name  Realbrain ريل برين 0123456789',
                         style: style),
                   ),
                 Text('0:45',
@@ -80,45 +81,36 @@ class _DesignGalleryState extends State<DesignGallery> {
                     'Springs: content settles in ${RbMotion.base.inMilliseconds} ms with no bounce, '
                     'the pill and sheets overshoot a little. Reduced motion: ${RbMotion.fast.inMilliseconds} ms eases.',
                     style: t.bodySmall),
-                _h(t, 'Glass'),
-                // Stand-in for a reel frame: glass only reads over colour.
+                _h(t, 'Surfaces and buttons'),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(RbSpace.cardRadius),
-                  child: Container(
-                    height: 220,
-                    decoration: const BoxDecoration(
-                      gradient: SweepGradient(colors: [
-                        Color(0xFFE76F51),
-                        Color(0xFFF4A261),
-                        Color(0xFF2A9D8F),
-                        Color(0xFF264653),
-                        Color(0xFFE76F51),
-                      ]),
+                  child: SizedBox(
+                    height: 260,
+                    child: Haze(
+                      child: Center(
+                        child: Column(mainAxisSize: MainAxisSize.min, children: [
+                          const BrainMark(size: 96),
+                          const SizedBox(height: 12),
+                          Panel(
+                            radius: RbSpace.panelRadius,
+                            padding: const EdgeInsets.all(16),
+                            child: Text('Floating panel on the haze',
+                                style: t.bodyMedium),
+                          ),
+                          const SizedBox(height: 12),
+                          Row(mainAxisSize: MainAxisSize.min, children: [
+                            PillButton(label: 'Cook now', onPressed: () {}),
+                            const SizedBox(width: 8),
+                            PillButton(
+                                label: 'Start cooking',
+                                action: true,
+                                onPressed: () {}),
+                          ]),
+                        ]),
+                      ),
                     ),
-                    alignment: Alignment.center,
-                    child: Column(mainAxisSize: MainAxisSize.min, children: [
-                      Glass(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 20, vertical: 14),
-                        child: Text('Glass pill on a reel frame',
-                            style: t.labelLarge),
-                      ),
-                      const SizedBox(height: 16),
-                      Glass(
-                        radius: RbSpace.panelRadius,
-                        padding: const EdgeInsets.all(16),
-                        child:
-                            Text('Glass panel, radius 16', style: t.bodyMedium),
-                      ),
-                    ]),
                   ),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                    Glass.solid(context)
-                        ? 'Solid fallback on (high contrast or reduced motion)'
-                        : 'Live blur',
-                    style: t.bodySmall),
                 const SizedBox(height: 12),
                 Pressable(
                   onTap: () {},
@@ -166,7 +158,7 @@ class _DesignGalleryState extends State<DesignGallery> {
                 const SkeletonCard(),
                 const EmptyState(
                     title: 'Nothing saved yet',
-                    body: 'Share a reel to Reelbrain · Me.',
+                    body: 'Share a reel to Realbrain · Me.',
                     action: 'How to share'),
                 Row(children: [
                   Expanded(

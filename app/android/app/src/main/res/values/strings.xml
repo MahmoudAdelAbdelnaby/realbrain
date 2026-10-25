@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="share_me">Reelbrain · Me</string>
-    <string name="share_home">Reelbrain · Home</string>
+    <string name="share_me">Realbrain · Me</string>
+    <string name="share_home">Realbrain · Home</string>
     <string name="share_no_link">No link found to save</string>
     <string name="share_saving_me">Saving to Me</string>
     <string name="share_saving_home">Saving to Home</string>

@@ -1,3 +1,5 @@
+> **Superseded 25 Oct by design v4 (`DESIGN_V4_PROPOSAL.md`):** the app is Realbrain, the mark is the polygonal brain, and Darkroom (safelight red, Glow icon, liquid background, develop) is gone. Kept for history.
+
 # Reelbrain brand: Darkroom
 
 Approved 25 Oct. Board: https://claude.ai/artifact/Rw3YpATFBg8UpqTpT6rfJ6 (private). Adds to

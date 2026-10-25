@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
-import '../../core/glass.dart';
+import '../../core/surface.dart';
 import '../../core/theme/tokens.dart';
 import '../factcheck/fact_check_view.dart' show openUrl;
 import '../section/section_screen.dart' show setItemState;
@@ -66,7 +66,6 @@ class _PlacesMapState extends State<PlacesMap> {
     final pins = placePins(widget.items);
     if (pins.isEmpty) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Map')),
         body: const Center(
           child: Padding(
             padding: EdgeInsets.all(RbSpace.side),
@@ -83,7 +82,6 @@ class _PlacesMapState extends State<PlacesMap> {
     );
     if (dark) tiles = ColorFiltered(colorFilter: _darkTiles, child: tiles);
     return Scaffold(
-      appBar: AppBar(title: const Text('Map')),
       body: Stack(children: [
         FlutterMap(
           mapController: _map,
@@ -142,13 +140,13 @@ class _PlaceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = pin.place;
     final t = Theme.of(context).textTheme;
-    // Text on glass uses the full text colour (design v3).
+    // Text on a floating panel uses the full text colour.
     final ink = RbColors.of(context).text;
     final visited = pin.item['user_state'] == 'visited';
     // ponytail: up to 2 cards plus the pill blur at once here; fine on the S22, go solid if it drops frames.
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 6),
-      child: Glass(
+      child: Panel(
         radius: RbSpace.cardRadius,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 8, 4),

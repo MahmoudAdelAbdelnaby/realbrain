@@ -39,19 +39,22 @@ notifications.
 
 When a check passes, tell me and I'll tick the ticket.
 
-## Design v3 (liquid): phone checks
+## Design v4 (Realbrain), step 1: phone checks
 
-Built 25 Oct in 5 commits (`docs/DESIGN_V3_PROPOSAL.md`). Try in dark and light, and in Arabic.
+Built 25 Oct (`docs/DESIGN_V4_PROPOSAL.md` §6 step 1). Try in dark and light, and in Arabic.
 
-| Step | Try this | Expect |
+| Check | Try this | Expect |
 | --- | --- | --- |
-| 1 Glass | Long-press **Reelbrain** → Glass | A blurred pill and panel over a colour field; hold the card: it shrinks a little and springs back |
-| 2 Pill | Look at the bottom; share a reel from TikTok | Floating glass pill with Home, Search, Map, Inbox (only the selected one shows its name). While it processes, the pill grows to show the thumbnail and step, then flashes the result. Over TikTok, the share pill blurs what's behind it |
-| 3 Lanes | Home | One row per section, swipe sideways; each card shows its own line (claims, time, stars, area, exercises) and a strip of moments along the frame. **Sections / Latest** switches to the old list. The newest reel's colours tint the background; the top bar turns to glass when you scroll |
-| 4 Motion | Tap a card, then Back | The frame grows into the save screen and shrinks back; a new save slides into its row |
-| 5 Chrome | Change section; Places → Map; Cook with a timer; Start workout | Glass sheet floating off the edges; glass place cards; the cooking timers and workout controls sit in the pill |
+| Icon and splash | Look at the launcher; open the app cold | **Realbrain** with the polygonal brain on a navy tile; themed icons show it in one colour. The splash draws the outline, then the lines and nodes |
+| Sign-in | Sign out from the avatar | Haze background, the full mesh, "The things you discover", white pill button |
+| Brain | Open the app | "Good evening, Mahmoud", three tiles (Ready now, Memories, To revisit), **Ready for you** photo cards with a colour wash and a pill (Cook now, Try now…), then the section lanes. Inbox shows as a card only when something needs a look |
+| Tab bar | Look at the bottom | Brain · Memories · + · Recall · Threads, all labelled. Recall shows a count when old saves wait |
+| + | Copy a reel link, tap + | The link is already filled in; Save to Me or Home; "Added to your brain"; the status pill shows it processing |
+| Memories | Memories tab | All / Search / Map / Reels; each works as before |
+| Recall and Threads | Their tabs | Recall: to-try saves older than a week, oldest first. Threads: your sections with counts and hues |
+| Share pill | Share a reel from TikTok | A solid navy pill with a lavender edge (no blur) |
 
-With **Remove animations** on (Android accessibility), glass turns solid and motion becomes quick fades.
+Recall and Threads are the lite versions; their full designs are steps 4 and 5. The gallery (long-press the greeting) shows the mark, panel and both buttons.
 
 ## Decisions (answered 25 Oct)
 

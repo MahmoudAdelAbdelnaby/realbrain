@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../core/glass.dart';
+import '../../core/surface.dart';
 import '../../core/native.dart';
 import '../../core/theme/tokens.dart';
 import '../factcheck/fact_check_view.dart' show VerdictPill, openUrl;
@@ -373,7 +373,7 @@ class _MomentCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
     final c = RbColors.of(context);
-    return Glass(
+    return Panel(
       radius: RbSpace.cardRadius,
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -424,7 +424,7 @@ class _RailButton extends StatelessWidget {
         child: Pressable(
           onTap: onTap,
           child: Column(children: [
-            Glass(
+            Panel(
               padding: const EdgeInsets.all(12),
               child: Icon(icon, color: Colors.white, size: 26),
             ),

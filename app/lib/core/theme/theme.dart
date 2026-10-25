@@ -29,7 +29,7 @@ ThemeData rbTheme(Brightness b) {
     secondaryContainer: c.raised,
     onSecondaryContainer: c.text,
   );
-  // Scale 12/14/16/20/28, weights 400/500/600, tabular figures on every number.
+  // Design v4 scale 12/13/15/16/19/28, weights 400-700, tabular figures on every number.
   TextStyle t(double size, FontWeight w, [Color? color]) => TextStyle(
       fontSize: size,
       fontWeight: w,
@@ -37,26 +37,24 @@ ThemeData rbTheme(Brightness b) {
       fontFeatures: RbType.tabular,
       fontFamily: RbType.family,
       fontFamilyFallback: RbType.fallback);
-  // Darkroom display face for headings and lane titles (docs/BRAND.md); Plex for reading.
-  TextStyle d(double size, double weight) => t(size, FontWeight.w600).copyWith(
-      fontFamily: RbType.display,
-      fontVariations: RbType.weight(weight),
-      letterSpacing: -0.2);
+  // Large text is bold with slightly tight tracking.
+  TextStyle d(double size, FontWeight w) =>
+      t(size, w).copyWith(letterSpacing: -0.02 * size, height: 1.15);
   final text = TextTheme(
-    displayLarge: d(28, 700),
-    displayMedium: d(28, 700),
-    displaySmall: d(28, 700),
-    headlineLarge: d(28, 700),
-    headlineMedium: d(28, 700),
-    headlineSmall: d(20, 600),
-    titleLarge: d(20, 600),
+    displayLarge: d(28, FontWeight.w700),
+    displayMedium: d(28, FontWeight.w700),
+    displaySmall: d(28, FontWeight.w700),
+    headlineLarge: d(28, FontWeight.w700),
+    headlineMedium: d(28, FontWeight.w700),
+    headlineSmall: d(19, FontWeight.w600),
+    titleLarge: d(19, FontWeight.w600),
     titleMedium: t(16, FontWeight.w600),
-    titleSmall: t(14, FontWeight.w600),
+    titleSmall: t(15, FontWeight.w600),
     bodyLarge: t(16, FontWeight.w400),
-    bodyMedium: t(14, FontWeight.w400),
-    bodySmall: t(12, FontWeight.w400, c.muted),
-    labelLarge: t(14, FontWeight.w500),
-    labelMedium: t(12, FontWeight.w500),
+    bodyMedium: t(15, FontWeight.w400),
+    bodySmall: t(13, FontWeight.w400, c.muted),
+    labelLarge: t(15, FontWeight.w500),
+    labelMedium: t(13, FontWeight.w500),
     labelSmall: t(12, FontWeight.w500, c.faint),
   );
   const round = StadiumBorder();
@@ -100,7 +98,6 @@ ThemeData rbTheme(Brightness b) {
       checkmarkColor: c.accent,
       labelStyle: text.labelLarge,
     ),
-    // Selected segment matches the pill's selected destination.
     segmentedButtonTheme: SegmentedButtonThemeData(
       style: ButtonStyle(
         backgroundColor: WidgetStateProperty.resolveWith((s) =>

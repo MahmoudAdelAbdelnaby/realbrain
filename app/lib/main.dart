@@ -13,9 +13,6 @@ Future<void> main() async {
   runApp(const ReelbrainApp());
 }
 
-/// Lets screens hear when one above them is popped (the liquid's back wave).
-final routeObserver = RouteObserver<ModalRoute<void>>();
-
 /// Light theme on its own, for cooking mode (always light: bright kitchen).
 final lightTheme = rbTheme(Brightness.light);
 
@@ -29,7 +26,7 @@ class ReelbrainApp extends StatelessWidget {
     return ValueListenableBuilder(
       valueListenable: appPrefs,
       builder: (context, prefs, _) => MaterialApp(
-        title: 'Reelbrain',
+        title: 'Realbrain',
         theme: rbTheme(Brightness.light),
         darkTheme: rbTheme(Brightness.dark),
         themeMode: themeModeOf(prefs.theme),
@@ -37,7 +34,6 @@ class ReelbrainApp extends StatelessWidget {
         supportedLocales: const [Locale('en'), Locale('ar')],
         localizationsDelegates: GlobalMaterialLocalizations.delegates,
         home: home,
-        navigatorObservers: [routeObserver],
       ),
     );
   }

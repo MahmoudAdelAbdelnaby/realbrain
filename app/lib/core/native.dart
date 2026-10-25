@@ -28,7 +28,7 @@ Future<void> shareText(String text) =>
 /// Plain-language message for an [api] failure.
 String apiError(Object e) => switch (e) {
       PlatformException(code: 'BACKEND_UNREACHABLE') =>
-        "Can't reach the Reelbrain backend. Is the PC on and on the same Wi-Fi?",
+        "Can't reach the Realbrain backend. Is the PC on and on the same Wi-Fi?",
       PlatformException(code: 'NOT_SIGNED_IN') => 'Sign in first.',
       PlatformException(code: 'HTTP_404') =>
         'That invite or space no longer exists.',

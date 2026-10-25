@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:reelbrain/core/glass.dart';
+import 'package:reelbrain/core/surface.dart';
 import 'package:reelbrain/core/theme/gallery.dart';
 import 'package:reelbrain/core/theme/theme.dart';
 import 'package:reelbrain/core/widgets.dart';
@@ -100,7 +100,7 @@ void main() {
           theme: rbTheme(Brightness.dark),
           home: MediaQuery(
             data: MediaQueryData(highContrast: high),
-            child: const Glass(child: Text('pill')),
+            child: const Panel(child: Text('pill')),
           ),
         );
     await tester.pumpWidget(app(false));

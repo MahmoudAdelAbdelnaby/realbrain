@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
-import '../../core/liquid_pill.dart';
+import '../../core/nav_bar.dart';
 import '../../core/native.dart';
 import '../recipes/cook_timers.dart' show clock;
 import 'workout_plan.dart';
@@ -231,8 +231,8 @@ class _WorkoutModeState extends State<WorkoutMode> {
           ]),
         ),
       ),
-      // Design v3: the pill becomes the workout's controls.
-      bottomNavigationBar: LiquidPill(
+      // The tab bar becomes the workout's controls.
+      bottomNavigationBar: NavBar(
         replace: Row(mainAxisSize: MainAxisSize.min, children: [
           if (next != null)
             Flexible(
