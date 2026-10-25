@@ -6,7 +6,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../core/brain_mark.dart';
+import '../../core/orbit.dart';
 import '../../core/native.dart';
 import '../../core/surface.dart';
 import '../../core/theme/tokens.dart';
@@ -221,35 +221,75 @@ class _SignInScreenState extends State<SignInScreen> {
     return Scaffold(
       body: Haze(
         child: SafeArea(
-          child: Padding(
+          // Onboarding (design v4 step 3): the orbital brain, what Realbrain does, one action.
+          child: ListView(
             padding: const EdgeInsets.all(RbSpace.side),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const Spacer(),
-                const Center(child: BrainMark(size: 160)),
-                const SizedBox(height: 28),
-                Text('Realbrain',
-                    textAlign: TextAlign.center, style: t.headlineLarge),
-                const SizedBox(height: 8),
-                Text('The things you discover.\nFinally part of your life.',
-                    textAlign: TextAlign.center,
-                    style: t.bodyLarge?.copyWith(color: c.muted)),
-                const Spacer(),
-                PillButton(
-                  label: _busy ? 'Signing in…' : 'Sign in with Google',
-                  onPressed: _busy ? null : _signIn,
-                ),
-                if (_error != null) ...[
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Center(child: OrbitBrain(size: 280)),
+                  const SizedBox(height: 8),
+                  Text('Realbrain', style: t.headlineLarge),
+                  const SizedBox(height: 8),
+                  Text('The things you discover.\nFinally part of your life.',
+                      style: t.bodyLarge?.copyWith(color: c.muted)),
+                  const SizedBox(height: 28),
+                  for (final (icon, title, body) in const [
+                    (Icons.ios_share, 'Save anything', 'From reels to ideas'),
+                    (
+                      Icons.auto_awesome_outlined,
+                      'Turn it into something',
+                      'Recipes, tools, places, workouts and more'
+                    ),
+                    (
+                      Icons.history,
+                      'Get it back when it matters',
+                      'At the right time, automatically'
+                    ),
+                  ])
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 18),
+                      child: Row(children: [
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                              color: c.raised,
+                              borderRadius: BorderRadius.circular(12)),
+                          child: Icon(icon, size: 20, color: c.text),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(title, style: t.titleSmall),
+                                Text(body, style: t.bodySmall),
+                              ]),
+                        ),
+                      ]),
+                    ),
+                  const SizedBox(height: 16),
+                  PillButton(
+                    action: true,
+                    label: _busy ? 'Signing in…' : 'Get started',
+                    onPressed: _busy ? null : _signIn,
+                  ),
+                  const SizedBox(height: 8),
+                  Text('Signs in with your Google account.',
+                      textAlign: TextAlign.center, style: t.bodySmall),
+                  if (_error != null) ...[
+                    const SizedBox(height: 12),
+                    Text(_error!,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            color: Theme.of(context).colorScheme.error)),
+                  ],
                   const SizedBox(height: 12),
-                  Text(_error!,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                          color: Theme.of(context).colorScheme.error)),
                 ],
-                const SizedBox(height: 12),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

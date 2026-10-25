@@ -89,6 +89,11 @@ List<Lane> lanesOf(Iterable<Map<String, dynamic>> items,
             .whereType<String>()
             .join(', '),
       );
+    case 'ideas':
+      return (
+        data['title'] as String? ?? summary,
+        data['idea'] as String? ?? ''
+      );
     case 'workout':
       final ex = list('exercises');
       final secs = buildPhases(ex).fold<int>(0, (t, p) => t + (p.seconds ?? 0));
@@ -389,6 +394,7 @@ const kindLabels = {
   'recipe': 'Recipe',
   'places': 'Place',
   'workout': 'Workout',
+  'ideas': 'Idea',
 };
 
 /// The card's one action, per section.
@@ -398,6 +404,7 @@ const actionLabels = {
   'recipe': 'Cook now',
   'places': 'Go',
   'workout': 'Start',
+  'ideas': 'Explore',
 };
 
 /// A Ready for you card (design v4 revision 2): the frame, the kind with its accent dot, the

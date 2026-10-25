@@ -11,6 +11,7 @@ const sectionIcons = {
   'recipe': Icons.restaurant_outlined,
   'places': Icons.place_outlined,
   'workout': Icons.fitness_center_outlined,
+  'ideas': Icons.lightbulb_outline,
 };
 
 /// A section named in words with its grey icon, an optional count, tappable when [onTap] is set.

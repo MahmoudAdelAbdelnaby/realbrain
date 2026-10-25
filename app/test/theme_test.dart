@@ -59,7 +59,7 @@ void main() {
         theme: rbTheme(Brightness.light), home: const DesignGallery()));
     expect(find.text('ground'), findsOneWidget);
     await tester.scrollUntilVisible(find.text('Cooked'), 300);
-    expect(find.byType(SectionChip), findsNWidgets(5));
+    expect(find.byType(SectionChip), findsNWidgets(sectionIcons.length));
     expect(find.byType(StatusPill), findsNWidgets(2));
     await tester.scrollUntilVisible(find.byType(EmptyState), 300);
 

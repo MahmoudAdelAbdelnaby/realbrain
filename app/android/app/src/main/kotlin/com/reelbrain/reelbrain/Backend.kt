@@ -58,9 +58,10 @@ object Backend {
 
     /** POST /v1/saves. [clientId] is this share's queue id: retries get the same save back, so a
      * failed upload never leaves an orphan stuck at "Waiting to start". */
-    fun createSave(url: String, space: String, caption: String?, creator: String?, clientId: String): Created {
+    fun createSave(url: String, space: String, caption: String?, creator: String?, clientId: String, hint: String? = null): Created {
         val body = JSONObject().put("source_url", url).put("space_id", space).put("client_id", clientId)
         caption?.takeIf { it.isNotBlank() }?.let { body.put("caption", it.take(5000)) }
+        hint?.let { body.put("section_hint", it) }
         creator?.takeIf { it.isNotBlank() }?.let { body.put("creator", it.take(200)) }
         val res = JSONObject(call("POST", "/v1/saves", body.toString()))
         return Created(res.getString("save_id"), res.getString("upload_url"), res.optString("status", "received") == "received")

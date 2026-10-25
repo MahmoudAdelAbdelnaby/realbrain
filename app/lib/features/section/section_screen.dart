@@ -26,6 +26,7 @@ const statusChoices = {
   'places': {'to_try': 'To try', 'visited': 'Visited'},
   'workout': {'to_try': 'To try', 'done': 'Done'},
   'fact_check': {'to_try': 'To read', 'done': 'Read'},
+  'ideas': {'to_try': 'To try', 'done': 'Done'},
 };
 
 const toolKinds = {

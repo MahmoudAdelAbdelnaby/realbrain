@@ -139,7 +139,9 @@ Two Gemini calls per save at most: one **Extract** call that watches the video a
                 "why_go": "...", "what_to_order": "...", "t": 8.0}]},
     {"type": "workout", "confidence": 0.9,
      "exercises": [{"name": "Plank", "duration_s": 120, "reps": null, "sets": 1,
-                    "rest_s": 30, "cues": "...", "t": 15.0, "estimated": false}]}
+                    "rest_s": 30, "cues": "...", "t": 15.0, "estimated": false}]},
+    {"type": "ideas", "confidence": 0.8,
+     "title": "...", "idea": "...", "next_steps": ["...", "..."]}
   ],
   "key_frame_t": 4.5,
   "good_for": "Quick weeknight dinner",
@@ -153,6 +155,10 @@ The last four (design v4 §5.1, added 25 Oct) are optional and describe the save
 `good_for` is one line of at most 60 characters in the video's language, shown as "Why you saved
 this" until the user writes their own; `effort_min` is the minutes it takes to try or use;
 `difficulty` is easy, medium or hard; `impact` is low, medium or high.
+
+The `ideas` section (design v4 §5.4, added 25 Oct) holds a thought worth keeping: a short `title`,
+the `idea` in a sentence or two, and 1-3 concrete `next_steps`. It is offered for typed ideas and for
+videos that are mostly an idea or a tip rather than a recipe, tool, place, workout or claim.
 
 **Call 2 — Fact Check grounding** (gemini-2.5-flash-lite + Google Search tool; changed 24 Oct in P1-08: the API refuses gemini-2.5-flash for new keys and Gemini 3+ grounding is 0/day on the free tier, while 2.5 Flash-Lite grounding works, about 2 s a call). The reply is JSON in text (search can't be combined with JSON mode); sources come from the search citations, or the search queries themselves when there are none: input = the claims list; output = per-claim verdict, one-line correction, 2-3 source URLs, plus an overall label and a notification line of at most 60 characters.
 
@@ -176,7 +182,7 @@ The app talks to a small authenticated API; the backend alone writes AI results 
 
 | Method and path | Body | Returns | Notes |
 | --- | --- | --- | --- |
-| POST /v1/saves | source\_url, space\_id, note? | save\_id, upload\_url | upload\_url is a signed Storage URL, valid 15 min |
+| POST /v1/saves | source\_url **or** idea, space\_id, note?, caption?, creator?, client\_id?, section\_hint? | save\_id, upload\_url, status | upload\_url is a signed Storage URL, valid 15 min. Design v4 step 3 (25 Oct): `idea` (≤ 2000 chars) is a typed thought with no link; it is read caption-only straight away (no upload), platform `idea`, filed under Ideas unless a hint says otherwise. `section_hint` (a section id, or `ideas`) is the Create screen's "What is this?": Extract runs with it as a hint, as a correction would |
 | POST /v1/saves/{id}/uploaded | — | 202 | Enqueues processing |
 | POST /v1/saves/{id}/no-video | reason | 202 | Phone couldn't fetch; backend tries the fallback chain |
 | POST /v1/saves/{id}/retry | — | 202 | From Inbox |

@@ -1,7 +1,7 @@
 # Design v4 (Realbrain): proposal, 25 Oct
 
 Status: **approved 25 Oct.** Step 1 (foundation) built 25 Oct (88b3bb1). **Revision 2 approved 25 Oct;
-step 1b built.** Steps 2–6 to come.
+step 1b built.** Steps 2 and 3 built 25 Oct; steps 4–6 to come.
 Board: https://claude.ai/artifact/5MJRG2CH9syMBU9PfGVg3J (private). Source: Mahmoud's concept board
 (10 screens) and the redesign brief. If approved, this replaces `BRAND.md` (Darkroom) and the visual
 parts of `DESIGN_V3_PROPOSAL.md` (liquid glass); the PRD gains the features in §4.

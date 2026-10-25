@@ -281,7 +281,7 @@ class SaveDetail extends StatelessWidget {
     final summary =
         save['summary'] as String? ?? save['step_text'] as String? ?? '';
     final title = switch (section) {
-      'recipe' => data['title'] as String? ?? summary,
+      'recipe' || 'ideas' => data['title'] as String? ?? summary,
       _ => summary,
     };
     final note = save['note'] as String?;
@@ -446,6 +446,7 @@ class SaveDetail extends StatelessWidget {
       'fact_check' =>
         FactCheckView(saveId: save['save_id'] as String?, data: data),
       'tools' => ToolsView(data: data),
+      'ideas' => IdeasView(data: data),
       _ => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           for (final l in itemLines(item))
             Padding(padding: const EdgeInsets.only(bottom: 6), child: Text(l)),
@@ -499,6 +500,11 @@ class SaveDetail extends StatelessWidget {
                   ].whereType<String>().join(', ')}'}'
                 '${p['why_go'] != null ? '\n   ${p['why_go']}' : ''}${_at(p['t'])}',
         ],
+      'ideas' => [
+          if (d['title'] != null) '${d['title']}',
+          if (d['idea'] != null) '${d['idea']}',
+          for (final s in (d['next_steps'] as List?) ?? const []) '• $s',
+        ],
       'workout' => [
           for (final e in list('exercises'))
             '• ${e['name']}: ${e['duration_s'] != null ? '${e['duration_s']} s' : '${e['reps'] ?? '?'} reps'}'
@@ -529,6 +535,31 @@ class _MetaChip extends StatelessWidget {
         Text(label, style: TextStyle(fontSize: 13, color: c.text)),
       ]),
     );
+  }
+}
+
+/// An idea: the thought, then its next steps.
+class IdeasView extends StatelessWidget {
+  const IdeasView({super.key, required this.data});
+  final Map<String, dynamic> data;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = Theme.of(context).textTheme;
+    final steps = ((data['next_steps'] as List?) ?? const []).cast<String>();
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      if (data['idea'] != null) Text('${data['idea']}', style: t.bodyLarge),
+      if (steps.isNotEmpty) ...[
+        const SizedBox(height: 16),
+        Text('Next steps', style: t.titleSmall),
+        const SizedBox(height: 6),
+        for (final (n, s) in steps.indexed)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Text('${n + 1}. $s', style: t.bodyMedium),
+          ),
+      ],
+    ]);
   }
 }
 

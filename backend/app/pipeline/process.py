@@ -29,7 +29,10 @@ def process(save_id: str, attempt: int = 0, max_attempts: int = 3) -> str:
         video: Path | None = Path(tmp) / "video.mp4"
         try:
             uri, caption, fetch = None, save.get("caption"), {"fetch_path": "phone"}
-            if not store.fetch_video(save_id, video):
+            if not save.get("source_url"):
+                # A typed idea (design v4 step 3): the text is all there is.
+                video, fetch = None, {"fetch_path": "typed"}
+            elif not store.fetch_video(save_id, video):
                 store.update_save(save, {"status": "fetching", "step_text": "Getting the video"})
                 got = fallback(save, video)
                 video, uri, caption = got.path, got.uri, got.caption
@@ -38,10 +41,16 @@ def process(save_id: str, attempt: int = 0, max_attempts: int = 3) -> str:
                     fetch["creator"] = got.creator
                 if got.used == "none":
                     raise RuntimeError("no video or caption from any source")
-            caption_only = video is None and uri is None
+            typed = fetch["fetch_path"] == "typed"
+            caption_only = video is None and uri is None and not typed  # a typed idea is complete
             store.update_save(
                 save,
-                {**fetch, "caption": caption, "status": "extracting", "step_text": "Watching the video"},
+                {
+                    **fetch,
+                    "caption": caption,
+                    "status": "extracting",
+                    "step_text": "Reading your idea" if typed else "Watching the video",
+                },
             )
             meta = {
                 "platform": save.get("platform"),

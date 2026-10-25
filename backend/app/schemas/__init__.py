@@ -2,7 +2,7 @@
 
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class Timed(BaseModel):
@@ -90,9 +90,21 @@ class Workout(BaseModel):
     exercises: list[Exercise]
 
 
+class Ideas(BaseModel):
+    """Design v4 §5.4: a thought worth keeping (typed in Create, or a video that is mostly a tip)."""
+
+    type: Literal["ideas"]
+    confidence: float = Field(ge=0, le=1)
+    title: str
+    idea: str = Field(description="The idea in a sentence or two")
+    next_steps: list[str] = Field(default_factory=list, description="1-3 concrete things to do with it")
+
+
 # Plain union (anyOf), not a discriminated one: Gemini's schema support is safest with anyOf,
 # and the Literal `type` still makes validation pick the right model.
-Section = FactCheck | Tools | Recipe | Places | Workout
+Section = FactCheck | Tools | Recipe | Places | Workout | Ideas
+
+SECTIONS = Literal["fact_check", "tools", "recipe", "places", "workout", "ideas"]
 
 
 class ExtractResult(BaseModel):
@@ -142,7 +154,9 @@ def gemini_schema(model: type[BaseModel]) -> dict:
 
 
 class CreateSave(BaseModel):
-    source_url: str = Field(pattern=r"^https?://")
+    # A link, or (design v4 step 3) a typed idea with no link.
+    source_url: str | None = Field(None, pattern=r"^https?://")
+    idea: str | None = Field(None, min_length=1, max_length=2000)
     space_id: str = Field(min_length=1, max_length=128)
     note: str | None = Field(None, max_length=2000)
     # Optional, from the phone's yt-dlp metadata; fill the save doc's caption/creator fields.
@@ -151,6 +165,14 @@ class CreateSave(BaseModel):
     # The phone's own id for this share. Retries send the same one and get the same save back,
     # so a failed upload can't leave an orphan behind.
     client_id: str | None = Field(None, pattern=r"^[A-Za-z0-9-]{8,64}$")
+    # Create's "What is this?": Extract runs with it as a hint, as a correction would.
+    section_hint: SECTIONS | None = None
+
+    @model_validator(mode="after")
+    def _link_or_idea(self):
+        if (self.source_url is None) == (self.idea is None):
+            raise ValueError("send source_url or idea, not both or neither")
+        return self
 
 
 class CreatedSave(BaseModel):
@@ -162,7 +184,7 @@ class CreatedSave(BaseModel):
 
 class FileUnder(BaseModel):
     # "none": nothing fits (e.g. a product ad before P3-02); keep it as a plain save.
-    section: Literal["fact_check", "tools", "recipe", "places", "workout", "none"]
+    section: Literal["fact_check", "tools", "recipe", "places", "workout", "ideas", "none"]
 
 
 class NoVideo(BaseModel):
@@ -184,7 +206,7 @@ class CreateHousehold(BaseModel):
 
 
 class CreateList(BaseModel):
-    section: Literal["fact_check", "tools", "recipe", "places", "workout"]
+    section: SECTIONS
     name: str = Field(min_length=1, max_length=60)
 
 

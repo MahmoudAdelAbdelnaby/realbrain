@@ -64,6 +64,7 @@ SECTION_NAMES = {
     "recipe": "Recipe",
     "places": "Places",
     "workout": "Workout",
+    "ideas": "Ideas",
 }
 
 

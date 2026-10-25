@@ -23,7 +23,10 @@ class MainActivity : FlutterActivity() {
                         background(result) { Downloader.download(applicationContext, url).toMap() }
                     }
                     "enqueue" -> result.success(
-                        Saves.enqueue(applicationContext, call.argument<String>("url")!!, call.argument<String>("space") ?: "me"),
+                        Saves.enqueue(
+                            applicationContext, call.argument<String>("url")!!, call.argument<String>("space") ?: "me",
+                            hint = call.argument<String>("hint"),
+                        ),
                     )
                     "saves" -> result.success(Saves.all(applicationContext).toString())
                     "retryWaiting" -> result.success(Saves.retryWaiting(applicationContext))

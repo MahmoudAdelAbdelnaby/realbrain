@@ -12,6 +12,7 @@ import '../../core/surface.dart';
 import '../../core/theme/gallery.dart';
 import '../../core/theme/tokens.dart';
 import '../../core/widgets.dart';
+import '../create/create_screen.dart';
 import '../factcheck/fact_check_view.dart' show verdictLabels;
 import '../inbox/inbox_screen.dart';
 import '../library/library_screen.dart';
@@ -31,6 +32,7 @@ const sectionLabels = {
   'recipe': 'Recipes',
   'places': 'Places',
   'workout': 'Workouts',
+  'ideas': 'Ideas',
 };
 
 const _processing = {
@@ -195,7 +197,8 @@ class _FeedScreenState extends State<FeedScreen> {
         bottomNavigationBar: NavBar(
           selected: _tab,
           onSelect: (i) => setState(() => _tab = i),
-          onCreate: () => addLink(context),
+          onCreate: () =>
+              openCreate(context, hasHome: _spaces.containsKey('home')),
           status: status,
           destinations: [
             (
@@ -915,50 +918,16 @@ class _Stat extends StatelessWidget {
   }
 }
 
-/// The + button: paste a link and pick a space; it saves exactly like a share.
-Future<void> addLink(BuildContext context) async {
+/// The + button: Create, starting from a link already on the clipboard.
+Future<void> openCreate(BuildContext context, {required bool hasHome}) async {
   final clip = (await Clipboard.getData(Clipboard.kTextPlain))?.text?.trim();
-  final field = TextEditingController(
-      text: clip != null && Uri.tryParse(clip)?.hasScheme == true ? clip : '');
   if (!context.mounted) return;
-  final messenger = ScaffoldMessenger.of(context);
-  Future<void> save(BuildContext sheet, String space) async {
-    final url = field.text.trim();
-    if (Uri.tryParse(url)?.hasScheme != true) return;
-    Navigator.of(sheet).pop();
-    await native.invokeMethod('enqueue', {'url': url, 'space': space});
-    messenger
-        .showSnackBar(const SnackBar(content: Text('Added to your brain')));
-  }
-
-  await showRbSheet<void>(context, title: 'Add to your brain', children: [
-    Padding(
-      padding: const EdgeInsets.symmetric(horizontal: RbSpace.side),
-      child: TextField(
-        controller: field,
-        autofocus: field.text.isEmpty,
-        keyboardType: TextInputType.url,
-        decoration:
-            const InputDecoration(hintText: 'Paste a link to a reel or video'),
-      ),
-    ),
-    Builder(
-      builder: (sheet) => Padding(
-        padding: EdgeInsets.fromLTRB(RbSpace.side, RbSpace.side, RbSpace.side,
-            RbSpace.side + MediaQuery.viewInsetsOf(sheet).bottom),
-        child: Row(children: [
-          Expanded(
-              child: PillButton(
-                  label: 'Save to Me', onPressed: () => save(sheet, 'me'))),
-          const SizedBox(width: 10),
-          Expanded(
-            child: OutlinedButton(
-                onPressed: () => save(sheet, 'home'),
-                child: const Text('Save to Home')),
-          ),
-        ]),
-      ),
-    ),
-  ]);
-  field.dispose();
+  await Navigator.of(context).push(MaterialPageRoute(
+    fullscreenDialog: true,
+    builder: (_) => CreateScreen(
+        hasHome: hasHome,
+        link: clip != null && Uri.tryParse(clip)?.hasScheme == true
+            ? clip
+            : null),
+  ));
 }

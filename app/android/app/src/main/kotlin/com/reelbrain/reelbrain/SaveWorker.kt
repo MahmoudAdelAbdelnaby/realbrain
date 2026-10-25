@@ -65,11 +65,15 @@ object Saves {
     }
 
     /** Creates the save and starts its background download + upload. */
-    fun enqueue(ctx: Context, url: String, space: String, sharedText: String? = null): String {
+    /** [hint]: Create's "What is this?" (a section id), sent with the save. */
+    fun enqueue(ctx: Context, url: String, space: String, sharedText: String? = null, hint: String? = null): String {
         val id = UUID.randomUUID().toString()
         upsert(
             ctx, id,
-            mapOf("url" to url, "space" to space, "shared_text" to sharedText, "status" to "queued", "at" to System.currentTimeMillis()),
+            mapOf(
+                "url" to url, "space" to space, "shared_text" to sharedText, "hint" to hint,
+                "status" to "queued", "at" to System.currentTimeMillis(),
+            ),
         )
         start(ctx, id, ExistingWorkPolicy.KEEP)
         return id
@@ -150,6 +154,7 @@ class SaveWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ctx, 
             val saved = Saves.get(ctx, id)!!
             val (saveId, uploadUrl, fresh) = Backend.createSave(
                 url, save.getString("space"), saved.str("caption") ?: save.str("shared_text"), saved.str("creator"), id,
+                save.str("hint"),
             )
             // A retry after the backend already has the video: nothing left to send.
             if (fresh) {
@@ -189,7 +194,7 @@ class SaveWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ctx, 
     private fun sendWithoutVideo(id: String, save: JSONObject, reason: String): Result {
         if (!Backend.configured) return Result.failure()
         return try {
-            val (saveId, _, fresh) = Backend.createSave(save.getString("url"), save.getString("space"), save.str("shared_text"), null, id)
+            val (saveId, _, fresh) = Backend.createSave(save.getString("url"), save.getString("space"), save.str("shared_text"), null, id, save.str("hint"))
             if (fresh) Backend.noVideo(saveId, reason)
             Saves.upsert(ctx, id, mapOf("status" to "sent_without_video", "save_id" to saveId))
             Result.success()

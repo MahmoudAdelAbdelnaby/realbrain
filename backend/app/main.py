@@ -160,16 +160,22 @@ def create_save(body: CreateSave, uid: str = Depends(user)) -> CreatedSave:
         save_id,
         {
             "source_url": body.source_url,
-            "platform": platform(body.source_url),
+            "platform": platform(body.source_url) if body.source_url else "idea",
             "space_id": space_id,
             "note": body.note,
-            "caption": body.caption,
+            "caption": body.caption or body.idea,
             "creator": body.creator,
             "status": "received",
             "step_text": None,
             "created_by": uid,
+            # Create's "What is this?"; a typed idea is an idea unless it says otherwise.
+            "forced_section": body.section_hint or ("ideas" if body.idea else None),
         },
     )
+    if body.idea:
+        # Nothing to upload: read it straight away.
+        tasks.enqueue(save_id)
+        return CreatedSave(save_id=save_id, upload_url="", status="uploaded")
     return CreatedSave(save_id=save_id, upload_url=store.upload_url(save_id))
 
 
