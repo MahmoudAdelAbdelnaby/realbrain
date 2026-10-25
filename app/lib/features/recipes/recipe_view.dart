@@ -22,8 +22,11 @@ String _at(Object? t) {
 
 /// Recipe card (P1-10): servings scaler, ingredients with "≈" for estimates, steps, tags, Cook.
 class RecipeView extends StatefulWidget {
-  const RecipeView({super.key, required this.data});
+  const RecipeView({super.key, required this.data, this.showTitle = true});
   final Map<String, dynamic> data;
+
+  /// Off when the memory's title above already is the recipe's.
+  final bool showTitle;
 
   @override
   State<RecipeView> createState() => _RecipeViewState();
@@ -42,7 +45,7 @@ class _RecipeViewState extends State<RecipeView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (d['title'] != null)
+        if (widget.showTitle && d['title'] != null)
           Text('${d['title']}', style: Theme.of(context).textTheme.titleMedium),
         if (tags.isNotEmpty)
           Padding(
@@ -97,7 +100,7 @@ class _RecipeViewState extends State<RecipeView> {
                   title: '${d['title'] ?? 'Cooking'}', steps: steps),
             )),
             icon: const Icon(Icons.soup_kitchen_outlined),
-            label: const Text('Cook'),
+            label: const Text('Start cooking'),
           ),
       ],
     );

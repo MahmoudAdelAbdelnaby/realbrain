@@ -52,7 +52,8 @@ class NavBar extends StatelessWidget {
         minimum: const EdgeInsets.fromLTRB(RbSpace.side, 0, RbSpace.side, 12),
         child: Center(
           heightFactor: 1,
-          child: Panel(radius: 32, padding: const EdgeInsets.all(6), child: controls),
+          child: Panel(
+              radius: 32, padding: const EdgeInsets.all(6), child: controls),
         ),
       );
     }
@@ -67,8 +68,8 @@ class NavBar extends StatelessWidget {
         ),
     ];
     if (onCreate != null) {
-      slots.insert(
-          (slots.length / 2).ceil(), Expanded(child: _Create(onTap: onCreate!)));
+      slots.insert((slots.length / 2).ceil(),
+          Expanded(child: _Create(onTap: onCreate!)));
     }
     return Column(mainAxisSize: MainAxisSize.min, children: [
       AnimatedSize(
@@ -81,7 +82,8 @@ class NavBar extends StatelessWidget {
               ? const SizedBox(key: ValueKey('none'), width: double.infinity)
               : Padding(
                   key: ValueKey(s.key),
-                  padding: const EdgeInsets.fromLTRB(RbSpace.side, 0, RbSpace.side, 8),
+                  padding: const EdgeInsets.fromLTRB(
+                      RbSpace.side, 0, RbSpace.side, 8),
                   child: _StatusRow(status: s),
                 ),
         ),
@@ -122,7 +124,9 @@ class _StatusRow extends StatelessWidget {
             const SizedBox(width: 10),
             Flexible(
               child: Text(status.text,
-                  maxLines: 1, overflow: TextOverflow.ellipsis, style: t.labelLarge),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: t.labelLarge),
             ),
           ]),
         ),
@@ -142,7 +146,8 @@ class _Destination extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = RbColors.of(context);
     final color = selected ? c.text : c.faint;
-    final icon = SizedBox.square(dimension: 26, child: Center(child: dest.icon(color)));
+    final icon =
+        SizedBox.square(dimension: 26, child: Center(child: dest.icon(color)));
     return Semantics(
       selected: selected,
       button: true,
@@ -151,7 +156,9 @@ class _Destination extends StatelessWidget {
       child: Pressable(
         onTap: onTap,
         child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-          dest.badge > 0 ? Badge(label: Text('${dest.badge}'), child: icon) : icon,
+          dest.badge > 0
+              ? Badge(label: Text('${dest.badge}'), child: icon)
+              : icon,
           const SizedBox(height: 4),
           Text(dest.label,
               maxLines: 1,

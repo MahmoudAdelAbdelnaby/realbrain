@@ -14,7 +14,8 @@ void main() {
     'ideas'
   ];
 
-  test('every interest has its own hue in both themes, distinct from each other',
+  test(
+      'every interest has its own hue in both themes, distinct from each other',
       () {
     for (final c in [RbColors.dark, RbColors.light]) {
       final hues = [for (final s in sections) c.section(s)];
@@ -84,14 +85,14 @@ void main() {
     expect(find.bySemanticsLabel('Realbrain'), findsNWidgets(2));
   });
 
-  testWidgets('pill buttons fire, and a disabled one does not',
-      (tester) async {
+  testWidgets('pill buttons fire, and a disabled one does not', (tester) async {
     var taps = 0;
     await tester.pumpWidget(MaterialApp(
       theme: rbTheme(Brightness.dark),
       home: Column(children: [
         PillButton(label: 'Cook now', onPressed: () => taps++),
-        PillButton(label: 'Start cooking', action: true, onPressed: () => taps++),
+        PillButton(
+            label: 'Start cooking', action: true, onPressed: () => taps++),
         const PillButton(label: 'Off', onPressed: null),
       ]),
     ));

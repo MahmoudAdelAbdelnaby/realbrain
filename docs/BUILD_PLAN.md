@@ -141,9 +141,18 @@ Two Gemini calls per save at most: one **Extract** call that watches the video a
      "exercises": [{"name": "Plank", "duration_s": 120, "reps": null, "sets": 1,
                     "rest_s": 30, "cues": "...", "t": 15.0, "estimated": false}]}
   ],
-  "key_frame_t": 4.5
+  "key_frame_t": 4.5,
+  "good_for": "Quick weeknight dinner",
+  "effort_min": 35,
+  "difficulty": "easy",
+  "impact": "medium"
 }
 ```
+
+The last four (design v4 §5.1, added 25 Oct) are optional and describe the save as a whole:
+`good_for` is one line of at most 60 characters in the video's language, shown as "Why you saved
+this" until the user writes their own; `effort_min` is the minutes it takes to try or use;
+`difficulty` is easy, medium or hard; `impact` is low, medium or high.
 
 **Call 2 — Fact Check grounding** (gemini-2.5-flash-lite + Google Search tool; changed 24 Oct in P1-08: the API refuses gemini-2.5-flash for new keys and Gemini 3+ grounding is 0/day on the free tier, while 2.5 Flash-Lite grounding works, about 2 s a call). The reply is JSON in text (search can't be combined with JSON mode); sources come from the search citations, or the search queries themselves when there are none: input = the claims list; output = per-claim verdict, one-line correction, 2-3 source URLs, plus an overall label and a notification line of at most 60 characters.
 

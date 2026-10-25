@@ -58,9 +58,38 @@ void main() {
     expect(find.text('• 200 g lentils'), findsOneWidget);
     expect(find.text('• ≈ salt'), findsOneWidget);
     expect(find.text('1. Boil the lentils'), findsOneWidget);
-    expect(find.text('Cook'), findsOneWidget);
+    expect(find.text('Start cooking'), findsOneWidget);
     expect(find.text('Abou Tarek'), findsOneWidget);
     expect(find.text('Downtown, Cairo'), findsOneWidget);
     expect(find.text('Open in Maps'), findsOneWidget);
+  });
+
+  test('the source line and the memory chips', () {
+    final save = {
+      'platform': 'instagram',
+      'creator': 'chef',
+      'created_at': DateTime(2026, 4, 12).millisecondsSinceEpoch / 1000,
+      'effort_min': 12,
+      'difficulty': 'easy',
+      'impact': 'high',
+    };
+    expect(sourceLine(save), 'From Instagram · chef · Saved 12 Apr');
+    expect([for (final (_, l) in metaChips(save)) l],
+        ['12 min', 'Easy', 'High impact']);
+    expect(metaChips({}), isEmpty);
+  });
+
+  testWidgets('why you saved it: the AI guess until you write your own',
+      (tester) async {
+    Widget detail(Map<String, dynamic> save) => ReelbrainApp(
+        home: Scaffold(
+            body: SaveDetail(save: save, items: const [], onEditWhy: () {})));
+    await tester
+        .pumpWidget(detail({'summary': 'S', 'good_for': 'Quick dinner'}));
+    expect(find.text('“Quick dinner” · tap to put it in your words'),
+        findsOneWidget);
+    await tester.pumpWidget(detail(
+        {'summary': 'S', 'good_for': 'Quick dinner', 'note': 'For Friday'}));
+    expect(find.text('“For Friday”'), findsOneWidget);
   });
 }

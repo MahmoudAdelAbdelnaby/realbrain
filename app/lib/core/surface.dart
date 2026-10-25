@@ -22,20 +22,15 @@ class Panel extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = RbColors.of(context);
     final dark = Theme.of(context).brightness == Brightness.dark;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: c.surface,
-        borderRadius: BorderRadius.circular(radius),
-        border: Border.all(color: c.line),
-        boxShadow: shadow
-            ? [
-                BoxShadow(
-                    color: Colors.black.withValues(alpha: dark ? 0.45 : 0.08),
-                    blurRadius: 28,
-                    offset: const Offset(0, 10))
-              ]
-            : null,
-      ),
+    // A Material, not a DecoratedBox: sheets put ListTiles on it, and their ink needs one.
+    return Material(
+      color: c.surface,
+      elevation: shadow ? 10 : 0,
+      shadowColor: Colors.black.withValues(alpha: dark ? 0.6 : 0.2),
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(radius),
+          side: BorderSide(color: c.line)),
+      clipBehavior: Clip.antiAlias,
       child: Padding(padding: padding, child: child),
     );
   }

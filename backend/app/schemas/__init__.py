@@ -103,6 +103,13 @@ class ExtractResult(BaseModel):
     on_screen_text: list[Timed]
     sections: list[Section]
     key_frame_t: float | None = None
+    # Design v4 §5.1: the save as a whole, for the memory card ("Why you saved this", chips).
+    good_for: str | None = Field(
+        None, max_length=80, description="Who or when it is good for, at most 60 chars, in the video's language, e.g. Quick weeknight dinner"
+    )
+    effort_min: int | None = Field(None, ge=0, description="Minutes it takes to try, cook, do or use it")
+    difficulty: Literal["easy", "medium", "hard"] | None = None
+    impact: Literal["low", "medium", "high"] | None = Field(None, description="How much it could change the viewer's day or work")
 
 
 REVIEW_BELOW = 0.6

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/surface.dart';
 import '../../core/native.dart';
 import '../../core/theme/tokens.dart';
+import '../../core/widgets.dart' show sectionIcons;
 import '../factcheck/fact_check_view.dart' show VerdictPill;
 import '../save/save_screen.dart';
 import '../workouts/workout_plan.dart';
@@ -355,13 +356,14 @@ typedef WaitingCard = ({Map<String, dynamic> item, Map<String, dynamic> save});
 
 /// Items still waiting for you (no state, or "to try") whose save is loaded and readable,
 /// newest first; with [olderThan], only those saved before it (Recall).
-List<WaitingCard> waiting(Iterable<Map<String, dynamic>> items,
-    Iterable<Map<String, dynamic>> saves,
+List<WaitingCard> waiting(
+    Iterable<Map<String, dynamic>> items, Iterable<Map<String, dynamic>> saves,
     {Duration? olderThan, DateTime? now}) {
   final byId = {for (final s in saves) s['save_id']: s};
   final cutoff = olderThan == null
       ? null
-      : (now ?? DateTime.now()).subtract(olderThan).millisecondsSinceEpoch / 1000;
+      : (now ?? DateTime.now()).subtract(olderThan).millisecondsSinceEpoch /
+          1000;
   final out = <WaitingCard>[];
   for (final item in items) {
     final save = byId[item['save_id']];
@@ -403,7 +405,8 @@ const actionLabels = {
 /// is the colour. [note] replaces the line
 /// (Recall: "Saved 47 days ago").
 class ReadyCard extends StatelessWidget {
-  const ReadyCard({super.key, required this.item, required this.save, this.note});
+  const ReadyCard(
+      {super.key, required this.item, required this.save, this.note});
   final Map<String, dynamic> item, save;
   final String? note;
 
@@ -414,7 +417,13 @@ class ReadyCard extends StatelessWidget {
     final section = item['section'] as String?;
     final hue = c.section(section);
     final (title, detail) = cardFace(item, save);
-    final saveId = save['save_id'] as String?, spaceId = save['space_id'] as String?;
+    // The memory's own time and difficulty first (design v4 §5.1), then the section's line.
+    final meta = [
+      for (final (_, label) in metaChips(save).take(2)) label,
+      if (detail.isNotEmpty) detail,
+    ].join(' · ');
+    final saveId = save['save_id'] as String?,
+        spaceId = save['space_id'] as String?;
     final hero = 'frame-$saveId-ready-$section';
     void open() => Navigator.of(context).push(MaterialPageRoute(
         builder: (_) => SaveScreen(
@@ -436,35 +445,39 @@ class ReadyCard extends StatelessWidget {
               tag: hero,
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(RbSpace.photoRadius),
-                child: SizedBox(width: 92, height: 108, child: FrameImage(save: save)),
+                child: SizedBox(
+                    width: 92, height: 108, child: FrameImage(save: save)),
               ),
             ),
             const SizedBox(width: 14),
             Expanded(
               child: SizedBox(
                 height: 108,
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Row(children: [
-                    Container(
-                        width: 6,
-                        height: 6,
-                        decoration: BoxDecoration(color: hue, shape: BoxShape.circle)),
-                    const SizedBox(width: 6),
-                    Text(kindLabels[section] ?? '',
-                        style: t.labelMedium?.copyWith(color: hue)),
-                  ]),
-                  const SizedBox(height: 4),
-                  Text(title,
-                      maxLines: 2, overflow: TextOverflow.ellipsis, style: t.titleMedium),
-                  if ((note ?? detail).isNotEmpty)
-                    Text(note ?? detail,
-                        maxLines: 1, overflow: TextOverflow.ellipsis, style: t.bodySmall),
-                  const Spacer(),
-                  PillButton(
-                      small: true,
-                      label: actionLabels[section] ?? 'Open',
-                      onPressed: canOpen ? open : null),
-                ]),
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(children: [
+                        Icon(sectionIcons[section], size: 14, color: hue),
+                        const SizedBox(width: 6),
+                        Text(kindLabels[section] ?? '',
+                            style: t.labelMedium?.copyWith(color: c.muted)),
+                      ]),
+                      const SizedBox(height: 4),
+                      Text(title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: t.titleMedium),
+                      if ((note ?? meta).isNotEmpty)
+                        Text(note ?? meta,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: t.bodySmall),
+                      const Spacer(),
+                      PillButton(
+                          small: true,
+                          label: actionLabels[section] ?? 'Open',
+                          onPressed: canOpen ? open : null),
+                    ]),
               ),
             ),
           ]),

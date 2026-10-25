@@ -88,7 +88,8 @@ class _DesignGalleryState extends State<DesignGallery> {
                     height: 260,
                     child: Haze(
                       child: Center(
-                        child: Column(mainAxisSize: MainAxisSize.min, children: [
+                        child:
+                            Column(mainAxisSize: MainAxisSize.min, children: [
                           const BrainMark(size: 96),
                           const SizedBox(height: 12),
                           Panel(

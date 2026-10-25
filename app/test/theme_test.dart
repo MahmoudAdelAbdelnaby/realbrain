@@ -94,18 +94,17 @@ void main() {
     expect(RbMotion.curve.transform(0.95), closeTo(1, 0.01));
   });
 
-  testWidgets('glass blurs normally and turns solid under high contrast',
+  testWidgets('a panel is solid and can hold list tiles (sheets)',
       (tester) async {
-    Widget app(bool high) => MaterialApp(
-          theme: rbTheme(Brightness.dark),
-          home: MediaQuery(
-            data: MediaQueryData(highContrast: high),
-            child: const Panel(child: Text('pill')),
-          ),
-        );
-    await tester.pumpWidget(app(false));
-    expect(find.byType(BackdropFilter), findsOneWidget);
-    await tester.pumpWidget(app(true));
+    await tester.pumpWidget(MaterialApp(
+      theme: rbTheme(Brightness.dark),
+      home: Scaffold(
+        body: Panel(
+            child: ListTile(title: const Text('Change section'), onTap: () {})),
+      ),
+    ));
+    expect(tester.takeException(), isNull);
     expect(find.byType(BackdropFilter), findsNothing);
+    await tester.tap(find.text('Change section'));
   });
 }

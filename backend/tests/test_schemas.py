@@ -48,3 +48,13 @@ def test_gemini_schema_is_plain_json_schema():
     assert '"default"' not in text and '"anyOf"' in text and "fact_check" in text
     assert all("title" not in d for d in schema["$defs"].values())
     assert "title" in schema["$defs"]["Recipe"]["properties"], "field names must survive"
+
+
+def test_memory_card_fields_are_optional_and_checked():
+    data = json.loads(SAMPLE)
+    assert ExtractResult.model_validate(data).good_for is None  # older replies still validate
+    data.update(good_for="Quick weeknight dinner", effort_min=35, difficulty="easy", impact="high")
+    r = ExtractResult.model_validate(data)
+    assert (r.good_for, r.effort_min, r.difficulty, r.impact) == ("Quick weeknight dinner", 35, "easy", "high")
+    with pytest.raises(ValidationError):
+        ExtractResult.model_validate({**data, "difficulty": "brutal"})

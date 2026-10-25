@@ -53,7 +53,8 @@ abstract final class BrainMesh {
 /// The mark. Below 80 px it draws the simplified mesh so it stays sharp (§3). With [animate] a
 /// light runs through the nodes: used wherever something is processing.
 class BrainMark extends StatefulWidget {
-  const BrainMark({super.key, this.size = 32, this.animate = false, this.color});
+  const BrainMark(
+      {super.key, this.size = 32, this.animate = false, this.color});
   final double size;
   final bool animate;
 
@@ -100,9 +101,7 @@ class _BrainMarkState extends State<BrainMark>
           dimension: widget.size,
           child: CustomPaint(
               painter: _MeshPainter(
-                  _c,
-                  widget.color ?? RbColors.of(context).text,
-                  widget.animate,
+                  _c, widget.color ?? RbColors.of(context).text, widget.animate,
                   full: widget.size >= 80)),
         ),
       );
@@ -121,7 +120,10 @@ class _MeshPainter extends CustomPainter {
     canvas.scale(px);
     canvas.translate(0, 2.5); // the brain spans y 15..80: centre it
     const o = BrainMesh.outline, i = BrainMesh.inner;
-    final lineW = (full ? math.max(0.8, size.width / 110) : math.max(1.5, size.width * 0.045)) / px;
+    final lineW = (full
+            ? math.max(0.8, size.width / 110)
+            : math.max(1.5, size.width * 0.045)) /
+        px;
     final line = Paint()
       ..color = color
       ..style = PaintingStyle.stroke
@@ -144,7 +146,8 @@ class _MeshPainter extends CustomPainter {
     canvas.drawPath(
         edges, full ? (line..color = color.withValues(alpha: 0.85)) : line);
     // Nodes; while animating a light travels through them in turn.
-    final nodes = full ? [...o, ...i] : [for (final k in BrainMesh.simpleNodes) i[k]];
+    final nodes =
+        full ? [...o, ...i] : [for (final k in BrainMesh.simpleNodes) i[k]];
     final bigs = full ? {for (final k in BrainMesh.big) i[k]} : nodes.toSet();
     final r = (full ? size.width * 0.012 : size.width * 0.05) / px;
     final rBig = (full ? size.width * 0.022 : size.width * 0.05) / px;

@@ -148,7 +148,7 @@ class _FeedScreenState extends State<FeedScreen> {
         ((b['created_at'] ?? 0) as num)
             .compareTo((a['created_at'] ?? 0) as num));
     String spaceLabel(String id) => labelOf[id] == 'home' ? 'Home' : 'Me';
-    final inbox = saves.where(inInbox).toList();
+    final inbox = saves.where(inInboxList).toList();
     // The Inbox and section screens listen to these, so they stay live while open.
     final allItems = [for (final list in _items.values) ...list];
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -175,8 +175,8 @@ class _FeedScreenState extends State<FeedScreen> {
     final tabs = [
       RefreshIndicator(
         onRefresh: _refresh,
-        child: _brain(context, saves, allItems, inbox, ready, recall,
-            spaceLabel, pad),
+        child: _brain(
+            context, saves, allItems, inbox, ready, recall, spaceLabel, pad),
       ),
       _memories(context, saves, allItems, spaceLabel, pad),
       _recallTab(context, recall, pad),
@@ -293,7 +293,8 @@ class _FeedScreenState extends State<FeedScreen> {
         const SizedBox(height: 20),
         if (inbox.isNotEmpty)
           _NeedsALook(
-              count: inbox.length,
+              needs: inbox.where(inInbox).length,
+              arriving: inbox.length - inbox.where(inInbox).length,
               onTap: () =>
                   _push(InboxScreen(saves: _inbox, spaceLabel: spaceLabel))),
         if (_error != null)
@@ -328,8 +329,8 @@ class _FeedScreenState extends State<FeedScreen> {
         for (final lane in lanes)
           LaneView(
             lane: lane,
-            onSeeAll: () => _push(
-                SectionScreen(section: lane.section, items: _allItems)),
+            onSeeAll: () =>
+                _push(SectionScreen(section: lane.section, items: _allItems)),
             isNew: _arrived,
             extra: lane.section == 'places'
                 ? TextButton(
@@ -484,8 +485,7 @@ class _FeedScreenState extends State<FeedScreen> {
                   ),
                   const SizedBox(width: 14),
                   Expanded(
-                      child:
-                          Text(sectionLabels[e.key]!, style: t.titleMedium)),
+                      child: Text(sectionLabels[e.key]!, style: t.titleMedium)),
                   Text('${e.value}',
                       style: t.titleMedium?.copyWith(color: c.muted)),
                   const SizedBox(width: 4),
@@ -856,10 +856,11 @@ class _AccountMenu extends StatelessWidget {
   }
 }
 
-/// Inbox nudge on Brain: only while saves need a look.
+/// Inbox nudge on Home: only while something is arriving or needs a look.
 class _NeedsALook extends StatelessWidget {
-  const _NeedsALook({required this.count, required this.onTap});
-  final int count;
+  const _NeedsALook(
+      {required this.needs, required this.arriving, required this.onTap});
+  final int needs, arriving;
   final VoidCallback onTap;
 
   @override
@@ -871,9 +872,11 @@ class _NeedsALook extends StatelessWidget {
             margin: EdgeInsets.zero,
             child: ListTile(
               leading: const Icon(Icons.inbox_outlined),
-              title: Text(count == 1
-                  ? 'Inbox · 1 save needs a look'
-                  : 'Inbox · $count saves need a look'),
+              title: Text([
+                'Inbox',
+                if (needs > 0) '$needs need${needs == 1 ? 's' : ''} a look',
+                if (arriving > 0) '$arriving understanding…',
+              ].join(' · ')),
               trailing: const Icon(Icons.chevron_right),
             ),
           ),
