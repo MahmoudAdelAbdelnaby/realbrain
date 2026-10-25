@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart';
 
-/// Design tokens: design v4 (docs/DESIGN_V4_PROPOSAL.md §2): a navy ground under a soft haze,
-/// lavender as the brand, pill and action gradients, and one hue per interest.
+/// Design tokens: design v4 revision 2 (docs/DESIGN_V4_PROPOSAL.md): a quiet charcoal ground,
+/// soft-white text and pills, four restrained accents, and colour only where it means something.
 @immutable
 class RbColors extends ThemeExtension<RbColors> {
   const RbColors({
@@ -24,42 +24,41 @@ class RbColors extends ThemeExtension<RbColors> {
     required this.falseBg,
     required this.brand,
     required this.haze,
-    required this.pill,
-    required this.action,
+    required this.capture,
     required this.sections,
   });
 
   final Color ground, surface, raised, line, text, muted, faint;
+
+  /// Every action pill (Cook now, Start cooking): soft white on charcoal.
   final Color primaryFill, primaryLabel, accent;
   final Color trueFg, trueBg, mixedFg, mixedBg, falseFg, falseBg;
 
-  /// Lavender: the mark, selection, links.
+  /// Violet: the mark's glow, selection, links.
   final Color brand;
 
-  /// The two glows behind every screen: top right, bottom left.
+  /// The two glows behind the expressive screens only (sign-in, onboarding, Threads, Year in
+  /// Brain): top right, bottom left.
   final (Color, Color) haze;
 
-  /// Pill buttons (Cook now, Try now, the + button): top to bottom.
-  final (Color, Color) pill;
+  /// The + capture button, the one gradient in daily use: start to end.
+  final (Color, Color) capture;
 
-  /// The one main action on a screen (Start cooking): start to end.
-  final (Color, Color) action;
-
-  /// One hue per interest: chip dot, card wash, thread node.
+  /// One accent per interest, shown as a small icon or dot, never a card fill.
   final Map<String, Color> sections;
 
   Color section(String? id) => sections[id] ?? accent;
 
   static const dark = RbColors(
-    ground: Color(0xFF080A14),
-    surface: Color(0xFF111528),
-    raised: Color(0xFF1A1F38),
-    line: Color(0xFF24294A),
-    text: Color(0xFFFFFFFF),
-    muted: Color(0xFFA7ACBF),
-    faint: Color(0xFF8A8FA3),
-    primaryFill: Color(0xFFECE9FF),
-    primaryLabel: Color(0xFF12142A),
+    ground: Color(0xFF0E0F12),
+    surface: Color(0xFF16181C),
+    raised: Color(0xFF1E2126),
+    line: Color(0xFF2A2D33),
+    text: Color(0xFFECEDEF),
+    muted: Color(0xFF9A9EA6),
+    faint: Color(0xFF868A93),
+    primaryFill: Color(0xFFECEDEF),
+    primaryLabel: Color(0xFF0E0F12),
     accent: Color(0xFF9C8CFF),
     trueFg: Color(0xFF3FC07A),
     trueBg: Color(0xFF172A1D),
@@ -68,29 +67,27 @@ class RbColors extends ThemeExtension<RbColors> {
     falseFg: Color(0xFFE5566F),
     falseBg: Color(0xFF2C1A20),
     brand: Color(0xFF9C8CFF),
-    haze: (Color(0xFF1B1F3D), Color(0xFF141A33)),
-    pill: (Color(0xFFFFFFFF), Color(0xFFE6E2FF)),
-    action: (Color(0xFFFF9A5A), Color(0xFFFF6B8B)),
+    haze: (Color(0xFF231F3A), Color(0xFF122229)),
+    capture: (Color(0xFF9C8CFF), Color(0xFF6EA2FF)),
     sections: {
-      'fact_check': Color(0xFFFF6B8B),
-      'tools': Color(0xFF8FB8FF),
-      'recipe': Color(0xFFFFB27A),
-      'places': Color(0xFF6FE0C8),
-      'workout': Color(0xFF9BE38A),
-      'learning': Color(0xFF9C8CFF),
-      'ideas': Color(0xFFFFD66B),
+      'fact_check': Color(0xFF9C8CFF),
+      'tools': Color(0xFF6EA2FF),
+      'recipe': Color(0xFFF2B866),
+      'places': Color(0xFF4FD1B9),
+      'workout': Color(0xFF8CCB7A),
+      'ideas': Color(0xFFE8CD6B),
     },
   );
 
   static const light = RbColors(
-    ground: Color(0xFFF4F4FA),
+    ground: Color(0xFFF5F5F7),
     surface: Color(0xFFFFFFFF),
-    raised: Color(0xFFECEBF6),
-    line: Color(0xFFDAD9E8),
-    text: Color(0xFF0E1024),
-    muted: Color(0xFF5B5F75),
-    faint: Color(0xFF63677D),
-    primaryFill: Color(0xFF0E1024),
+    raised: Color(0xFFECECEF),
+    line: Color(0xFFDCDDE1),
+    text: Color(0xFF111216),
+    muted: Color(0xFF5C6069),
+    faint: Color(0xFF656973),
+    primaryFill: Color(0xFF111216),
     primaryLabel: Color(0xFFFFFFFF),
     accent: Color(0xFF5B4FD6),
     trueFg: Color(0xFF247B50),
@@ -100,17 +97,15 @@ class RbColors extends ThemeExtension<RbColors> {
     falseFg: Color(0xFF831C1E),
     falseBg: Color(0xFFFFEDEA),
     brand: Color(0xFF5B4FD6),
-    haze: (Color(0xFFE4E1FA), Color(0xFFE9EDFA)),
-    pill: (Color(0xFF1B1E3A), Color(0xFF0E1024)),
-    action: (Color(0xFFE0641F), Color(0xFFD62C5A)),
+    haze: (Color(0xFFE6E3F5), Color(0xFFE2EEF0)),
+    capture: (Color(0xFF5B4FD6), Color(0xFF2F62C8)),
     sections: {
-      'fact_check': Color(0xFFC2264B),
-      'tools': Color(0xFF2D63C8),
-      'recipe': Color(0xFFA2520C),
-      'places': Color(0xFF0F7A68),
+      'fact_check': Color(0xFF5B4FD6),
+      'tools': Color(0xFF2F62C8),
+      'recipe': Color(0xFF9A5B00),
+      'places': Color(0xFF0E7A68),
       'workout': Color(0xFF3F7A1E),
-      'learning': Color(0xFF5B4FD6),
-      'ideas': Color(0xFF7F6200),
+      'ideas': Color(0xFF7A6300),
     },
   );
 
@@ -139,10 +134,8 @@ class RbColors extends ThemeExtension<RbColors> {
         'brand': brand,
         'haze top': haze.$1,
         'haze bottom': haze.$2,
-        'pill top': pill.$1,
-        'pill bottom': pill.$2,
-        'action start': action.$1,
-        'action end': action.$2,
+        'capture start': capture.$1,
+        'capture end': capture.$2,
         for (final e in sections.entries) 'section ${e.key}': e.value,
       };
 

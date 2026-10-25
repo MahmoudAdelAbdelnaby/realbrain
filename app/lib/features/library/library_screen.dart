@@ -107,7 +107,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
             saveMatches(s, _query.text, platform: _platform, section: _section))
         .toList();
     return Scaffold(
-      backgroundColor: Colors.transparent, // the liquid shows through
+      backgroundColor: Colors.transparent, // sits on the Memories tab
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         title: TextField(

@@ -186,9 +186,9 @@ class _Create extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: LinearGradient(
-                  colors: [c.pill.$1, c.pill.$2],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter),
+                  colors: [c.capture.$1, c.capture.$2],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight),
             ),
             child: Icon(Icons.add, color: c.primaryLabel, size: 26),
           ),

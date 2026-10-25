@@ -1,9 +1,60 @@
 # Design v4 (Realbrain): proposal, 25 Oct
 
-Status: **approved 25 Oct.** Step 1 (foundation) built 25 Oct; steps 2–6 to come.
+Status: **approved 25 Oct.** Step 1 (foundation) built 25 Oct (88b3bb1). **Revision 2 proposed 25 Oct,
+waiting for approval** (next section); steps 2–6 wait for it.
 Board: https://claude.ai/artifact/5MJRG2CH9syMBU9PfGVg3J (private). Source: Mahmoud's concept board
 (10 screens) and the redesign brief. If approved, this replaces `BRAND.md` (Darkroom) and the visual
 parts of `DESIGN_V3_PROPOSAL.md` (liquid glass); the PRD gains the features in §4.
+
+## Revision 2: Design 1 structure, Design 2 accents (proposed 25 Oct, waiting for approval)
+
+Source: Mahmoud's two boards and the "Premium UI/UX Design Direction" brief. **Design 1** (the
+flatter charcoal board) sets about 80%: structure, density, cards, buttons. **Design 2** (the first
+concept, the navy one with orbs) gives about 20%: the luminous network motif, used only on
+onboarding, Threads and Year in Brain. Rule: *keep the interface quiet, make the intelligence
+visible, let the memories bring the colour.* Where this revision and the sections below differ,
+this revision wins.
+
+**What changes from the approved v4 (and from step 1, already built):**
+
+| Area | Approved v4 / built in step 1 | Revision 2 |
+| --- | --- | --- |
+| Ground | Navy #080A14 with a lavender haze on every screen | Near-black charcoal, neutral: ground #0E0F12, surface #16181C, raised #1E2126, line #2A2D33. **No haze on everyday screens**; it stays only on onboarding/sign-in, Threads and Year in Brain |
+| Text | Pure white / #A7ACBF | Soft white #ECEDEF / cool grey #9A9EA6 (both ≥ 4.5:1 on surface) |
+| Accents | Seven bright interest hues | Four restrained accents carry meaning: violet #9C8CFF, blue #6EA2FF, teal #4FD1B9, amber #F2B866. Interests map onto them (Tools blue, Learning/Fact Check violet, Places teal, Recipes amber); Workouts get green #8CCB7A, Ideas yellow #E8CD6B. They show only as a small icon or dot, never as a card fill |
+| Cards | Corner colour wash on every Ready card | Plain dark surface, 1 px line, no wash. The photo is the colour (the memories provide it) |
+| Buttons | White-to-lavender pill; orange-to-pink main action | One **soft-white pill** for every action (Cook now, Start cooking with its icon). Gradients only where they mean something: the **+** capture button (violet to blue), the selected Threads node, and Year in Brain |
+| Stat tiles | Gradient fill | Flat surface: **New items · Memories · To revisit** |
+| Greeting line | "Your brain has N things waiting." | "Your brain found N things worth your attention." |
+| Tab bar | Brain · Memories · + · Recall · Threads | **Home** · Memories · + · Recall · Threads (Home keeps the brain mark as its icon); outline icons, white active state, no colour |
+| Memory detail | One layout | **Per-type layouts.** The photo goes edge to edge at the top with back and bookmark on it, then "From Instagram · Saved 12 Apr", icon chips (Quick, Easy, 12 min), the section's own content, the white action, **Why you saved this**, a row of related memories, and Share · Save · More at the bottom. Recipes show ingredients and steps, tools show the link and what it does, places show the map, workouts the plan, fact checks the claims |
+| Recall | Flat list | Grouped **Today · This week · Upcoming**, each card saying why it's back ("3 months ago you saved…, you never tried it") with one action |
+| Inbox | Card list | Compact rows: source icon (Instagram, TikTok, YouTube, link, image), title, type · length, a subtle "Processing…" or what it needs, with filter chips **All · Links · Videos · Images** |
+| Create | Paste a link | A preview of the input, then **What is this?** (Recipe, Tool, Idea, Learn, Action, Inspiration). The pick is a real section hint sent with the save; leave it on Auto and the AI decides |
+| Brain Boosts | "Signals", two lines on Home | Its own calm screen, reached from Home: a few insight cards with small dot-row progress ("Your cooking brain grew this week, +3"), no badges or streaks |
+| Onboarding | Mark and text | Design 2's motif, made ours: the polygonal brain glowing softly in the centre, two thin orbital paths, and a few of the user's own memory thumbnails as nodes on them, joined by fine lines. Then Save anything · Turn it into something · Get it back when it matters, and **Get Started** |
+| Threads | Constellation (step 5) | The signature screen and the brightest one: **You** in the centre, interests as softly glowing nodes in their accent, thin lines. Tap one to see its tags, its memories, and *why* they connect (the shared tags) |
+| Year in Brain | Story screens | The most expressive screen: atmospheric imagery, big numbers, richer gradients, **Share your brain** |
+
+**Unchanged:** the name, Inter, the polygonal brain mark (D7 below), the five destinations, the
+Memories tab holding All · Search · Map · Reels, and the build order (the revision is folded into it).
+
+**D7. Logo.** Design 1's corner icon is a two-lobe line brain, not the polygonal one approved
+earlier today. Proposal: keep the polygonal brain. It's built, and its nodes and lines are the same
+motif as Threads and onboarding. Say if you want the line brain instead.
+
+**Build order with the revision:**
+
+| Step | Builds |
+| --- | --- |
+| 1b (new, small) | Apply the revision to what step 1 built: charcoal tokens, haze only where it belongs, washes off, one white pill, tab label Home, the new greeting line |
+| 2 | Memory detail per type, the Inbox rows, Ready cards in Design 1's layout |
+| 3 | Create with its type picker, then Onboarding with the orbital motif |
+| 4 | Recall groups with reasons, plus Brain Boosts |
+| 5 | Threads |
+| 6 | Year in Brain, then store screenshots |
+
+---
 
 **Idea.** The part of your brain that never forgets. Every save moves through **Capture** (I found
 something) → **Understand** (Realbrain knows what it is) → **Activate** (I actually use it).

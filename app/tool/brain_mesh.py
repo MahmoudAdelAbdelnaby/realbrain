@@ -84,9 +84,9 @@ def vector(body, size=108, dp=108):
 
 HAZE = ('<path android:pathData="M0,0 H108 V108 H0 Z">\n<aapt:attr name="android:fillColor">\n'
         '<gradient android:type="radial" android:centerX="70" android:centerY="30" android:gradientRadius="100">\n'
-        '<item android:offset="0" android:color="#FF2A2654"/>\n'
-        '<item android:offset="0.55" android:color="#FF121530"/>\n'
-        '<item android:offset="1" android:color="#FF080A14"/>\n'
+        '<item android:offset="0" android:color="#FF2A2545"/>\n'
+        '<item android:offset="0.55" android:color="#FF16181C"/>\n'
+        '<item android:offset="1" android:color="#FF0E0F12"/>\n'
         '</gradient>\n</aapt:attr>\n</path>\n')
 
 
@@ -100,7 +100,7 @@ def anim(target, prop, start, duration, frm, to):
 
 def main():
     write = lambda name, text: (RES / name).write_text(HEAD + text, encoding="utf-8", newline="\n")
-    # Launcher: the mark on a navy tile with a lavender haze; inside the 66 dp safe zone.
+    # Launcher: the mark on a charcoal tile with a soft violet glow; inside the 66 dp safe zone.
     write("ic_launcher_background.xml", vector(HAZE))
     write("ic_launcher_foreground.xml", vector(group(0.6, simple("#FFFFFFFF"))))
     write("ic_launcher_monochrome.xml", vector(group(0.6, simple("#FF000000"))))

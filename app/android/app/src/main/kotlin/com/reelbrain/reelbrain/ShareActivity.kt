@@ -72,16 +72,16 @@ class ShareActivity : Activity() {
     private val dark get() =
         resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
 
-    /** Design v4 panel, native: a solid round fill with a lavender edge (no frosted glass).
+    /** Design v4 panel (revision 2), native: a solid round fill with a lavender edge (no frosted glass).
      * ponytail: no thumbnail yet; the reel's frame only exists after the download, add it then. */
     private fun panel() = GradientDrawable().apply {
         cornerRadius = dp(999).toFloat()
-        setColor(if (dark) Color.rgb(0x11, 0x15, 0x28) else Color.WHITE)
+        setColor(if (dark) Color.rgb(0x16, 0x18, 0x1C) else Color.WHITE)
         setStroke(dp(1), Color.argb(0x99, 0x9C, 0x8C, 0xFF))
     }
 
     private fun savePill() = TextView(this).apply {
-        setTextColor(if (dark) Color.WHITE else Color.parseColor("#0E1024"))
+        setTextColor(if (dark) Color.WHITE else Color.parseColor("#111216"))
         setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
         setPadding(dp(20), dp(12), dp(20), dp(12))
     }

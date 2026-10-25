@@ -11,7 +11,6 @@ void main() {
     'recipe',
     'places',
     'workout',
-    'learning',
     'ideas'
   ];
 
@@ -33,10 +32,19 @@ void main() {
     }
   });
 
-  test('pill and action labels stay readable on both gradient ends', () {
+  test('pill labels and the + icon stay readable', () {
     for (final c in [RbColors.dark, RbColors.light]) {
-      for (final fill in [c.pill.$1, c.pill.$2, c.primaryFill]) {
+      for (final fill in [c.primaryFill, c.capture.$1, c.capture.$2]) {
         expect(contrast(c.primaryLabel, fill), greaterThanOrEqualTo(4.5));
+      }
+    }
+  });
+
+  test('everyday text reads on charcoal and white', () {
+    for (final c in [RbColors.dark, RbColors.light]) {
+      for (final fg in [c.text, c.muted, c.faint]) {
+        expect(contrast(fg, c.surface), greaterThanOrEqualTo(4.5));
+        expect(contrast(fg, c.ground), greaterThanOrEqualTo(4.5));
       }
     }
   });

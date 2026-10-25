@@ -398,8 +398,9 @@ const actionLabels = {
   'workout': 'Start',
 };
 
-/// A Ready for you card (design v4): the frame, a wash of the section's hue in the corner, the
-/// kind, title and one line, and a pill with the section's action. [note] replaces the line
+/// A Ready for you card (design v4 revision 2): the frame, the kind with its accent dot, the
+/// title and one line, and a white pill with the section's action. No colour wash: the frame
+/// is the colour. [note] replaces the line
 /// (Recall: "Saved 47 days ago").
 class ReadyCard extends StatelessWidget {
   const ReadyCard({super.key, required this.item, required this.save, this.note});
@@ -410,7 +411,6 @@ class ReadyCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
     final c = RbColors.of(context);
-    final dark = Theme.of(context).brightness == Brightness.dark;
     final section = item['section'] as String?;
     final hue = c.section(section);
     final (title, detail) = cardFace(item, save);
@@ -430,11 +430,6 @@ class ReadyCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(RbSpace.cardRadius),
             border: Border.all(color: c.line),
             color: c.surface,
-            gradient: RadialGradient(
-              center: AlignmentDirectional.bottomEnd.resolve(Directionality.of(context)),
-              radius: 1.3,
-              colors: [hue.withValues(alpha: dark ? 0.22 : 0.12), c.surface],
-            ),
           ),
           child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Hero(

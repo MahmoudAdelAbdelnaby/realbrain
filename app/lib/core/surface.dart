@@ -41,7 +41,8 @@ class Panel extends StatelessWidget {
   }
 }
 
-/// The haze behind every main screen: the ground with two soft glows, top right and bottom left.
+/// The haze: the ground with two soft glows, top right and bottom left. Only on the expressive
+/// screens (sign-in, onboarding, Threads, Year in Brain); everyday screens stay plain.
 class Haze extends StatelessWidget {
   const Haze({super.key, this.child});
   final Widget? child;
@@ -70,24 +71,24 @@ class Haze extends StatelessWidget {
   }
 }
 
-/// A pill button: the white-to-lavender gradient (dark) or ink (light). [action] makes it the
-/// screen's one main action: the orange-to-pink gradient, full width.
+/// The action pill (revision 2): soft white on charcoal, ink on light. [action] makes it the
+/// screen's main action: taller, full width, with an optional [icon].
 class PillButton extends StatelessWidget {
   const PillButton(
       {super.key,
       required this.label,
       required this.onPressed,
+      this.icon,
       this.action = false,
       this.small = false});
   final String label;
   final VoidCallback? onPressed;
+  final IconData? icon;
   final bool action, small;
 
   @override
   Widget build(BuildContext context) {
     final c = RbColors.of(context);
-    final (a, b) = action ? c.action : c.pill;
-    final fg = action ? Colors.white : c.primaryLabel;
     final height = small ? 34.0 : (action ? 52.0 : RbSpace.touch);
     return Semantics(
       button: true,
@@ -100,22 +101,27 @@ class PillButton extends StatelessWidget {
             height: height,
             // Small pills keep a 48 dp touch target through the card around them.
             padding: EdgeInsets.symmetric(horizontal: small ? 16 : 22),
-            alignment: Alignment.center,
             decoration: BoxDecoration(
+              color: c.primaryFill,
               borderRadius: BorderRadius.circular(RbSpace.pill),
-              gradient: LinearGradient(
-                  colors: [a, b],
-                  begin: action ? Alignment.centerLeft : Alignment.topCenter,
-                  end: action ? Alignment.centerRight : Alignment.bottomCenter),
             ),
-            child: Text(label,
-                maxLines: 1,
-                style: TextStyle(
-                    fontFamily: RbType.family,
-                    fontFamilyFallback: RbType.fallback,
-                    fontSize: small ? 13 : 16,
-                    fontWeight: FontWeight.w600,
-                    color: fg)),
+            child: Row(
+                mainAxisSize: action ? MainAxisSize.max : MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (icon != null) ...[
+                    Icon(icon, size: small ? 16 : 20, color: c.primaryLabel),
+                    const SizedBox(width: 8),
+                  ],
+                  Text(label,
+                      maxLines: 1,
+                      style: TextStyle(
+                          fontFamily: RbType.family,
+                          fontFamilyFallback: RbType.fallback,
+                          fontSize: small ? 13 : 16,
+                          fontWeight: FontWeight.w600,
+                          color: c.primaryLabel)),
+                ]),
           ),
         ),
       ),

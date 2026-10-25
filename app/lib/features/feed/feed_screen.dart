@@ -54,7 +54,7 @@ Map<String, int> toTryCounts(Iterable<Map<String, dynamic>> items) {
   return counts;
 }
 
-/// The app shell (design v4): Brain, Memories, Recall and Threads, live from Firestore, with the
+/// The app shell (design v4): Home, Memories, Recall and Threads, live from Firestore, with the
 /// + button and the processing status above the tab bar.
 class FeedScreen extends StatefulWidget {
   const FeedScreen({super.key});
@@ -186,13 +186,12 @@ class _FeedScreenState extends State<FeedScreen> {
       canPop: _tab == 0,
       onPopInvokedWithResult: (popped, _) {
         if (!popped) {
-          setState(() => _tab = 0); // Back from a tab goes to Brain first
+          setState(() => _tab = 0); // Back from a tab goes Home first
         }
       },
       child: Scaffold(
         extendBody: true,
-        backgroundColor: Colors.transparent,
-        body: Haze(child: IndexedStack(index: _tab, children: tabs)),
+        body: IndexedStack(index: _tab, children: tabs),
         bottomNavigationBar: NavBar(
           selected: _tab,
           onSelect: (i) => setState(() => _tab = i),
@@ -201,7 +200,7 @@ class _FeedScreenState extends State<FeedScreen> {
           destinations: [
             (
               icon: (c) => BrainMark(size: 26, color: c),
-              label: 'Brain',
+              label: 'Home',
               badge: 0
             ),
             (
@@ -269,8 +268,8 @@ class _FeedScreenState extends State<FeedScreen> {
                       Text(
                           ready.isEmpty
                               ? 'Share a reel and your brain takes it from there.'
-                              : 'Your brain has ${ready.length} '
-                                  'thing${ready.length == 1 ? '' : 's'} waiting.',
+                              : 'Your brain found ${ready.length} '
+                                  'thing${ready.length == 1 ? '' : 's'} worth your attention.',
                           style: t.bodyMedium?.copyWith(color: c.muted)),
                     ]),
               ),
@@ -282,7 +281,7 @@ class _FeedScreenState extends State<FeedScreen> {
         Padding(
           padding: side,
           child: Row(children: [
-            _Stat('${ready.length}', 'Ready now'),
+            _Stat('${ready.length}', 'New items'),
             const SizedBox(width: 10),
             _Stat('${saves.length}', 'Memories',
                 onTap: () => setState(() => _tab = 1)),
@@ -898,13 +897,9 @@ class _Stat extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
           decoration: BoxDecoration(
+            color: c.surface,
             borderRadius: BorderRadius.circular(18),
             border: Border.all(color: c.line),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [c.raised, c.surface],
-            ),
           ),
           child: Column(children: [
             Text(value, style: t.headlineSmall?.copyWith(fontSize: 24)),
