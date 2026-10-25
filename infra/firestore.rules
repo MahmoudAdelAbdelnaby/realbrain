@@ -1,6 +1,6 @@
 rules_version = '2';
 // Backend contract: a user reads a space only if their uid is in `members`; clients may write only
-// `note`, `user_state` and list membership. Everything else (users, spaces, invites, AI results)
+// `note`, `user_state`, `recall_after` and list membership. Everything else (users, spaces, invites, AI results)
 // is written by the backend's service account, which bypasses these rules.
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -43,8 +43,11 @@ service cloud.firestore {
 
         match /items/{itemId} {
           allow read: if member(spaceId);
-          allow update: if member(spaceId) && onlyChanges(['user_state'])
-            && request.resource.data.user_state in [null, 'to_try', 'tried', 'visited', 'cooked', 'done', 'using', 'not_useful'];
+          // user_state, and (design v4 Recall) recall_after: "Not now" brings it back after this
+          // time (epoch seconds). 'archived' takes it out of Recall for good.
+          allow update: if member(spaceId) && onlyChanges(['user_state', 'recall_after'])
+            && request.resource.data.get('user_state', null) in [null, 'to_try', 'tried', 'visited', 'cooked', 'done', 'using', 'not_useful', 'archived']
+            && (request.resource.data.get('recall_after', null) == null || request.resource.data.recall_after is number);
         }
       }
 

@@ -93,6 +93,14 @@ def col_list(path: str) -> list[dict]:
     return [json.loads(f.read_text("utf-8")) for f in sorted(d.glob("*.json"))] if d.exists() else []
 
 
+def col_items(path: str) -> list[tuple[str, dict]]:
+    """(id, data) for every document in a collection."""
+    if FIRESTORE:
+        return [(d.id, d.to_dict()) for d in _firestore().collection(path).stream()]
+    d = DATA / "docs" / Path(*path.split("/"))
+    return [(f.stem, json.loads(f.read_text("utf-8"))) for f in sorted(d.glob("*.json"))] if d.exists() else []
+
+
 def col_replace(path: str, docs: dict[str, dict]) -> None:
     """Replaces every document in a collection (re-runs and retries stay idempotent)."""
     if FIRESTORE:

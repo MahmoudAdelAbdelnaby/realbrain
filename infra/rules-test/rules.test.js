@@ -74,6 +74,14 @@ test("members may change only user_state on an item, to a known value", async ()
   await assertFails(updateDoc(doc(as("me"), `${SAVE}/items/0-recipe`), { data: { title: "x" } }));
 });
 
+test("Recall: members may snooze an item or archive it", async () => {
+  const item = doc(as("wife"), `${SAVE}/items/0-recipe`);
+  await assertSucceeds(updateDoc(item, { recall_after: 1793000000 }));
+  await assertSucceeds(updateDoc(item, { user_state: "archived", recall_after: null }));
+  await assertFails(updateDoc(item, { recall_after: "tomorrow" }));
+  await assertFails(updateDoc(doc(as("stranger"), `${SAVE}/items/0-recipe`), { recall_after: 1 }));
+});
+
 test("members may change only list membership", async () => {
   await assertSucceeds(updateDoc(doc(as("wife"), "spaces/h_home/lists/l1"), { item_refs: ["s1/0-recipe"] }));
   await assertFails(updateDoc(doc(as("wife"), "spaces/h_home/lists/l1"), { name: "renamed" }));

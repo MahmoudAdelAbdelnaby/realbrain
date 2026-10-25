@@ -86,7 +86,11 @@ def get_settings(uid: str = Depends(user)) -> dict:
     from app.pipeline.extract import MODELS, keys
 
     return {
-        "settings": {"lang": s.get("lang", "system"), "theme": s.get("theme", "system")},
+        "settings": {
+            "lang": s.get("lang", "system"),
+            "theme": s.get("theme", "system"),
+            "recall": s.get("recall", True),
+        },
         "saves_today": used.get("count", 0) if used.get("date") == usage.today() else 0,
         "gemini": {"keys": len(keys()), "models": MODELS, "usage_today": usage.model_usage()},
         "billing": "Spark plan: $0, no billing account"

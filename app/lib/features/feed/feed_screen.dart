@@ -17,6 +17,8 @@ import '../factcheck/fact_check_view.dart' show verdictLabels;
 import '../inbox/inbox_screen.dart';
 import '../library/library_screen.dart';
 import '../places/places_map.dart';
+import '../recall/boosts.dart';
+import '../recall/recall.dart';
 import '../reels/reels_screen.dart';
 import '../save/save_screen.dart';
 import '../save/saves_screen.dart';
@@ -171,17 +173,21 @@ class _FeedScreenState extends State<FeedScreen> {
       _known = {for (final s in saves) s['save_id'] as String? ?? ''};
     }
     final ready = waiting(allItems, saves);
-    final recall = waiting(allItems, saves, olderThan: _recallAfter);
+    final recall = recallPlan(allItems, saves);
+    final boosts = boostsOf(allItems, saves);
     final pad = EdgeInsets.only(
         top: MediaQuery.paddingOf(context).top + 12, bottom: _barRoom + 16);
     final tabs = [
       RefreshIndicator(
         onRefresh: _refresh,
-        child: _brain(
-            context, saves, allItems, inbox, ready, recall, spaceLabel, pad),
+        child: _brain(context, saves, allItems, inbox, ready, recall, boosts,
+            spaceLabel, pad),
       ),
       _memories(context, saves, allItems, spaceLabel, pad),
-      _recallTab(context, recall, pad),
+      RecallView(
+          plan: recall,
+          padding: pad,
+          onSection: (s) => _push(SectionScreen(section: s, items: _allItems))),
       _threads(context, allItems, pad),
     ];
     return PopScope(
@@ -214,7 +220,7 @@ class _FeedScreenState extends State<FeedScreen> {
             (
               icon: (c) => Icon(Icons.history, color: c, size: 24),
               label: 'Recall',
-              badge: recall.length
+              badge: recall.today.length
             ),
             (
               icon: (c) => Icon(Icons.hub_outlined, color: c, size: 24),
@@ -234,7 +240,8 @@ class _FeedScreenState extends State<FeedScreen> {
       List<Map<String, dynamic>> allItems,
       List<Map<String, dynamic>> inbox,
       List<WaitingCard> ready,
-      List<WaitingCard> recall,
+      RecallPlan recall,
+      List<Boost> boosts,
       String Function(String) spaceLabel,
       EdgeInsets pad) {
     final t = Theme.of(context).textTheme;
@@ -289,11 +296,33 @@ class _FeedScreenState extends State<FeedScreen> {
             _Stat('${saves.length}', 'Memories',
                 onTap: () => setState(() => _tab = 1)),
             const SizedBox(width: 10),
-            _Stat('${recall.length}', 'To revisit',
+            _Stat('${recall.due.length}', 'To revisit',
                 onTap: () => setState(() => _tab = 2)),
           ]),
         ),
         const SizedBox(height: 20),
+        if (boosts.isNotEmpty)
+          Padding(
+            padding:
+                const EdgeInsets.fromLTRB(RbSpace.side, 0, RbSpace.side, 16),
+            child: Pressable(
+              onTap: () => _push(BrainBoostsScreen(
+                  boosts: boosts,
+                  onSection: (s) =>
+                      _push(SectionScreen(section: s, items: _allItems)))),
+              child: Card(
+                margin: EdgeInsets.zero,
+                child: ListTile(
+                  leading: const Icon(Icons.insights_outlined),
+                  title: Text(boosts.first.text),
+                  subtitle: Text(boosts.length == 1
+                      ? 'Brain Boosts'
+                      : 'Brain Boosts · ${boosts.length - 1} more'),
+                  trailing: const Icon(Icons.chevron_right),
+                ),
+              ),
+            ),
+          ),
         if (inbox.isNotEmpty)
           _NeedsALook(
               needs: inbox.where(inInbox).length,
@@ -404,37 +433,6 @@ class _FeedScreenState extends State<FeedScreen> {
     ]);
   }
 
-  /// Recall: things you saved a while ago and haven't tried yet. The lite version: the daily
-  /// nudge and Not now / Archive come with design v4 step 4.
-  Widget _recallTab(
-      BuildContext context, List<WaitingCard> recall, EdgeInsets pad) {
-    final t = Theme.of(context).textTheme;
-    final now = DateTime.now().millisecondsSinceEpoch / 1000;
-    String ago(Map<String, dynamic> save) {
-      final days =
-          ((now - ((save['created_at'] ?? now) as num)) / 86400).floor();
-      return 'Saved $days days ago';
-    }
-
-    return ListView(
-      padding: pad.add(const EdgeInsets.symmetric(horizontal: RbSpace.side)),
-      children: [
-        Text('Recall', style: t.headlineMedium),
-        const SizedBox(height: 6),
-        Text('Your brain brings things back when they matter.',
-            style: t.bodyMedium?.copyWith(color: RbColors.of(context).muted)),
-        const SizedBox(height: 20),
-        if (recall.isEmpty)
-          const EmptyState(
-              icon: Icons.history,
-              title: 'Nothing to bring back yet',
-              body: 'Saves you haven’t tried after a week come back here.'),
-        for (final card in recall.reversed) // the oldest first
-          ReadyCard(item: card.item, save: card.save, note: ago(card.save)),
-      ],
-    );
-  }
-
   /// Threads: your interests, each with its hue and count. The lite version: the constellation
   /// comes with design v4 step 5.
   Widget _threads(BuildContext context, List<Map<String, dynamic>> allItems,
@@ -504,7 +502,6 @@ class _FeedScreenState extends State<FeedScreen> {
   /// Room the tab bar takes at the bottom of each tab.
   static const _barRoom = 88.0;
   static const _readyShown = 5;
-  static const _recallAfter = Duration(days: 7);
   int _tab = 0, _memView = 0;
 
   // Saves on screen when Brain first loaded; any later one "arrives" (slides in once).

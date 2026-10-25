@@ -360,25 +360,18 @@ class MomentStrip extends StatelessWidget {
 typedef WaitingCard = ({Map<String, dynamic> item, Map<String, dynamic> save});
 
 /// Items still waiting for you (no state, or "to try") whose save is loaded and readable,
-/// newest first; with [olderThan], only those saved before it (Recall).
-List<WaitingCard> waiting(
-    Iterable<Map<String, dynamic>> items, Iterable<Map<String, dynamic>> saves,
-    {Duration? olderThan, DateTime? now}) {
+/// newest first (Ready for you).
+List<WaitingCard> waiting(Iterable<Map<String, dynamic>> items,
+    Iterable<Map<String, dynamic>> saves) {
   final byId = {for (final s in saves) s['save_id']: s};
-  final cutoff = olderThan == null
-      ? null
-      : (now ?? DateTime.now()).subtract(olderThan).millisecondsSinceEpoch /
-          1000;
   final out = <WaitingCard>[];
   for (final item in items) {
     final save = byId[item['save_id']];
     final state = item['user_state'];
-    final at = (save?['created_at'] ?? 0) as num;
     if (save == null ||
         !sectionLabels.containsKey(item['section']) ||
         (state != null && state != 'to_try') ||
-        !(save['status'] == 'ready' || save['status'] == 'partial') ||
-        (cutoff != null && at > cutoff)) {
+        !(save['status'] == 'ready' || save['status'] == 'partial')) {
       continue;
     }
     out.add((item: item, save: save));

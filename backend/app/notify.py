@@ -47,36 +47,42 @@ def key_line(result: ExtractResult, partial: bool = False) -> tuple[str, str]:
     return _cut(title, TITLE_MAX), body
 
 
+def push(uid: str, title: str, body: str, data: dict[str, str]) -> int:
+    """One push to every phone of uid; drops tokens FCM says are gone. Raises on FCM errors."""
+    user = store.doc_get(f"users/{uid}") or {}
+    tokens = user.get("fcm_tokens") or []
+    if not tokens or not store.FIRESTORE:
+        return 0
+    from firebase_admin import messaging
+
+    from app.auth import firebase_app
+
+    # users.fcm_tokens holds Firebase installation IDs (FIDs), FCM's current send target.
+    msg = messaging.MulticastMessage(
+        fids=tokens,
+        notification=messaging.Notification(title=_cut(title, TITLE_MAX), body=body),
+        data=data,
+        android=messaging.AndroidConfig(priority="high"),
+    )
+    resp = messaging.send_each_for_multicast(msg, app=firebase_app())
+    gone = [t for t, r in zip(tokens, resp.responses) if isinstance(r.exception, messaging.UnregisteredError)]
+    if gone:
+        store.doc_update(f"users/{uid}", {"fcm_tokens": [t for t in tokens if t not in gone]})
+    return resp.success_count
+
+
 def send(save: dict, result: ExtractResult, partial: bool = False, title: str | None = None) -> int:
-    """Notifies the person who saved it; drops tokens FCM says are gone. Never raises."""
+    """Notifies the person who saved it. Never raises."""
     try:
-        user = store.doc_get(f"users/{save['created_by']}") or {}
-        tokens = user.get("fcm_tokens") or []
-        if not tokens or not store.FIRESTORE:
-            return 0
-        from firebase_admin import messaging
-
-        from app.auth import firebase_app
-
         line, body = key_line(result, partial)
-        title = _cut(title, TITLE_MAX) if title else line  # Fact Check: the grounded verdict line
-        # users.fcm_tokens holds Firebase installation IDs (FIDs), FCM's current send target.
-        msg = messaging.MulticastMessage(
-            fids=tokens,
-            notification=messaging.Notification(title=title, body=body),
-            data={"save_id": save["save_id"], "space_id": save["space_id"]},
-            android=messaging.AndroidConfig(priority="high"),
+        sent = push(
+            save["created_by"],
+            title or line,  # Fact Check: the grounded verdict line
+            body,
+            {"save_id": save["save_id"], "space_id": save["space_id"]},
         )
-        resp = messaging.send_each_for_multicast(msg, app=firebase_app())
-        gone = [
-            t for t, r in zip(tokens, resp.responses) if isinstance(r.exception, messaging.UnregisteredError)
-        ]
-        if gone:
-            store.doc_update(
-                f"users/{save['created_by']}", {"fcm_tokens": [t for t in tokens if t not in gone]}
-            )
-        log.info("save=%s push sent=%d failed=%d", save["save_id"], resp.success_count, resp.failure_count)
-        return resp.success_count
+        log.info("save=%s push sent=%d", save["save_id"], sent)
+        return sent
     except Exception:
         log.exception("save=%s push failed (the save itself is fine)", save.get("save_id"))
         return 0

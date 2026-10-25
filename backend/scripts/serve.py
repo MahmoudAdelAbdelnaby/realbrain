@@ -80,6 +80,11 @@ def main() -> int:
 
     import uvicorn
 
+    from app import recall
+
+    # ponytail: an in-process daily loop while the backend lives on this PC; Cloud Scheduler on Cloud Run.
+    threading.Thread(target=recall.loop, daemon=True).start()
+
     try:
         uvicorn.run("app.main:app", host="0.0.0.0", port=a.port)
     finally:

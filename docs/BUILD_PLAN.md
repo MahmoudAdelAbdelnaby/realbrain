@@ -210,6 +210,7 @@ spaces/{spaceId}/saves/{saveId}     source_url, platform, creator, caption, sear
 spaces/{spaceId}/saves/{saveId}/items/{itemId}
                                     section, confidence, data{...typed},
                                     user_state (to_try|tried|visited|cooked|done|using|not_useful; the last two added in P1-09 for tools)
+                                    recall_after? (epoch seconds; design v4 Recall "Not now"); user_state archived takes it out of Recall
 spaces/{spaceId}/lists/{listId}     section, name, item_refs[], overrides{} (P1-13: per-exercise edits;
                                     created via POST /v1/spaces/{id}/lists, members edit item_refs/overrides)
 ```
@@ -218,7 +219,7 @@ spaces/{spaceId}/lists/{listId}     section, name, item_refs[], overrides{} (P1-
 
 **Spaces and invites (P1-03):** the phone keeps sending `space_id` = `me` or `home`; the backend resolves them through `users/{uid}.spaces`. Spaces and invites are created only by the backend, so a client can never add itself to `members`. An invite link is `https://reelbrain-dev.web.app/join/<code>` on Firebase Hosting (free on Spark): an Android App Link opens the app straight to the join screen, and the page shows the code for typing in.
 
-**Security rules:** a user reads a space only if their uid is in `members`; clients may write only `note`, `user_state` and list membership; everything AI-produced is written by the backend service account. Videos in Storage are deleted when the job ends; key frames live under `frames/{spaceId}/`.
+**Security rules:** a user reads a space only if their uid is in `members`; clients may write only `note`, `user_state`, `recall_after` and list membership; everything AI-produced is written by the backend service account. Videos in Storage are deleted when the job ends; key frames live under `frames/{spaceId}/`.
 
 ## Phase 0 — Spike: prove the hard part
 

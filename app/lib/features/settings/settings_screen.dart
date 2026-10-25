@@ -82,6 +82,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 (s['settings'] as Map)['theme'] as String,
                 (v) => _patch({'theme': v}),
               ),
+              const SizedBox(height: 8),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Recall reminders'),
+                subtitle: const Text(
+                    'One "Remember this?" a day, in the evening, for something you never tried'),
+                value: (s['settings'] as Map)['recall'] as bool? ?? true,
+                onChanged: (v) => _patch({'recall': v}),
+              ),
               const Divider(height: 32),
               Text('Saves today: ${s['saves_today']}'),
               const Divider(height: 32),

@@ -213,3 +213,5 @@ class CreateList(BaseModel):
 class Settings(BaseModel):
     lang: Literal["system", "en", "ar"] | None = None
     theme: Literal["system", "light", "dark"] | None = None
+    # Design v4 Recall: one "Remember this?" push a day; on unless turned off.
+    recall: bool | None = None
