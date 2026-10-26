@@ -2,14 +2,16 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
+import 'core/platform_setup.dart'
+    if (dart.library.js_interop) 'core/native_web.dart';
 import 'core/theme/theme.dart';
 import 'features/auth/auth_gate.dart';
 import 'features/settings/settings_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase
-      .initializeApp(); // options from android/app/google-services.json
+  // Android: options from google-services.json; web: from Firebase Hosting.
+  await Firebase.initializeApp(options: await platformSetup());
   runApp(const ReelbrainApp());
 }
 

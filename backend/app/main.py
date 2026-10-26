@@ -7,6 +7,7 @@ from typing import Annotated
 from urllib.parse import urlparse
 
 from fastapi import BackgroundTasks, Depends, FastAPI, Header, HTTPException, Request, Response
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
 from app import spaces, store, tasks, usage
@@ -37,6 +38,13 @@ app = FastAPI(
     docs_url="/docs" if _dev_docs else None,
     redoc_url=None,
     openapi_url="/openapi.json" if _dev_docs else None,
+)
+# I1: the iPhone web app (Firebase Hosting) calls the API from the browser.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["https://reelbrain-app.web.app"],
+    allow_methods=["*"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 MAX_VIDEO_BYTES = 200 * 1024 * 1024
 

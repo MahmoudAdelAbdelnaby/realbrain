@@ -6,29 +6,53 @@
   "storage": {
     "rules": "infra/storage.rules"
   },
-  "hosting": {
-    "public": "hosting/public",
-    "cleanUrls": true,
-    "rewrites": [
-      {
-        "source": "/join/**",
-        "destination": "/join.html"
-      }
-    ],
-    "headers": [
-      {
-        "source": "/.well-known/assetlinks.json",
-        "headers": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ]
-      }
-    ],
-    "ignore": [
-      "firebase.json",
-      "**/node_modules/**"
-    ]
-  }
+  "hosting": [
+    {
+      "public": "hosting/public",
+      "cleanUrls": true,
+      "rewrites": [
+        {
+          "source": "/join/**",
+          "destination": "/join.html"
+        }
+      ],
+      "headers": [
+        {
+          "source": "/.well-known/assetlinks.json",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        }
+      ],
+      "ignore": [
+        "firebase.json",
+        "**/node_modules/**"
+      ],
+      "site": "reelbrain-dev"
+    },
+    {
+      "site": "reelbrain-app",
+      "public": "app/build/web",
+      "rewrites": [
+        {
+          "source": "**",
+          "destination": "/index.html"
+        }
+      ],
+      "headers": [
+        {
+          "source": "**",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache"
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }

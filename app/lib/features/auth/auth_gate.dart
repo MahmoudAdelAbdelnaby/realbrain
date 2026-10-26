@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -206,7 +207,10 @@ class _SignInScreenState extends State<SignInScreen> {
       _error = null;
     });
     try {
-      await FirebaseAuth.instance.signInWithProvider(GoogleAuthProvider());
+      // Web: a redirect, since home-screen apps on iPhone can't open popups.
+      await (kIsWeb
+          ? FirebaseAuth.instance.signInWithRedirect(GoogleAuthProvider())
+          : FirebaseAuth.instance.signInWithProvider(GoogleAuthProvider()));
     } on FirebaseAuthException catch (e) {
       if (mounted) setState(() => _error = e.message ?? e.code);
     } finally {
