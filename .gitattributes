@@ -1,0 +1,5 @@
+# Shipped to the Linux VM by git archive: keep LF even with core.autocrlf on Windows.
+*.sh text eol=lf
+Dockerfile text eol=lf
+Caddyfile text eol=lf
+*.env.example text eol=lf
