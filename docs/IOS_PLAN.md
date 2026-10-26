@@ -121,3 +121,42 @@ later drop the download-then-upload step on Android too (a separate ticket). Two
 - yt-dlp warns that TikTok "impersonation" isn't installed (the `curl_cffi` package). Adding it
   would make TikTok more robust.
 - Datacenter IPs can be blocked at any time, so watch the `fetch_path` field on new saves.
+
+## 7. I2 proposal: "Save to Realbrain" Shortcut (proposed 26 Oct, waiting for approval)
+
+iOS never lists home-screen web apps in the share sheet, but a Shortcut can be listed there. This
+replaces the I2 idea in section 4, so nothing opens Safari: the Shortcut sends the link straight to
+the backend and shows "Saved". She never leaves Instagram or TikTok.
+
+**How she uses it:**
+1. One time: Realbrain → Settings → **iPhone Shortcut** → "Get my save key", then follow the
+   steps on that screen to build the Shortcut (about 2 minutes). After that she can send you an
+   iCloud link to the Shortcut, and anyone else adds it in one tap and pastes their own key.
+2. Every save: Share → **Save to Realbrain** → a "Saved to Realbrain" banner. The save appears in
+   her feed and processes like any pasted link.
+
+**Backend:**
+- `POST /v1/me/save-key` (signed in): makes a random key and returns it once. Only its SHA-256 is
+  stored (`save_keys/{hash}` → uid). Asking again replaces the old key, so a leaked key is revoked
+  by making a new one.
+- `POST /v1/shortcut/save` with an `X-Save-Key` header and `{"url": ...}`: looks up the uid, then
+  does what the web app does today (create the save in her personal space, then the backend's
+  fetch). It's idempotent per link for a minute, so a double tap doesn't make two saves. A bad key
+  gets 401.
+- It reuses `create_save` and `no_video`; there's no new pipeline.
+
+**App (web and Android):** one Settings row, "iPhone Shortcut", that shows the key with a Copy
+button and the Shortcut steps:
+- Receive **URLs** from the **Share Sheet**.
+- **Get Contents of URL**: `POST https://realbrain-mahmoud.duckdns.org/v1/shortcut/save`, with
+  header `X-Save-Key: <key>` and a JSON body `url` = Shortcut Input.
+- **Show Notification**: "Saved to Realbrain".
+
+**Why not a ready-made Shortcut file:** signing a `.shortcut` file needs a Mac. An iCloud link is
+made from her iPhone after she builds it once.
+
+**Done for I2:**
+- She shares a real reel from Instagram on her iPhone and it shows up processed in her feed.
+- Backend tests cover a good key, a bad key, a replaced key and a double tap.
+- ruff and `flutter analyze` are clean and all tests pass.
+- Deployed to the VM and committed as `I2: ...`.

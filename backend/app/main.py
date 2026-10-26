@@ -1,6 +1,8 @@
 import hashlib
 import logging
 import os
+import re
+import secrets
 import time
 import uuid
 from typing import Annotated
@@ -163,7 +165,9 @@ def create_save(body: CreateSave, uid: str = Depends(user)) -> CreatedSave:
         existing = store.get_save(save_id)
         if existing is not None:
             return CreatedSave(
-                save_id=save_id, upload_url=store.upload_url(save_id), status=existing.get("status", "received")
+                save_id=save_id,
+                upload_url=store.upload_url(save_id),
+                status=existing.get("status", "received"),
             )
     else:
         save_id = uuid.uuid4().hex
@@ -208,6 +212,40 @@ def no_video(save_id: str, body: NoVideo, uid: str = Depends(user)) -> dict:
     )
     tasks.enqueue(save_id)
     return {"save_id": save_id}
+
+
+def _key_hash(key: str) -> str:
+    return hashlib.sha256(key.encode()).hexdigest()
+
+
+@app.post("/v1/me/save-key")
+def new_save_key(uid: str = Depends(user)) -> dict:
+    """I2: the key the iPhone Shortcut saves with. Shown once; a new one replaces the old."""
+    key = secrets.token_urlsafe(24)
+    store.doc_set(f"save_keys/{_key_hash(key)}", {"uid": uid})
+    # Only the current hash counts, so the old key stops working without deleting its doc.
+    store.doc_update(f"users/{uid}", {"save_key_hash": _key_hash(key)})
+    return {"key": key}
+
+
+@app.post("/v1/shortcut/save", status_code=202)
+def shortcut_save(body: dict, x_save_key: str | None = Header(None)) -> dict:
+    """I2: Share → Save to Realbrain. The link goes the web app's way: save, then the backend fetches."""
+    h = _key_hash(x_save_key or "")
+    owner = (store.doc_get(f"save_keys/{h}") or {}).get("uid")
+    if not owner or (store.doc_get(f"users/{owner}") or {}).get("save_key_hash") != h:
+        raise HTTPException(401, "invalid save key")
+    # Share sheets often send text around the link ("Check this out https://...").
+    m = re.search(r"https?://\S+", str(body.get("url") or ""))
+    if not m:
+        raise HTTPException(422, "no link")
+    url = m.group(0)
+    # Same link within a minute = the same save, so a double tap doesn't make two.
+    client_id = hashlib.sha256(f"{url}:{int(time.time() // 60)}".encode()).hexdigest()[:32]
+    created = create_save(CreateSave(source_url=url, space_id="me", client_id=client_id), owner)
+    if created.status == "received":
+        no_video(created.save_id, NoVideo(reason="ios shortcut"), owner)
+    return {"save_id": created.save_id}
 
 
 @app.post("/v1/saves/{save_id}/retry", status_code=202)

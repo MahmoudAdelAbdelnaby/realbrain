@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../core/native.dart';
 
@@ -91,6 +92,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 value: (s['settings'] as Map)['recall'] as bool? ?? true,
                 onChanged: (v) => _patch({'recall': v}),
               ),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.ios_share),
+                title: const Text('iPhone Shortcut'),
+                subtitle: const Text("Save from any app's Share button"),
+                onTap: () => showModalBottomSheet<void>(
+                    context: context,
+                    isScrollControlled: true,
+                    showDragHandle: true,
+                    builder: (_) => const ShortcutSheet()),
+              ),
               const Divider(height: 32),
               Text('Saves today: ${s['saves_today']}'),
               const Divider(height: 32),
@@ -130,4 +142,93 @@ class _SettingsScreenState extends State<SettingsScreen> {
           onSelectionChanged: (v) => onPick(v.first),
         ),
       );
+}
+
+/// I2: iOS won't list a home-screen web app in the share sheet, but a Shortcut can be.
+/// It posts the shared link with this key to /v1/shortcut/save.
+class ShortcutSheet extends StatefulWidget {
+  const ShortcutSheet({super.key});
+
+  @override
+  State<ShortcutSheet> createState() => _ShortcutSheetState();
+}
+
+class _ShortcutSheetState extends State<ShortcutSheet> {
+  String? _key;
+  String? _error;
+  bool _busy = false;
+
+  Future<void> _newKey() async {
+    setState(() => _busy = true);
+    try {
+      final r = await api('POST', '/v1/me/save-key');
+      if (mounted) setState(() => _key = r['key'] as String);
+    } catch (e) {
+      if (mounted) setState(() => _error = apiError(e));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Widget _copy(String label, String value) => ListTile(
+        contentPadding: EdgeInsets.zero,
+        title: Text(label),
+        subtitle: SelectableText(value),
+        trailing: IconButton(
+          icon: const Icon(Icons.copy),
+          tooltip: 'Copy',
+          onPressed: () {
+            Clipboard.setData(ClipboardData(text: value));
+            ScaffoldMessenger.of(context)
+                .showSnackBar(SnackBar(content: Text('$label copied')));
+          },
+        ),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final t = Theme.of(context).textTheme;
+    final url = '${backendUrl.value ?? ''}/v1/shortcut/save';
+    return SafeArea(
+      child: ListView(
+          shrinkWrap: true,
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+          children: [
+            Text('Save to Realbrain from the Share button',
+                style: t.titleMedium),
+            const SizedBox(height: 8),
+            const Text(
+                'Build it once in the Shortcuts app (about 2 minutes). After that, '
+                "Share → Save to Realbrain saves without leaving the app you're in."),
+            const SizedBox(height: 16),
+            if (_key == null)
+              FilledButton(
+                onPressed: _busy ? null : _newKey,
+                child: Text(_busy ? 'Making a key…' : 'Get my save key'),
+              )
+            else ...[
+              _copy('Your save key', _key!),
+              Text('Shown once. Getting a new key turns this one off.',
+                  style: t.bodySmall),
+              const SizedBox(height: 8),
+              _copy('Address', url),
+            ],
+            if (_error != null) Text(_error!),
+            const SizedBox(height: 16),
+            Text('In Shortcuts, tap + and add:', style: t.titleSmall),
+            const SizedBox(height: 8),
+            for (final step in const [
+              "1. Tap the shortcut's name at the top → Details → turn on 'Show in Share Sheet'. "
+                  'Back in the editor, tap "Any" in "Receive Any input" and keep only URLs and Text.',
+              '2. Add "Get Contents of URL". Paste the Address. Tap the arrow: Method POST, '
+                  'Headers: add X-Save-Key with your save key. Request Body: JSON, '
+                  'add a Text field "url" and set its value to Shortcut Input.',
+              '3. Add "Show Notification" with the text "Saved to Realbrain".',
+              '4. Name it "Save to Realbrain" and tap Done.',
+            ])
+              Padding(
+                  padding: const EdgeInsets.only(bottom: 8), child: Text(step)),
+          ]),
+    );
+  }
 }
