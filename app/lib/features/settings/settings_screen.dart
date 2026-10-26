@@ -215,18 +215,23 @@ class _ShortcutSheetState extends State<ShortcutSheet> {
             ],
             if (_error != null) Text(_error!),
             const SizedBox(height: 16),
-            Text('In Shortcuts, tap + and add:', style: t.titleSmall),
+            Text('In the Shortcuts app:', style: t.titleSmall),
             const SizedBox(height: 8),
             for (final step in const [
-              "1. Tap the shortcut's name at the top → Details → turn on 'Show in Share Sheet'. "
-                  'Back in the editor, tap "Any" in "Receive Any input" and keep only URLs and Text.',
-              "2. Add 'List' with two items, Me and Home. Then add 'Choose from List' (prompt: Save to).",
-              '3. Add "Get Contents of URL". Paste the Address. '
-                  'Tap the arrow: Method POST, Headers: add X-Save-Key with your save key. '
-                  'Request Body: JSON, add a Text field "url" set to Shortcut Input, and a Text '
-                  'field "space" set to Chosen Item.',
-              '4. Add "Show Notification" with the text "Saved to Realbrain".',
-              '5. Name it "Save to Realbrain" and tap Done.',
+              '1. Tap + (top right). Tap "New Shortcut" at the top → Rename → Save to Realbrain.',
+              '2. Tap ⓘ at the bottom → turn on "Show in Share Sheet" → Done. A "Receive … input '
+                  'from Share Sheet" block appears: tap its blue "Images and 18 more", tap Clear, '
+                  'pick URLs and Text, then Done.',
+              '3. In "Search for apps and actions" at the bottom, add "List". Change its items to Me and Home.',
+              '4. Add "Choose from List". Tap its arrow (>) and set Prompt to Save to.',
+              '5. Add "Get Contents of URL". Tap the blue URL and paste the Address. Tap the arrow (>): '
+                  'Method POST. Headers: Add new header, Key X-Save-Key, Text: paste your save key.',
+              '6. Still there, Request Body: JSON. Add new field → Text, key url; for its value tap '
+                  '"Shortcut Input" in the bar above the keyboard. Add new field → Text, key space; '
+                  'value: tap "Chosen Item".',
+              '7. Add "Show Notification", change "Hello World!" to Saved to Realbrain, tap Done.',
+              '8. Try it: in Instagram tap Share → "Share to…" (TikTok: Share → More), scroll down, '
+                  'tap Save to Realbrain. The first time, tap "Always Allow".',
             ])
               Padding(
                   padding: const EdgeInsets.only(bottom: 8), child: Text(step)),
