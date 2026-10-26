@@ -21,5 +21,5 @@ git archive HEAD web/landing infra/oracle/Caddyfile | ssh -i "$KEY" "$VM" '
   sudo systemctl reload caddy
   rm -rf "$tmp"'
 # The page answers at /, and the API still answers next to it.
-curl -fsS "$URL/" | grep -q '<title>Realbrain</title>' && echo "page ok"
+case "$(curl -fsS "$URL/")" in *'<title>Realbrain</title>'*) echo "page ok" ;; *) echo "page missing" >&2; exit 1 ;; esac
 curl -fsS "$URL/health" && echo
