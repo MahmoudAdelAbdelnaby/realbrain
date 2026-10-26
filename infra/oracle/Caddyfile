@@ -1,4 +1,14 @@
 # /etc/caddy/Caddyfile on the VM; replace the name with your DuckDNS one. Caddy gets the certificate.
 realbrain-mahmoud.duckdns.org {
-	reverse_proxy 127.0.0.1:8000
+	# The landing page (web/landing, shipped by deploy-web.sh) owns only / and /site/*.
+	@site path / /index.html /site/*
+	handle @site {
+		root * /srv/reelbrain/web
+		encode gzip
+		file_server
+	}
+	# Everything else is the API, as before.
+	handle {
+		reverse_proxy 127.0.0.1:8000
+	}
 }

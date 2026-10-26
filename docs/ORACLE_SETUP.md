@@ -110,3 +110,18 @@ which can do almost anything in the project; never delete that one).
 
 Then I install Docker and Caddy, put the Gemini key and the JSON on the VM (root-only), start the
 backend, point the app at the new address and do a real save from your phone.
+
+## Updating the landing page (W1)
+
+The page lives in `web/landing/` and is served by Caddy at `/` and `/site/*`; every other path still
+goes to the API (`infra/oracle/Caddyfile`). After committing a change to the page:
+
+```bash
+sh infra/oracle/deploy-web.sh
+```
+
+or `infra\oracle\deploy-web.cmd` from PowerShell. It ships `web/landing` and the Caddyfile from the
+last commit, validates the Caddyfile on the VM before touching anything, swaps `/srv/reelbrain/web`
+(the previous copy stays in `/srv/reelbrain/web.old`), reloads Caddy, then checks that `/` is the
+page and `/health` is still the API. The backend container is not rebuilt or restarted.
+Rolling back: `sudo rm -rf /srv/reelbrain/web && sudo mv /srv/reelbrain/web.old /srv/reelbrain/web` on the VM, or redeploy an older commit.

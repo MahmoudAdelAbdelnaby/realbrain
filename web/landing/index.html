@@ -1,0 +1,565 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Realbrain</title>
+<meta name="description" content="Share a reel to Realbrain. It pulls out the key information, the amounts, the steps, the place, the link, the verdict, and turns it into a next step you can act on.">
+<meta property="og:title" content="Your saved reels, given a Realbrain">
+<meta property="og:description" content="Saved is where reels go to die. Realbrain pulls out the key information and turns it into a next step.">
+<meta property="og:image" content="/site/brag.jpg">
+<link rel="icon" href="/site/mark.svg" type="image/svg+xml">
+<script>try{const t=localStorage.getItem('rb-theme');if(t)document.documentElement.dataset.theme=t}catch{}document.documentElement.classList.add('js')</script>
+<style>
+/* Tokens: app/lib/core/theme/tokens.dart (design v4). Light first; dark on the toggle. */
+@font-face{font-family:Inter;font-weight:400;font-display:swap;src:url(site/fonts/Inter-Regular.ttf)}
+@font-face{font-family:Inter;font-weight:600;font-display:swap;src:url(site/fonts/Inter-SemiBold.ttf)}
+@font-face{font-family:Inter;font-weight:700;font-display:swap;src:url(site/fonts/Inter-Bold.ttf)}
+:root{
+  --ground:#F5F5F7;--surface:#FFFFFF;--raised:#ECECEF;--line:#DCDDE1;--text:#111216;--muted:#5C6069;--faint:#656973;
+  --pill:#111216;--pill-label:#FFFFFF;--brand:#5B4FD6;--cap1:#5B4FD6;--cap2:#2F62C8;--haze1:#E6E3F5;--haze2:#E2EEF0;
+  --false-fg:#831C1E;--false-bg:#FFEDEA;
+  --recipe:#9A5B00;--workout:#3F7A1E;--places:#0E7A68;--tools:#2F62C8;--fact_check:#5B4FD6;--ideas:#7A6300;
+  color-scheme:light;
+}
+:root[data-theme=dark]{
+  --ground:#0E0F12;--surface:#16181C;--raised:#1E2126;--line:#2A2D33;--text:#ECEDEF;--muted:#9A9EA6;--faint:#868A93;
+  --pill:#ECEDEF;--pill-label:#0E0F12;--brand:#9C8CFF;--cap1:#9C8CFF;--cap2:#6EA2FF;--haze1:#231F3A;--haze2:#122229;
+  --false-fg:#E5566F;--false-bg:#2C1A20;
+  --recipe:#F2B866;--workout:#8CCB7A;--places:#4FD1B9;--tools:#6EA2FF;--fact_check:#9C8CFF;--ideas:#E8CD6B;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--ground);color:var(--text);font:400 16px/1.55 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:clip;transition:background .3s,color .3s}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--brand);outline-offset:3px;border-radius:6px}
+.wrap{max-width:1160px;margin:0 auto;padding:0 20px}
+h1,h2,h3,p{margin:0}
+h1{font-weight:700;font-size:clamp(40px,6.4vw,76px);line-height:1.02;letter-spacing:-.035em}
+h2{font-weight:700;font-size:clamp(32px,4.6vw,52px);line-height:1.08;letter-spacing:-.03em}
+h3{font-weight:600;font-size:19px;line-height:1.3;letter-spacing:-.01em}
+.lead{font-size:clamp(17px,1.9vw,20px);color:var(--muted);max-width:34em}
+.muted{color:var(--muted)}
+section.block{padding:clamp(80px,12vw,140px) 0 0}
+.pill{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:0 24px;border-radius:999px;border:0;background:var(--pill);color:var(--pill-label);font:600 16px/1 Inter,sans-serif;text-decoration:none;cursor:pointer}
+.pill.quiet{background:var(--surface);color:var(--text);border:1px solid var(--line)}
+.pill.ghost{background:none;color:var(--muted);padding:0 12px}
+.pill:active{transform:scale(.97)}
+.dot{width:10px;height:10px;border-radius:50%;flex:none;background:var(--c)}
+
+/* header: clear over the film, solid once the page covers it */
+header{position:fixed;top:0;left:0;right:0;z-index:20;color:#fff;transition:background .3s,color .3s}
+header.solid{color:var(--text);background:color-mix(in srgb,var(--ground) 86%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+header .wrap{display:flex;align-items:center;gap:10px;height:64px;max-width:none;padding:0 clamp(20px,3vw,40px)}
+.wordmark{display:flex;align-items:center;gap:8px;font-weight:700;font-size:20px;letter-spacing:-.03em;text-decoration:none;margin-inline-end:auto}
+.wordmark svg{width:30px;height:30px}
+.theme{width:40px;height:40px;display:grid;place-items:center;border-radius:50%;background:none;border:1px solid rgba(255,255,255,.35);color:inherit;cursor:pointer}
+header.solid .theme{border-color:var(--line)}
+.theme svg{width:18px;height:18px}
+:root[data-theme=dark] .moon,:root:not([data-theme=dark]) .sun{display:none}
+header .pill{min-height:40px;padding:0 18px;font-size:15px;background:#fff;color:#0E0F12}
+header.solid .pill{background:var(--pill);color:var(--pill-label)}
+
+/* hero: the film fills the screen; the page slides up over it */
+.hero{position:sticky;top:0;height:100svh;overflow:hidden;background:#0E0F12;color:#fff}
+.hero video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scale(calc(1 - var(--h,0) * .08));filter:brightness(calc(1 - var(--h,0) * .55))}
+.hero::after{content:"";position:absolute;inset:auto 0 0;height:22%;background:linear-gradient(rgba(14,15,18,0),rgba(14,15,18,.7));pointer-events:none}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.hero .over{position:absolute;left:0;right:0;bottom:0;z-index:1;padding:0 clamp(20px,3vw,40px) clamp(20px,3vw,36px)}
+.hero .cta{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.hero .cta .pill{background:#fff;color:#0E0F12}
+.hero .cta button{min-height:40px;padding:0 16px;border-radius:999px;border:1px solid rgba(255,255,255,.3);background:rgba(14,15,18,.5);color:#fff;font:600 14px/1 Inter,sans-serif;cursor:pointer}
+.hero .cta{opacity:0;transform:translateY(30px);animation:rise .8s cubic-bezier(.2,.9,.3,1.2) forwards;animation-delay:calc(var(--i,6) * 80ms + 150ms)}
+@keyframes rise{to{opacity:1;transform:none}}
+.page{position:relative;z-index:1;background:var(--ground);border-radius:28px 28px 0 0;box-shadow:0 -40px 80px rgba(0,0,0,.35);transition:background .3s}
+
+/* the story: scroll drives one phone through the problem and the fix, one short line per beat */
+html{scroll-snap-type:y proximity}
+.story{position:relative;height:calc(100svh + 4 * 60svh);--grave:#D9DADE}
+.snap{position:absolute;left:0;width:1px;height:1px;scroll-snap-align:start;scroll-snap-stop:always}
+:root[data-theme=dark] .story{--grave:#070809}
+.stick{position:sticky;top:0;height:100svh;padding-top:64px;display:grid;align-items:center;border-radius:28px 28px 0 0;transition:background-color .6s}
+.stick::before{content:"";position:absolute;inset:0;opacity:0;transition:opacity .7s;pointer-events:none;border-radius:inherit;
+  background:radial-gradient(60% 60% at 78% 50%,color-mix(in srgb,var(--cap1) 26%,transparent),transparent 70%),radial-gradient(50% 50% at 10% 90%,color-mix(in srgb,var(--cap2) 18%,transparent),transparent 70%)}
+.story[data-mood=grave] .stick{background-color:var(--grave)}
+.story[data-mood=rescue] .stick::before{opacity:1}
+.stick .wrap{position:relative;display:grid;gap:24px;align-items:center;width:100%}
+@media (min-width:860px){.stick .wrap{grid-template-columns:1fr auto;gap:48px}}
+.steps{position:relative;min-height:clamp(220px,34vh,340px)}
+.step{position:absolute;inset:0 0 auto;pointer-events:none}
+.step h2{font-size:clamp(46px,7.2vw,108px);line-height:.95;letter-spacing:-.05em}
+.step .w{display:inline-block;opacity:0;transform:translateY(.45em) scale(.8) rotate(4deg);filter:blur(10px);transition:opacity .2s,transform .2s,filter .2s}
+.step.on .w{opacity:1;transform:none;filter:none;transition:opacity .35s,transform .6s cubic-bezier(.3,1.6,.5,1),filter .35s;transition-delay:calc(var(--i) * 75ms)}
+.step.rescue .w{background:linear-gradient(100deg,var(--cap1),var(--cap2));-webkit-background-clip:text;background-clip:text;color:transparent;padding-bottom:.08em}
+.story[data-mood=grave] .step.on h2{color:var(--muted)}
+.step p{margin-top:18px;color:var(--muted);font-size:clamp(18px,2vw,24px);font-weight:600;letter-spacing:-.01em;opacity:0;transform:translateY(12px);transition:opacity .2s,transform .2s}
+.step.on p{opacity:1;transform:none;transition:opacity .4s .35s,transform .5s cubic-bezier(.3,1.5,.5,1) .35s}
+/* the pitch: the graveyard beat runs slower, and its last line lands once everything has gone grey */
+.story[data-mood=grave] .step.on .w{transition:opacity .7s,transform 1s cubic-bezier(.2,1.2,.4,1),filter .7s;transition-delay:calc(var(--i) * 220ms)}
+.story[data-mood=grave] .step.on p{transition:opacity .8s 3s,transform .8s cubic-bezier(.2,1.2,.4,1) 3s}
+.story[data-mood=grave] .stick{transition:background-color 2.5s 1s}
+.rail{display:flex;gap:6px;margin-bottom:28px}
+.rail i{height:5px;width:32px;border-radius:3px;background:var(--line);transition:background .3s,width .4s cubic-bezier(.3,1.5,.5,1)}
+.rail i.on{background:var(--text)}
+.rail i.now{width:56px}
+.rail i.rb.on{background:linear-gradient(90deg,var(--cap1),var(--cap2))}
+@keyframes bump{40%{transform:scale(1.05) rotate(-1.5deg)}100%{transform:none}}
+.phone.bump{animation:bump .55s cubic-bezier(.3,1.5,.5,1)}
+@media (max-width:859px){
+  .stick .wrap{grid-template-rows:auto 1fr;height:100%;padding-top:12px;padding-bottom:12px;align-content:start}
+  .phonebox{order:-1}
+  .steps{min-height:150px}
+  .step h2{font-size:clamp(36px,10.5vw,60px)}
+  .step p{margin-top:8px;font-size:17px}
+  .rail{margin-bottom:12px}
+}
+.phonebox{justify-self:center}
+.phone{zoom:var(--z,1);position:relative;width:320px;height:660px;border-radius:46px;background:#0E0F12;border:10px solid #23262c;box-shadow:0 50px 90px -40px rgba(17,18,22,.45);overflow:hidden;color:#ECEDEF;font-size:14px}
+:root[data-theme=dark] .phone{border-color:#33363d;box-shadow:0 50px 90px -40px rgba(156,140,255,.25)}
+.screen{position:absolute;inset:0;overflow:hidden}
+.layer{position:absolute;inset:0}
+#feed .reel{position:absolute;left:0;width:300px;height:640px;overflow:hidden}
+.reel .cap{position:absolute;left:16px;right:64px;bottom:34px}
+.reel .who{font-weight:600}
+.reel .ln{height:8px;border-radius:4px;background:rgba(255,255,255,.4);margin-top:8px}
+.reel .side{position:absolute;right:12px;bottom:40px;display:grid;gap:18px;justify-items:center}
+.reel .side svg{width:28px;height:28px;fill:none;stroke:#fff;stroke-width:2;stroke-linejoin:round}
+#bm.on{fill:#fff}
+.reel .big{position:absolute;left:20px;right:20px;top:120px;font-weight:700;font-size:34px;line-height:1.05;letter-spacing:-.02em;text-shadow:0 2px 20px rgba(0,0,0,.4)}
+#subs{position:absolute;left:16px;right:16px;bottom:150px;text-align:center;font-weight:600;font-size:17px;line-height:1.35}
+#subs span{background:rgba(0,0,0,.55);padding:2px 6px;border-radius:6px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+#subs b{color:#F2B866}
+.toast{position:absolute;left:50%;top:60px;transform:translateX(-50%);padding:10px 18px;border-radius:999px;background:#ECEDEF;color:#0E0F12;font-weight:600;white-space:nowrap}
+.tap{position:absolute;width:56px;height:56px;margin:-28px 0 0 -28px;border-radius:50%;border:3px solid rgba(255,255,255,.9);opacity:0;pointer-events:none}
+#grave{background:#0E0F12;padding:54px 16px 0}
+#grave .hd{font-weight:700;font-size:26px;letter-spacing:-.02em}
+#grave .sub{color:#868A93;font-size:13px;margin-top:2px}
+#grave .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:16px}
+#grave .th{aspect-ratio:9/16;border-radius:8px;background:var(--g)}
+#grave .th.k{position:relative;outline:2px solid transparent;transition:outline-color .3s}
+#sheet{position:absolute;left:0;right:0;bottom:0;background:#1E2126;border-radius:24px 24px 0 0;padding:16px 18px 30px}
+#sheet .grab{width:40px;height:4px;border-radius:2px;background:#2A2D33;margin:0 auto 14px}
+#sheet .apps{display:flex;justify-content:space-between;margin-top:14px}
+#sheet .app{display:grid;justify-items:center;gap:6px;font-size:11px;color:#9A9EA6;width:56px}
+#sheet .app i{width:50px;height:50px;border-radius:14px;background:#2A2D33;display:grid;place-items:center}
+#sheet .app.rb i{background:#0E0F12;border:1px solid #9C8CFF}
+#sheet .app.rb{color:#ECEDEF}
+#sheet .app.rb svg{width:34px;height:34px}
+#rb{background:#0E0F12;padding:50px 18px 0}
+#rb .top{display:flex;align-items:center;gap:10px}
+#rb .top svg{width:36px;height:36px}
+#rb .lab{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:#9A9EA6;margin-top:18px}
+#rb .ttl{font-size:30px;font-weight:700;letter-spacing:-.02em;margin-top:4px}
+#rb .src{font-size:12px;color:#868A93;margin-top:2px}
+#rb ul{list-style:none;padding:0;margin:14px 0 0}
+#rb li{display:flex;justify-content:space-between;padding:7px 0;border-top:1px solid #2A2D33;font-size:14px}
+#rb li b{font-variant-numeric:tabular-nums;color:#F2B866;font-weight:600}
+#rb .stp{display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:13px;color:#9A9EA6;gap:10px}
+#rb .stp span:last-child{background:#1E2126;color:#ECEDEF;padding:4px 10px;border-radius:999px;font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
+#rb .acts{display:flex;gap:8px;margin-top:18px}
+#rb .acts span{padding:12px 18px;border-radius:999px;font-weight:600;background:#1E2126;border:1px solid #2A2D33}
+#rb .acts .go{background:#ECEDEF;color:#0E0F12;border-color:#ECEDEF}
+#notif{position:absolute;left:10px;right:10px;top:12px;display:flex;gap:10px;align-items:center;background:rgba(36,39,45,.96);border:1px solid #2A2D33;border-radius:18px;padding:10px 12px;font-size:13px;line-height:1.35}
+#notif svg{width:30px;height:30px;flex:none}
+#notif b{display:block;font-size:14px}
+
+/* six sections, coming to life as they scroll in */
+.kinds .lead{margin-top:16px}
+.rows{margin-top:40px;border-bottom:1px solid var(--line)}
+.row{display:grid;gap:14px 40px;padding:28px 0;border-top:1px solid var(--line)}
+@media (min-width:860px){.row{grid-template-columns:220px 1fr 380px;align-items:center}}
+.row h3{display:flex;align-items:center;gap:10px;font-size:22px}
+.row p{color:var(--muted);max-width:30em}
+.spec{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px 18px;font-size:15px;overflow:hidden}
+.spec .t{font-weight:600}
+.spec ul{margin:8px 0 0;padding:0;list-style:none;color:var(--muted)}
+.spec ul li{display:flex;justify-content:space-between;gap:12px;padding:3px 0}
+.spec .num{font-variant-numeric:tabular-nums;color:var(--text);font-weight:600}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;font-weight:600;font-size:13px;margin-top:10px;background:var(--raised);font-variant-numeric:tabular-nums}
+.chip.false{background:var(--false-bg);color:var(--false-fg)}
+.spec .act{display:inline-flex;margin-top:12px;padding:8px 16px;border-radius:999px;background:var(--pill);color:var(--pill-label);font-weight:600;font-size:14px}
+.raw{font-size:13px;color:var(--faint);font-style:italic;margin-bottom:8px}
+.map{height:86px;border-radius:10px;margin-top:10px;position:relative;background:
+  linear-gradient(115deg,transparent 46%,color-mix(in srgb,var(--places) 25%,transparent) 46% 50%,transparent 50%),
+  linear-gradient(20deg,transparent 60%,var(--line) 60% 62%,transparent 62%),
+  linear-gradient(160deg,transparent 30%,var(--line) 30% 32%,transparent 32%),var(--raised)}
+.pin{position:absolute;left:58%;top:18px;width:22px;height:22px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:var(--places)}
+.pin::after{content:"";position:absolute;inset:7px;border-radius:50%;background:var(--surface)}
+.more{margin-top:20px;color:var(--faint);font-size:15px}
+/* life: rows spring in; then the extracted parts follow the raw input */
+.js .row{opacity:0;transform:translateY(48px) scale(.97);transition:opacity .5s,transform .8s cubic-bezier(.3,1.4,.5,1)}
+.js .row.live{opacity:1;transform:none}
+.js .row .spec li,.js .row .spec .chip,.js .row .spec .act,.js .row .spec .t{opacity:0;transform:translateY(8px);transition:opacity .4s,transform .5s cubic-bezier(.2,.8,.2,1);transition-delay:calc(var(--d,0) * 110ms + 250ms)}
+.js .row.live .spec li,.js .row.live .spec .chip,.js .row.live .spec .act,.js .row.live .spec .t{opacity:1;transform:none}
+.js .row .chip.false{transform:scale(1.5)}
+.js .row.live .chip.false{transform:none}
+.js .row .pin{opacity:0;translate:0 -30px;transition:opacity .3s .5s,translate .5s cubic-bezier(.3,1.6,.5,1) .5s}
+.js .row.live .pin{opacity:1;translate:0 0}
+.js .row .dot{transform:scale(0);transition:transform .4s cubic-bezier(.3,1.6,.5,1)}
+.js .row.live .dot{transform:none}
+
+/* recall, threads */
+.split{display:grid;gap:40px;align-items:center}
+@media (min-width:900px){.split{grid-template-columns:1fr 1fr;gap:64px}}
+.split .lead{margin-top:18px}
+.rcard{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:24px;transition:border-color .3s,opacity .3s}
+.rcard .lab{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--muted)}
+.rcard .ttl{font-size:28px;font-weight:700;letter-spacing:-.02em;margin-top:10px}
+.rcard .why{margin-top:6px}
+.rcard .acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
+.rcard .done{margin-top:20px;font-weight:600;min-height:48px;display:flex;align-items:center}
+.push{display:flex;gap:12px;align-items:center;background:var(--raised);border:1px solid var(--line);border-radius:16px;padding:12px 16px;margin-bottom:14px;font-size:15px}
+.push svg{width:32px;height:32px;flex:none}
+.push b{display:block}
+.constellation{position:relative;aspect-ratio:6/5;max-width:560px;width:100%;margin-inline:auto;background:radial-gradient(closest-side,var(--haze1),transparent);border-radius:50%}
+.constellation svg{position:absolute;inset:0;width:100%;height:100%}
+.node{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:6px;background:none;border:0;padding:6px;color:var(--muted);font:600 14px/1.2 Inter,sans-serif;cursor:pointer;min-width:48px;min-height:48px}
+.node i{width:18px;height:18px;border-radius:50%;background:var(--c);box-shadow:0 0 18px var(--c);transition:transform .3s}
+.node[aria-pressed=true]{color:var(--text)}
+.node[aria-pressed=true] i{transform:scale(1.4)}
+.you{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:72px;height:72px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,var(--cap1),var(--cap2));color:#fff;font-weight:700;box-shadow:0 0 40px color-mix(in srgb,var(--cap1) 50%,transparent)}
+.why-panel{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin-top:24px;min-height:132px}
+.why-panel .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.why-panel .tags span{padding:3px 10px;border-radius:999px;background:var(--raised);font-size:13px;font-weight:600}
+.why-panel p{margin-top:10px;color:var(--muted)}
+.line{stroke:var(--line);stroke-width:1.5}
+.link{stroke:url(#cap);stroke-width:2.5;fill:none;stroke-dasharray:1;stroke-dashoffset:1;transition:stroke-dashoffset .6s ease}
+.link.on{stroke-dashoffset:0}
+
+/* join */
+.join{padding-bottom:clamp(80px,12vw,140px)}
+.join .box{position:relative;overflow:hidden;border-radius:28px;padding:clamp(32px,6vw,72px);background:var(--surface);border:1px solid var(--line)}
+.join .box::after{content:"";position:absolute;inset:auto -20% -60% auto;width:70%;aspect-ratio:1;border-radius:50%;background:radial-gradient(closest-side,color-mix(in srgb,var(--cap2) 24%,transparent),transparent);pointer-events:none}
+.join .lead{margin-top:16px}
+.join .actions{margin-top:28px;position:relative;z-index:1}
+footer{border-top:1px solid var(--line);padding:28px 0 40px;font-size:14px;color:var(--faint)}
+footer .wrap{display:flex;flex-wrap:wrap;gap:8px 24px;align-items:center}
+footer .wordmark{font-size:16px;color:var(--text)}
+footer .wordmark svg{width:22px;height:22px}
+</style>
+</head>
+<body>
+
+<header id="hdr">
+  <div class="wrap">
+    <a class="wordmark" href="#top" aria-label="Realbrain"><svg class="mark" viewBox="0 0 100 100" aria-hidden="true"></svg><span>Realbrain</span></a>
+    <button class="theme" id="theme" type="button" aria-label="Dark mode" aria-pressed="false">
+      <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+      <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+    </button>
+    <a class="pill" href="#join">Join the test</a>
+  </div>
+</header>
+
+<section class="hero" id="top">
+    <video id="film" src="site/realbrain-launch.mp4" poster="site/brag.jpg" muted loop playsinline preload="none" aria-label="Realbrain launch video: a saved reel turns into a recipe, a workout, a place, a tool, a fact check and an idea, then comes back in Recall and Brain Threads."></video>
+    <h1 class="sr">Realbrain: your saved reels, given a Realbrain</h1>
+    <div class="over">
+      <div class="cta">
+        <a class="pill" href="#join">Join the test</a>
+        <button type="button" id="soundBtn">Sound on</button><button type="button" id="filmBtn">Pause</button>
+      </div>
+    </div>
+  </section>
+
+<div class="page">
+<main>
+  <section class="story" id="story" aria-label="How a saved reel gets lost, and how Realbrain brings it back">
+    <div class="snap" style="top:0"></div><div class="snap" style="top:60svh"></div><div class="snap" style="top:120svh"></div><div class="snap" style="top:180svh"></div><div class="snap" style="top:240svh"></div>
+    <div class="stick">
+      <div class="wrap">
+        <div>
+          <div class="rail" aria-hidden="true"><i></i><i></i><i></i><i class="rb"></i><i class="rb"></i></div>
+          <div class="steps">
+            <div class="step"><h2>You find a good one.</h2><p>A recipe, read out at double speed.</p></div>
+            <div class="step"><h2>You save it.</h2><p>Feels like keeping it.</p></div>
+            <div class="step"><h2>You never see it again.</h2><p>Saved is where reels go to die.</p></div>
+            <div class="step rescue"><h2>Realbrain digs it out.</h2><p>Every amount. Every step. Every timer.</p></div>
+            <div class="step rescue"><h2>Now you cook it.</h2><p>And if you forget, it comes back.</p></div>
+          </div>
+        </div>
+        <div class="phonebox">
+          <div class="phone" aria-hidden="true"><div class="screen">
+            <div class="layer" id="feed"></div>
+            <div class="toast" id="toast">Saved</div>
+            <div class="layer" id="grave"><div class="hd">Saved</div><div class="sub">Everything you meant to come back to</div><div class="grid" id="ggrid"></div></div>
+            <div id="sheet"><div class="grab"></div><div style="font-weight:600">Share to</div>
+              <div class="apps"><span class="app"><i></i>Chats</span><span class="app"><i></i>Copy link</span><span class="app rb" id="rbapp"><i><svg class="mark" viewBox="0 0 100 100"></svg></i>Realbrain</span><span class="app"><i></i>More</span></div></div>
+            <div class="layer" id="rb">
+              <div class="top"><svg class="mark" id="rbmark" viewBox="0 0 100 100"></svg><b>Realbrain</b></div>
+              <div class="lab"><span class="dot" style="--c:#F2B866"></span>Recipes</div>
+              <div class="ttl">Koshari</div>
+              <div class="src">From speech at 0:07 and the caption</div>
+              <ul id="ings"><li>Brown lentils<b>1 cup</b></li><li>Short-grain rice<b>2 cups</b></li><li>Vermicelli<b>½ cup</b></li><li>Onions, fried crisp<b>3</b></li></ul>
+              <div class="stp" id="st1"><span>Simmer the lentils</span><span>12:00</span></div>
+              <div class="stp" id="st2"><span>Fry the onions until deep brown</span><span>15:00</span></div>
+              <div class="acts" id="rbacts"><span class="go" id="cook">Cook now</span><span>Shopping list</span></div>
+            </div>
+            <div id="notif"><svg class="mark" viewBox="0 0 100 100"></svg><div><b>Remember this?</b>You saved Koshari 3 weeks ago and never tried it.</div></div>
+            <div class="tap" id="tap"></div>
+          </div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block kinds">
+    <div class="wrap">
+      <h2>What comes out of a reel</h2>
+      <p class="lead">Each save lands where it belongs, already turned into something you can act on. Six kinds today.</p>
+      <div class="rows">
+        <div class="row" style="--c:var(--recipe)">
+          <h3><span class="dot"></span>Recipes</h3>
+          <p>Ingredients with amounts and steps with their own timers. The quantities they rushed through, written down.</p>
+          <div class="spec"><div class="raw">“…a cup of lentils, two of rice, then the onions…”</div><div class="t">Koshari</div>
+            <ul><li style="--d:1"><span>Brown lentils</span><span class="num">1 cup</span></li><li style="--d:2"><span>Short-grain rice</span><span class="num">2 cups</span></li><li style="--d:3"><span>Onions, fried crisp</span><span class="num">3</span></li></ul>
+            <span class="chip" style="--d:4">Step 4, simmer 12:00</span><br><span class="act" style="--d:5">Cook now</span></div>
+        </div>
+        <div class="row" style="--c:var(--workout)">
+          <h3><span class="dot"></span>Workouts</h3>
+          <p>Sets, reps and rest, ready for a guided timer.</p>
+          <div class="spec"><div class="raw">“…ten of these, three rounds, a minute off…”</div><div class="t">Bar dips</div>
+            <ul><li style="--d:1"><span>Sets × reps</span><span class="num">3 × 10</span></li><li style="--d:2"><span>Rest</span><span class="num">60 s</span></li><li style="--d:3"><span>Works</span><span>triceps, chest</span></li></ul>
+            <span class="act" style="--d:4">Start</span></div>
+        </div>
+        <div class="row" style="--c:var(--places)">
+          <h3><span class="dot"></span>Places</h3>
+          <p>A pin on your map, not a half-read sign in the corner of a video.</p>
+          <div class="spec"><div class="raw">A sign at 0:03, half out of frame</div><div class="t">Rooftop café, Zamalek</div>
+            <div class="map"><span class="pin"></span></div><span class="act" style="--d:2">Go</span></div>
+        </div>
+        <div class="row" style="--c:var(--tools)">
+          <h3><span class="dot"></span>Dev and Tools</h3>
+          <p>The repo or app they only said out loud, resolved to a real link with what it does.</p>
+          <div class="spec"><div class="raw">“…it's called, uh, something like doc-chat…”</div><div class="t">The real link, with a one-line summary</div>
+            <ul><li style="--d:1"><span>Spoken at 0:14, never written</span></li></ul><span class="act" style="--d:2">Try now</span></div>
+        </div>
+        <div class="row" style="--c:var(--fact_check)">
+          <h3><span class="dot"></span>Fact Check</h3>
+          <p>A verdict with cited sources, instead of the comment section.</p>
+          <div class="spec"><div class="raw">“Scientists say we only use 10% of our brain.”</div><div class="t">The claim, checked</div>
+            <span class="chip false" style="--d:2">False, 3 sources</span><br><span class="act" style="--d:3">Read</span></div>
+        </div>
+        <div class="row" style="--c:var(--ideas)">
+          <h3><span class="dot"></span>Ideas</h3>
+          <p>The thought that made you stop scrolling, kept in your words. Type your own in too.</p>
+          <div class="spec"><div class="raw">A two-minute monologue about weekends</div><div class="t">“Plan Sunday like a trip.”</div>
+            <ul><li style="--d:1"><span>Linked to 2 saves about mornings</span></li></ul><span class="act" style="--d:2">Explore</span></div>
+        </div>
+      </div>
+      <p class="more">More sections are on the way.</p>
+    </div>
+  </section>
+
+  <section class="block recall">
+    <div class="wrap split">
+      <div>
+        <h2>It brings things back when they matter.</h2>
+        <p class="lead">Each evening, one “Remember this?” for something you saved and never tried. Every card says why it's back. Not now sends it away for a week; Archive puts it to rest.</p>
+      </div>
+      <div>
+        <div class="push"><svg class="mark" viewBox="0 0 100 100" aria-hidden="true"></svg><div><b>Remember this?</b><span class="muted">Koshari, from a reel you saved in September</span></div></div>
+        <div class="rcard" id="rcard" style="--c:var(--recipe)">
+          <div class="lab"><span class="dot"></span>Recipes, today</div>
+          <div class="ttl">Koshari</div>
+          <p class="why">You saved this 47 days ago. You never tried it.</p>
+          <div class="acts" id="racts">
+            <button class="pill" type="button" data-act="cook">Cook now</button>
+            <button class="pill quiet" type="button" data-act="later">Not now</button>
+            <button class="pill ghost" type="button" data-act="archive">Archive</button>
+          </div>
+          <div class="done" id="rdone" hidden aria-live="polite"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block threads">
+    <div class="wrap split">
+      <div>
+        <h2>Brain Threads</h2>
+        <p class="lead">You in the centre, your interests around you. Tap one to see what it holds, and why two saves you made weeks apart belong together.</p>
+        <div class="why-panel" id="why" aria-live="polite"></div>
+      </div>
+      <div class="constellation" id="cons">
+        <svg viewBox="0 0 600 500" aria-hidden="true"><defs><linearGradient id="cap" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="var(--cap1)"/><stop offset="1" stop-color="var(--cap2)"/></linearGradient></defs><g id="lines"></g><path id="link" class="link" pathLength="1"/></svg>
+        <div class="you">You</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block join" id="join">
+    <div class="wrap">
+      <div class="box">
+        <h2>Join the test</h2>
+        <p class="lead">Android, free, a small group. Tell us one reel you saved and never opened again, and we'll send you the app.</p>
+        <div class="actions"><a class="pill" href="mailto:mahmoud.ad9292@gmail.com?subject=Realbrain%20test">Email to join</a></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span class="wordmark"><svg class="mark" viewBox="0 0 100 100" aria-hidden="true"></svg>Realbrain</span>
+    <span>Made in Cairo. No cookies or trackers on this page.</span>
+  </div>
+</footer>
+</div>
+
+<script>
+// The polygonal brain: the same points as BrainMesh (app/lib/core/brain_mark.dart, app/tool/brain_mesh.py).
+const O=[[14,52],[12,40],[18,29],[28,21],[41,16],[55,15],[68,18],[79,25],[87,35],[89,47],[85,58],[76,64],[68,72],[60,80],[54,70],[44,66],[32,64],[22,60]];
+const I=[[25,42],[36,32],[50,27],[63,28],[75,36],[40,47],[55,41],[68,48],[80,47],[30,54],[47,57],[62,58],[74,56]];
+const SP=[[1,0],[0,0],[2,0],[2,1],[3,1],[4,1],[4,2],[5,2],[5,3],[6,3],[7,3],[7,4],[8,4],[9,8],[8,8],[10,8],[10,12],[11,12],[12,11],[12,12],[13,11],[14,11],[14,10],[15,10],[16,9],[16,10],[17,9],[0,9]];
+const ME=[[0,1],[1,2],[2,3],[3,4],[4,8],[0,5],[1,5],[2,5],[2,6],[3,6],[3,7],[4,7],[6,5],[6,7],[7,8],[7,12],[8,12],[0,9],[5,9],[5,10],[9,10],[6,10],[6,11],[10,11],[7,11],[11,12]];
+const BIG=[2,5,7,11,9];
+const seg=(a,b)=>`M${a[0]} ${a[1]}L${b[0]} ${b[1]}`;
+for(const svg of document.querySelectorAll('svg.mark')){
+  const path=`M${O.map(p=>p.join(' ')).join('L')}Z`+SP.map(([a,b])=>seg(O[a],I[b])).join('')+ME.map(([a,b])=>seg(I[a],I[b])).join('');
+  const dots=[...O.map(p=>[p,1.6]),...I.map((p,k)=>[p,BIG.includes(k)?3:1.6])].map(([p,r])=>`<circle cx="${p[0]}" cy="${p[1]}" r="${r}"/>`).join('');
+  svg.innerHTML=`<g transform="translate(0 2.5)" fill="currentColor"><path d="${path}" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" opacity=".85"/>${dots}</g>`;
+}
+const $=id=>document.getElementById(id);
+const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// Theme: light first, dark on request, remembered.
+const root=document.documentElement,themeBtn=$('theme');
+const syncTheme=()=>{const d=root.dataset.theme==='dark';themeBtn.setAttribute('aria-pressed',d);themeBtn.setAttribute('aria-label',d?'Light mode':'Dark mode')};
+themeBtn.onclick=()=>{root.dataset.theme=root.dataset.theme==='dark'?'light':'dark';try{localStorage.setItem('rb-theme',root.dataset.theme)}catch{}syncTheme()};
+syncTheme();
+
+// Hero film: plays muted; stays still under reduced motion until asked.
+const film=$('film'),filmBtn=$('filmBtn'),soundBtn=$('soundBtn');
+// A vertical cut for portrait screens, so the film fills a phone too.
+const cut=matchMedia('(max-aspect-ratio: 1/1)').matches?'-vertical':'';
+if(cut){film.poster=`site/brag${cut}.jpg`;film.src=`site/realbrain-launch${cut}.mp4`}
+film.preload='auto';
+if(!reduced)film.play().catch(()=>{});
+const filmLabel=()=>{filmBtn.textContent=film.paused?'Play':'Pause';soundBtn.textContent=film.muted?'Sound on':'Sound off'};
+film.onplay=film.onpause=filmLabel;
+filmBtn.onclick=()=>film.paused?film.play():film.pause();
+soundBtn.onclick=()=>{film.muted=!film.muted;if(!film.muted&&film.paused)film.play();filmLabel()};
+filmLabel();
+// The film stays put while the page slides over it and dims; it pauses once covered and resumes when you come back.
+const hero=$('top'),hdr=$('hdr');let userPaused=false,autoPaused=false;
+filmBtn.addEventListener('click',()=>userPaused=film.paused);
+function onHero(){const h=cl(scrollY/innerHeight);hero.style.setProperty('--h',h.toFixed(3));hdr.classList.toggle('solid',scrollY>innerHeight-80);
+  if(h>.85&&!film.paused){film.pause();autoPaused=true}
+  else if(h<.85&&autoPaused&&!userPaused&&!reduced){autoPaused=false;film.play().catch(()=>{})}}
+addEventListener('scroll',onHero,{passive:true});
+
+// --- the story: five steps. Scroll picks the step; the phone plays that step's part of the timeline p (0..1) on its own clock ---
+const cl=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)),ramp=(p,a,b)=>cl((p-a)/(b-a)),eo=x=>1-Math.pow(1-x,3);
+const REELS=[['#6EA2FF','#1d2b45','@daily.tech','This app does WHAT'],['#E8CD6B','#3a321a','@funnyguy','wait for it'],['#4FD1B9','#173430','@walks.cairo','Sunset from the bridge'],['#F2B866','#3d2a12','@home.cook','Koshari like my grandmother made']];
+const feed=$('feed');
+feed.innerHTML=REELS.map(([a,b,who,big],k)=>`<div class="reel" style="top:${k*640}px;background:radial-gradient(120% 70% at 70% 20%,${a}88,transparent),linear-gradient(170deg,${b},#0E0F12 80%)"><div class="big">${big}</div>
+  <div class="side"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"/></svg><svg viewBox="0 0 24 24"><path d="M4 5h16v11H8l-4 4z"/></svg><svg viewBox="0 0 24 24"${k===3?' id="bm"':''}><path d="M6 3h12v18l-6-4-6 4z"/></svg></div>
+  <div class="cap"><div class="who">${who}</div><div class="ln" style="width:80%"></div><div class="ln" style="width:50%"></div></div>${k===3?'<div id="subs"></div>':''}</div>`).join('');
+const SUBS='So you take <b>a cup of lentils</b>, <b>two cups of rice</b>, <b>half a cup of vermicelli</b>, and the onions, <b>three</b>, fried till they\'re deep brown, about <b>fifteen minutes</b>, then the lentils simmer <b>twelve</b>…';
+const subWords=SUBS.split(' ');
+const G=['#2c3a52','#3a3321','#1f3a35','#3d2c2f','#2b2f45','#2a3a26','#3b2d1a','#24323b'];
+$('ggrid').innerHTML=Array.from({length:11},(_,k)=>`<div class="th" style="--g:linear-gradient(170deg,${G[k%8]},#16181C)"></div>`).join('')+'<div class="th k" id="kthumb" style="--g:radial-gradient(120% 70% at 70% 20%,#F2B86688,transparent),linear-gradient(170deg,#3d2a12,#0E0F12)"></div>';
+document.querySelectorAll('.step h2').forEach(h=>h.innerHTML=h.textContent.split(' ').map((w,i)=>`<span class="w" style="--i:${i}">${w}</span>`).join(' '));
+const steps=[...document.querySelectorAll('.step')],rail=[...document.querySelectorAll('.rail i')];
+const ENDS=[.33,.44,.6,.8,1],DUR=[1400,1100,3600,1600,1400];let dur=1400;
+const ings=[...document.querySelectorAll('#ings li')],rbBits=[...ings,$('st1'),$('st2'),$('rbacts')];
+const rbNodes=[...$('rbmark').querySelectorAll('circle')];
+const tap=$('tap'),phone=document.querySelector('.phone'),story=$('story');
+let lastStep=-1;
+// The tap ring is placed in the phone's own (unzoomed) coordinates.
+function tapAt(el,q){const z=parseFloat(phone.style.getPropertyValue('--z'))||1,s=tap.parentElement.getBoundingClientRect(),r=el.getBoundingClientRect();
+  tap.style.left=(r.left+r.width/2-s.left)/z+'px';tap.style.top=(r.top+r.height/2-s.top)/z+'px';tap.style.opacity=q>0&&q<1?1-q:0;tap.style.transform=`scale(${.5+q})`}
+function render(p){
+  tap.style.opacity=0;
+  // 1 scroll the feed, settle on the koshari reel; 4 later it shrinks into the Saved grid
+  const f=eo(ramp(p,.02,.17)),g=eo(ramp(p,.45,.55));
+  feed.style.transformOrigin=`50% ${3*640+320}px`;
+  feed.style.transform=`translateY(${-f*3*640}px) translate(${g*110}px,${g*185}px) scale(${1-g*.78})`;
+  feed.style.opacity=1-ramp(p,.5,.56);
+  for(let i=0;i<3;i++)feed.children[i].style.visibility=p>.4?'hidden':'';
+  // 2 subtitles race past
+  const n=Math.round(ramp(p,.19,.31)*subWords.length);
+  $('subs').innerHTML=n?`<span>${subWords.slice(Math.max(0,n-9),n).join(' ')}</span>`:'';
+  $('subs').style.opacity=1-ramp(p,.33,.36);
+  // 3 save
+  const bm=$('bm');bm.classList.toggle('on',p>.37);
+  if(p>.35&&p<.4)tapAt(bm,ramp(p,.355,.395));
+  $('toast').style.opacity=ramp(p,.375,.39)*(1-ramp(p,.43,.45));
+  // 4 graveyard: everything greys out
+  $('grave').style.opacity=ramp(p,.47,.52);
+  const grey=ramp(p,.55,.6),back=eo(ramp(p,.62,.66));
+  $('ggrid').querySelectorAll('.th:not(.k)').forEach(t=>{t.style.filter=`grayscale(${grey})`;t.style.opacity=1-.6*grey});
+  const kt=$('kthumb'),kg=grey*(1-back);kt.style.opacity=ramp(p,.53,.55)*(1-.6*kg);kt.style.filter=`grayscale(${kg})`;kt.style.transform=`scale(${1+.08*back})`;kt.style.outlineColor=back>.5?'#9C8CFF':'transparent';
+  // 5 share to Realbrain, it extracts the key information
+  const sh=eo(ramp(p,.64,.68))*(1-ramp(p,.715,.735));$('sheet').style.transform=`translateY(${(1-sh)*110}%)`;
+  if(p>.68&&p<.71)tapAt($('rbapp').querySelector('i'),ramp(p,.68,.71));
+  $('rb').style.opacity=ramp(p,.71,.74);
+  rbNodes.forEach((c,i)=>c.style.opacity=.3+.7*ramp(p,.71+i/rbNodes.length*.04,.72+i/rbNodes.length*.04));
+  rbBits.forEach((b,i)=>{const q=eo(ramp(p,.74+i*.008,.76+i*.008));b.style.opacity=q;b.style.transform=`translateY(${(1-q)*12}px)`});
+  // 6 the next step, and Recall
+  const nt=eo(ramp(p,.83,.87));$('notif').style.opacity=nt;$('notif').style.transform=`translateY(${(nt-1)*80}px)`;
+  const pulse=ramp(p,.9,.97);$('cook').style.boxShadow=`0 0 0 ${pulse*10}px rgba(242,184,102,${.35*(1-pulse)})`;
+  if(p>.89&&p<.93)tapAt($('cook'),ramp(p,.89,.93));
+}
+let cur=0,from=0,to=0,t0=0,raf=0;
+function setStep(k){
+  if(k===lastStep)return;
+  steps.forEach((s,i)=>s.classList.toggle('on',i===k));rail.forEach((r,i)=>{r.classList.toggle('on',i<=k);r.classList.toggle('now',i===k)});
+  story.dataset.mood=k===2?'grave':k>=3?'rescue':'';
+  if(lastStep>=0&&!reduced){phone.classList.remove('bump');void phone.offsetWidth;phone.classList.add('bump')}
+  lastStep=k;
+  // Forward plays from where it is; going back jumps to the start of that step and plays it again.
+  from=to>ENDS[k]?(k?ENDS[k-1]:0):cur;to=ENDS[k];t0=performance.now();dur=DUR[k];
+  if(reduced){cur=to;render(cur)}else if(!raf)raf=requestAnimationFrame(loop);
+}
+function loop(now){const q=Math.min(1,(now-t0)/dur),e=q<.5?2*q*q:1-Math.pow(-2*q+2,2)/2;cur=from+(to-from)*e;render(cur);raf=q<1?requestAnimationFrame(loop):0}
+function measure(){const r=story.getBoundingClientRect(),p=cl(-r.top/(r.height-innerHeight));if(r.top<innerHeight*.5)setStep(Math.round(p*4))}
+addEventListener('scroll',measure,{passive:true});
+function fit(){const desk=innerWidth>=860,h=innerHeight-64;phone.style.setProperty('--z',Math.min(1,desk?(h*.9)/680:(h-230)/680,(innerWidth-40)/340).toFixed(3));measure();render(cur)}
+addEventListener('resize',fit);fit();onHero();
+
+// Sections come to life as they scroll in.
+const rows=document.querySelectorAll('.row');
+if('IntersectionObserver' in window){const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('live');io.unobserve(e.target)}}),{threshold:.2});rows.forEach(r=>io.observe(r))}
+else rows.forEach(r=>r.classList.add('live'));
+
+// Recall card: each action says what happened, like the app.
+const RECALL={cook:'Opening the recipe at step 1.',later:'Back in a week.',archive:'Archived. It won’t come back.'};
+const rcard=$('rcard'),racts=$('racts'),rdone=$('rdone');
+racts.onclick=e=>{const a=e.target.closest('button')?.dataset.act;if(!a)return;
+  racts.hidden=true;rdone.hidden=false;rdone.textContent=RECALL[a];
+  rcard.style.borderColor=a==='cook'?'var(--c)':'';rcard.style.opacity=a==='archive'?.55:'';
+  setTimeout(()=>{racts.hidden=false;rdone.hidden=true;rcard.style.borderColor='';rcard.style.opacity=''},2600)};
+
+// Brain Threads.
+const NODES=[
+ {id:'recipe',x:22,y:24,n:'Recipes',tags:['#cairo','#weeknight','#lentils'],to:'places',why:'The koshari reel and the rooftop café were both filmed in Cairo. Plan the day around them.'},
+ {id:'places',x:78,y:24,n:'Places',tags:['#cairo','#rooftop'],to:'recipe',why:'Shares #cairo with three recipes you saved this month.'},
+ {id:'workout',x:92,y:56,n:'Workouts',tags:['#calisthenics','#home'],to:'fact_check',why:'A fact check about protein timing sits next to your dips plan through #health.'},
+ {id:'tools',x:72,y:88,n:'Dev and Tools',tags:['#ai','#productivity'],to:'ideas',why:'The PDF tool and your “plan Sunday like a trip” idea meet at #productivity.'},
+ {id:'fact_check',x:28,y:88,n:'Fact Check',tags:['#brain','#health'],to:'workout',why:'Two of your fact checks were about training myths. They link to Workouts through #health.'},
+ {id:'ideas',x:8,y:56,n:'Ideas',tags:['#morning','#productivity'],to:'tools',why:'Ideas you typed yourself connect to saves by the words you used.'},
+];
+const cons=$('cons'),lines=$('lines'),link=$('link'),why=$('why'),P=n=>[n.x*6,n.y*5];
+NODES.forEach(n=>{
+  const [x,y]=P(n);lines.insertAdjacentHTML('beforeend',`<line class="line" x1="300" y1="250" x2="${x}" y2="${y}"/>`);
+  const b=document.createElement('button');b.className='node';b.type='button';b.style.cssText=`left:${n.x}%;top:${n.y}%;--c:var(--${n.id})`;
+  b.setAttribute('aria-pressed','false');b.innerHTML=`<i></i><span>${n.n}</span>`;b.onclick=()=>pick(n.id);cons.appendChild(b);n.el=b;
+});
+function pick(id){
+  const n=NODES.find(n=>n.id===id),m=NODES.find(k=>k.id===n.to);
+  NODES.forEach(k=>k.el.setAttribute('aria-pressed',k===n));
+  const [x1,y1]=P(n),[x2,y2]=P(m);
+  link.classList.remove('on');link.setAttribute('d',`M${x1} ${y1}Q300 250 ${x2} ${y2}`);requestAnimationFrame(()=>requestAnimationFrame(()=>link.classList.add('on')));
+  why.innerHTML=`<h3></h3><div class="tags">${n.tags.map(t=>`<span>${t}</span>`).join('')}</div><p></p>`;
+  why.querySelector('h3').textContent=`${n.n} ↔ ${m.n}`;why.querySelector('p').textContent=n.why;
+}
+pick('recipe');
+
+</script>
+</body>
+</html>
