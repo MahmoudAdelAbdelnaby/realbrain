@@ -243,9 +243,10 @@ Gate: 10 real reels (5 TikTok, 5 Instagram) go from share to correct JSON on an 
 - [x] **P0-04 · Backend pipeline v0 (local)**
   - `POST /v1/saves` + upload + `/internal/process` working locally with the Gemini key from env.
   - Extract call returns JSON that validates against the Pydantic schema for all 10 reels; ffmpeg saves the key frame at `key_frame_t`.
-- [ ] **P0-05 · Deploy to Cloud Run + Cloud Tasks**
+- [x] **P0-05 · Deploy to Cloud Run + Cloud Tasks**
   - Backend deployed; Cloud Tasks queue with 3 retries and exponential backoff; 429 from Gemini is retried, not failed.
   - One end-to-end run from the phone to Cloud Run to Firestore.
+  - _Done 26 Oct as B1, on an Oracle Cloud Always Free VM instead of Cloud Run (docs/ORACLE_MIGRATION.md; Blaze plan kept in docs/BLAZE_MIGRATION.md, not chosen). Docker + Caddy at https://realbrain-mahmoud.duckdns.org, published to `config/backend`; processing stays an in-process thread with the same 3-attempt backoff. Seen live: a TikTok share from the S22 went phone → VM → Gemini → Firestore, Ready with its key frame. Updates: `infra\oracle\deploy.cmd` ships the last commit._
 - [x] **P0-06 · Fallback chain**
   - If the phone can't download, `/no-video` triggers: cloud mirror → yt-dlp → caption-only (`partial`).
   - Each step's outcome logged; caption-only still produces a summary.
@@ -273,7 +274,7 @@ Gate: 10 real reels (5 TikTok, 5 Instagram) go from share to correct JSON on an 
 - **Decision, on-device download: confirmed.** 6 of 6 working reels downloaded on the phone (Instagram 4.9 to 19.6 MB in 4 to 19 s). The server fallback is only for dead or blocked links. TikTok links yt-dlp can't read come back as `EXTRACTOR` and go to `/no-video`.
 - **Gemini models:** `GEMINI_MODELS` = 3.6 Flash, 3.8 Flash, 3.5 Flash-Lite, 3.1 Flash-Lite, tried in order on 429/5xx, for each key in `GEMINI_API_KEYS` (yours, then your wife's). 3.6 Flash answers in 20 to 70 s per reel. 3.8 Flash was overloaded on test day.
 - **Free quota seen in AI Studio (24 Oct):** Flash models 5 requests/minute and 20/day each; 3.5 and 3.1 Flash-Lite 15/minute and 500/day each. Gemini calls are spaced 15 s apart. `gemini-2.5-flash` is refused for new keys, and search grounding is 0/day for Gemini 3+ (see the note on Call 2 for P1-08).
-- **Still open from Phase 0:** P0-05, the Cloud Run deploy (`infra/deploy.ps1`, which needs your gcloud login and Firebase console steps). Phase 1 can run against the local backend until then. Deploy before P1-06 push notifications and before Phase 2.
+- **Phase 0 closed:** P0-05 done as B1 (Oracle VM), 26 Oct.
 
 ## Phase 1 — MVP: five sections on Android
 

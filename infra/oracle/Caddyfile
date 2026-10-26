@@ -1,0 +1,4 @@
+# /etc/caddy/Caddyfile on the VM; replace the name with your DuckDNS one. Caddy gets the certificate.
+realbrain-mahmoud.duckdns.org {
+	reverse_proxy 127.0.0.1:8000
+}

@@ -59,7 +59,7 @@ def run_once(now: float | None = None) -> int:
         picks = due(saves, items, now)
         if not picks:
             continue
-        item, save = picks[0]
+        _, save = picks[0]
         try:
             n = notify.push(
                 uid,

@@ -1,12 +1,13 @@
-"""Start the backend on this PC, reachable from anywhere through a Cloudflare quick tunnel.
+"""Start the backend: on this PC through a Cloudflare quick tunnel, or on the Oracle VM behind Caddy.
 
     .venv\\Scripts\\python -m scripts.serve            # tunnel + backend
     .venv\\Scripts\\python -m scripts.serve --lan      # home Wi-Fi only, no tunnel
+    python -m scripts.serve --lan --publish           # the VM (PUBLIC_URL = its fixed address)
 
-The quick tunnel's https://<random>.trycloudflare.com address changes on every start, so it is
-published to Firestore (config/backend) and the app picks it up by itself. Free, no account.
-ponytail: quick tunnel = new address per start and no uptime promise; a named tunnel (free
-Cloudflare account + a domain) or Cloud Run gives a fixed one.
+--publish writes the address to Firestore (config/backend) and every phone switches to it by
+itself. Without it the phones stay where they are, so a PC run for development doesn't pull them
+off the VM. Add --publish on the PC to take them over (the quick tunnel's address changes on every
+start); restarting the VM's container moves them back.
 """
 
 import argparse
@@ -63,6 +64,7 @@ def main() -> int:
     p = argparse.ArgumentParser()
     p.add_argument("--lan", action="store_true", help="no tunnel; phone must be on the same Wi-Fi")
     p.add_argument("--port", type=int, default=8000)
+    p.add_argument("--publish", action="store_true", help="point every phone at this backend")
     a = p.parse_args()
     load_env()
 
@@ -73,16 +75,20 @@ def main() -> int:
         tunnel, url = start_tunnel(a.port)
     os.environ["PUBLIC_URL"] = url  # before importing the app: upload URLs use it
 
-    from app import store
+    print(f"\n  Backend: {url}")
+    if a.publish:
+        from app import store
 
-    store.doc_set("config/backend", {"url": url, "started_at": time.time()})
-    print(f"\n  Backend: {url}\n  Published to Firestore config/backend; the app switches to it by itself.\n")
+        store.doc_set("config/backend", {"url": url, "started_at": time.time()})
+        print("  Published to Firestore config/backend; the app switches to it by itself.\n")
+    else:
+        print("  Not published (no --publish): phones stay on the backend in config/backend.\n")
 
     import uvicorn
 
     from app import recall
 
-    # ponytail: an in-process daily loop while the backend lives on this PC; Cloud Scheduler on Cloud Run.
+    # ponytail: an in-process daily loop fine for one backend; a scheduler if it ever runs as several.
     threading.Thread(target=recall.loop, daemon=True).start()
 
     try:
