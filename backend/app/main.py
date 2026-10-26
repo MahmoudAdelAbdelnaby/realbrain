@@ -240,9 +240,11 @@ def shortcut_save(body: dict, x_save_key: str | None = Header(None)) -> dict:
     if not m:
         raise HTTPException(422, "no link")
     url = m.group(0)
+    # The Shortcut's "Me or Home?" menu; Home without a household lands in Me (spaces.resolve).
+    space = "home" if str(body.get("space") or "").strip().lower() == "home" else "me"
     # Same link within a minute = the same save, so a double tap doesn't make two.
-    client_id = hashlib.sha256(f"{url}:{int(time.time() // 60)}".encode()).hexdigest()[:32]
-    created = create_save(CreateSave(source_url=url, space_id="me", client_id=client_id), owner)
+    client_id = hashlib.sha256(f"{url}:{space}:{int(time.time() // 60)}".encode()).hexdigest()[:32]
+    created = create_save(CreateSave(source_url=url, space_id=space, client_id=client_id), owner)
     if created.status == "received":
         no_video(created.save_id, NoVideo(reason="ios shortcut"), owner)
     return {"save_id": created.save_id}

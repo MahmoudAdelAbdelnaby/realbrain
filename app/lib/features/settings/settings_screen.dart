@@ -220,11 +220,13 @@ class _ShortcutSheetState extends State<ShortcutSheet> {
             for (final step in const [
               "1. Tap the shortcut's name at the top → Details → turn on 'Show in Share Sheet'. "
                   'Back in the editor, tap "Any" in "Receive Any input" and keep only URLs and Text.',
-              '2. Add "Get Contents of URL". Paste the Address. Tap the arrow: Method POST, '
-                  'Headers: add X-Save-Key with your save key. Request Body: JSON, '
-                  'add a Text field "url" and set its value to Shortcut Input.',
-              '3. Add "Show Notification" with the text "Saved to Realbrain".',
-              '4. Name it "Save to Realbrain" and tap Done.',
+              "2. Add 'List' with two items, Me and Home. Then add 'Choose from List' (prompt: Save to).",
+              '3. Add "Get Contents of URL". Paste the Address. '
+                  'Tap the arrow: Method POST, Headers: add X-Save-Key with your save key. '
+                  'Request Body: JSON, add a Text field "url" set to Shortcut Input, and a Text '
+                  'field "space" set to Chosen Item.',
+              '4. Add "Show Notification" with the text "Saved to Realbrain".',
+              '5. Name it "Save to Realbrain" and tap Done.',
             ])
               Padding(
                   padding: const EdgeInsets.only(bottom: 8), child: Text(step)),

@@ -148,8 +148,10 @@ the backend and shows "Saved". She never leaves Instagram or TikTok.
 **App (web and Android):** one Settings row, "iPhone Shortcut", that shows the key with a Copy
 button and the Shortcut steps:
 - Receive **URLs** from the **Share Sheet**.
+- **List** (Me, Home), then **Choose from List**, the same choice the Android share sheet gives.
 - **Get Contents of URL**: `POST https://realbrain-mahmoud.duckdns.org/v1/shortcut/save`, with
-  header `X-Save-Key: <key>` and a JSON body `url` = Shortcut Input.
+  header `X-Save-Key: <key>` and a JSON body `url` = Shortcut Input and
+  `space` = Chosen Item (added 26 Oct at the user's request; Home without a household saves to Me).
 - **Show Notification**: "Saved to Realbrain".
 
 **Why not a ready-made Shortcut file:** signing a `.shortcut` file needs a Mac. An iCloud link is

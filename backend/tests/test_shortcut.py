@@ -38,3 +38,16 @@ def test_a_bad_or_replaced_key_is_refused():
     assert client.post("/v1/shortcut/save", json=body).status_code == 401
     assert client.post("/v1/shortcut/save", json=body, headers={"X-Save-Key": old}).status_code == 401
     assert client.post("/v1/shortcut/save", json=body, headers={"X-Save-Key": new}).status_code == 202
+
+
+def test_home_goes_to_the_household_and_anything_else_to_me():
+    key = _key()
+    home = client.post("/v1/spaces/household", json={"name": "Home"}, headers=ME).json()["space_id"]
+    me = client.post("/v1/me", json={}, headers=ME).json()["spaces"]["me"]
+    h = {"X-Save-Key": key}
+    a = client.post("/v1/shortcut/save", json={"url": REEL + "h", "space": "Home"}, headers=h).json()
+    b = client.post("/v1/shortcut/save", json={"url": REEL + "m", "space": "Me"}, headers=h).json()
+    c = client.post("/v1/shortcut/save", json={"url": REEL + "x"}, headers=h).json()
+    assert store.get_save(a["save_id"])["space_id"] == home
+    assert store.get_save(b["save_id"])["space_id"] == me
+    assert store.get_save(c["save_id"])["space_id"] == me
