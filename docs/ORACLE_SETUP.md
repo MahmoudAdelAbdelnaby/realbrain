@@ -87,12 +87,19 @@ Type `yes` to the fingerprint question. You should see an `ubuntu@reelbrain` pro
 
 Your address is now `https://reelbrain-mahmoud.duckdns.org` (HTTPS starts working after my setup).
 
-## 8. Firebase service-account key
+## 8. Service-account key for the VM
 
-1. <https://console.firebase.google.com> → **reelbrain-dev** → ⚙ **Project settings** → **Service accounts**.
-2. **Firebase Admin SDK** → **Generate new private key** → **Generate key**. A JSON file downloads.
-3. Move it **outside the repo**, e.g. `C:\Users\Sarah Tarek\.secrets\reelbrain-sa.json`.
-   It is a password for your database: never commit it, never paste its contents into chat.
+A dedicated account that can only use Firestore and send pushes (not the Firebase Admin SDK account,
+which can do almost anything in the project; never delete that one).
+
+1. <https://console.cloud.google.com/iam-admin/serviceaccounts/create?project=reelbrain-dev>
+   → name `reelbrain-vm` → **Create and continue**.
+2. Roles: **Cloud Datastore User** and **Firebase Cloud Messaging API Admin** → **Continue** → **Done**.
+3. Click `reelbrain-vm@…` → **Keys** → **Add key** → **Create new key** → **JSON**. A file downloads.
+4. Move it **outside the repo**, e.g. `C:\Users\Sarah Tarek\reelbrain-vm.json`.
+   It is a password for your database: never commit it, never attach it with `@` or paste it into chat.
+   To rotate: add a new key the same way, have it copied to the VM, then delete the old **key**
+   (not the account) on the same Keys tab.
 
 ## 9. Send me
 

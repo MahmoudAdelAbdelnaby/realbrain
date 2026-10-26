@@ -71,8 +71,10 @@ which writes that fixed URL to `config/backend` (as today, just never changing).
 
 ## Firestore without Blaze
 
-Firebase console → Project settings → Service accounts → **Generate new private key** (you do this,
-it downloads a JSON). I copy it to `/etc/reelbrain/sa.json` (root-only, mounted read-only into the
+A dedicated service account `reelbrain-vm` with only Cloud Datastore User and Firebase Cloud
+Messaging API Admin; you create its JSON key in the Cloud console (`docs/ORACLE_SETUP.md` step 8).
+_Changed 26 Oct: the Firebase Admin SDK account was deleted by mistake while rotating its key; the
+narrower account replaced it._ I copy it to `/etc/reelbrain/sa.json` (root-only, mounted read-only into the
 container) and set `GOOGLE_APPLICATION_CREDENTIALS` to it. `firebase_admin` already uses whatever
 ADC finds, so no code change; `GOOGLE_CLOUD_QUOTA_PROJECT` is not needed with a service-account key.
 Works on Spark: Firestore and FCM don't need billing.
