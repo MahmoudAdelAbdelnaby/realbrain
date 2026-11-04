@@ -62,7 +62,10 @@ def doc_set(path: str, data: dict) -> None:
     with _lock:
         f = _file(path)
         f.parent.mkdir(parents=True, exist_ok=True)
-        f.write_text(json.dumps(data, ensure_ascii=False, indent=2), "utf-8")
+        # Atomic: a reader on another thread never sees a half-written file.
+        tmp = f.with_name(f"{f.name}.{threading.get_ident()}.tmp")
+        tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2), "utf-8")
+        os.replace(tmp, f)
 
 
 def doc_update(path: str, fields: dict) -> None:
@@ -86,6 +89,18 @@ def doc_array_add(path: str, field: str, value) -> None:
             doc_set(path, {**data, field: [*data.get(field, []), value]})
 
 
+def doc_array_remove(path: str, field: str, value) -> None:
+    """Removes value from an array field (Firestore ArrayRemove)."""
+    if FIRESTORE:
+        from google.cloud.firestore import ArrayRemove
+
+        _firestore().document(path).update({field: ArrayRemove([value])})
+        return
+    with _lock:
+        data = doc_get(path) or {}
+        doc_set(path, {**data, field: [v for v in data.get(field, []) if v != value]})
+
+
 def col_list(path: str) -> list[dict]:
     if FIRESTORE:
         return [d.to_dict() for d in _firestore().collection(path).stream()]
@@ -98,7 +113,9 @@ def col_items(path: str) -> list[tuple[str, dict]]:
     if FIRESTORE:
         return [(d.id, d.to_dict()) for d in _firestore().collection(path).stream()]
     d = DATA / "docs" / Path(*path.split("/"))
-    return [(f.stem, json.loads(f.read_text("utf-8"))) for f in sorted(d.glob("*.json"))] if d.exists() else []
+    return (
+        [(f.stem, json.loads(f.read_text("utf-8"))) for f in sorted(d.glob("*.json"))] if d.exists() else []
+    )
 
 
 def col_replace(path: str, docs: dict[str, dict]) -> None:
@@ -214,6 +231,23 @@ def delete_video(save_id: str) -> None:
             blob.delete()
         return
     local_video(save_id).unlink(missing_ok=True)
+
+
+IMAGE_TYPES = {"jpg": "image/jpeg", "png": "image/png", "webp": "image/webp"}
+
+
+def put_image(space_id: str, name: str, data: bytes, ext: str) -> str:
+    """A photo posted to a group (a cook-along result, a challenge proof), stored like frames."""
+    if ext not in IMAGE_TYPES:
+        raise ValueError(f"unsupported image type {ext}")
+    if BUCKET:
+        blob = _bucket().blob(f"frames/{space_id}/{name}.{ext}")
+        blob.upload_from_string(data, content_type=IMAGE_TYPES[ext])
+        return f"gs://{BUCKET}/{blob.name}"
+    d = DATA / "frames" / Path(space_id).name
+    d.mkdir(parents=True, exist_ok=True)
+    (d / f"{Path(name).name}.{ext}").write_bytes(data)
+    return f"/dev/frames/{space_id}/{Path(name).name}.{ext}"
 
 
 def put_frame(space_id: str, save_id: str, jpg: Path) -> str:

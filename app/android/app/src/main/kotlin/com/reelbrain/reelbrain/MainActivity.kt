@@ -46,6 +46,20 @@ class MainActivity : FlutterActivity() {
                         startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(call.argument<String>("url"))))
                         result.success(null)
                     }
+                    // shareImage(bytes, text): an achievement or recap card through the share sheet.
+                    "shareImage" -> {
+                        val bytes = call.argument<ByteArray>("bytes")
+                        if (bytes == null) return@setMethodCallHandler result.error("BAD_ARGS", "bytes required", null)
+                        val dir = java.io.File(cacheDir, "share").apply { mkdirs() }
+                        val file = java.io.File(dir, "realbrain.png").apply { writeBytes(bytes) }
+                        val uri = androidx.core.content.FileProvider.getUriForFile(this, "$packageName.files", file)
+                        val send = Intent(Intent.ACTION_SEND).setType("image/png")
+                            .putExtra(Intent.EXTRA_STREAM, uri)
+                            .putExtra(Intent.EXTRA_TEXT, call.argument<String>("text"))
+                            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        startActivity(Intent.createChooser(send, null))
+                        result.success(null)
+                    }
                     "share" -> {
                         val send = Intent(Intent.ACTION_SEND).setType("text/plain")
                             .putExtra(Intent.EXTRA_TEXT, call.argument<String>("text"))

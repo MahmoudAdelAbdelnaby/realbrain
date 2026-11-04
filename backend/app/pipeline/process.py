@@ -7,7 +7,7 @@ import time
 from pathlib import Path
 
 from app import notify, search, store
-from app.pipeline import enrich, frames, geo, tools
+from app.pipeline import enrich, frames, geo, products, tools
 from app.pipeline.extract import Transient, extract
 from app.pipeline.fetch import fallback
 from app.schemas import needs_review
@@ -77,6 +77,7 @@ def process(save_id: str, attempt: int = 0, max_attempts: int = 3) -> str:
             items = [_item(s) for s in result.sections]
             _verify_tools(items)
             _locate_places(items)
+            products.link(items)  # V5: affiliate links only where configured
             if video is not None:
                 _moment_frames(save, items, video, Path(tmp))
             verdict = _check_claims(save, items, result.language) if status in ("ready", "partial") else None
@@ -136,8 +137,16 @@ MAX_MOMENTS = 15  # per item; a reel rarely has more steps or exercises
 
 def _moment_frames(save: dict, items: list[dict], video: Path, tmp: Path) -> None:
     """A frame at every extracted moment: recipe steps (cooking mode), exercises (the pose), and
-    claims, tools and places (the Reels view shows each moment over its own frame)."""
-    lists = {"recipe": "steps", "workout": "exercises", "fact_check": "claims", "tools": "items", "places": "items"}
+    claims, tools, places, titles and products (the viewer shows each moment over its own frame)."""
+    lists = {
+        "recipe": "steps",
+        "workout": "exercises",
+        "fact_check": "claims",
+        "tools": "items",
+        "places": "items",
+        "entertainment": "items",
+        "products": "items",
+    }
     for item in items:
         key = lists.get(item["section"])
         for n, moment in enumerate((item["data"].get(key) or [])[:MAX_MOMENTS] if key else []):
@@ -145,7 +154,7 @@ def _moment_frames(save: dict, items: list[dict], video: Path, tmp: Path) -> Non
                 continue
             jpg = frames.key_frame(video, moment["t"], tmp / f"m-{item['section']}-{n}.jpg")
             if jpg:
-                # Tools and places both keep their list in "items": name the file by section.
+                # Several sections keep their list in "items": name the file by section.
                 name = item["section"] if key == "items" else key
                 moment["frame"] = store.put_frame(save["space_id"], f"{save['save_id']}-{name}-{n}", jpg)
 

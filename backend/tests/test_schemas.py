@@ -55,7 +55,12 @@ def test_memory_card_fields_are_optional_and_checked():
     assert ExtractResult.model_validate(data).good_for is None  # older replies still validate
     data.update(good_for="Quick weeknight dinner", effort_min=35, difficulty="easy", impact="high")
     r = ExtractResult.model_validate(data)
-    assert (r.good_for, r.effort_min, r.difficulty, r.impact) == ("Quick weeknight dinner", 35, "easy", "high")
+    assert (r.good_for, r.effort_min, r.difficulty, r.impact) == (
+        "Quick weeknight dinner",
+        35,
+        "easy",
+        "high",
+    )
     with pytest.raises(ValidationError):
         ExtractResult.model_validate({**data, "difficulty": "brutal"})
 

@@ -12,12 +12,14 @@ from fastapi import BackgroundTasks, Depends, FastAPI, Header, HTTPException, Re
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
-from app import spaces, store, tasks, usage
+from app import groups, spaces, store, tasks, usage
 from app.auth import claims, cloud_tasks, user
 from app.pipeline.extract import Transient
 from app.pipeline.process import process
 from app.schemas import (
+    CommentBody,
     CreatedSave,
+    CreateGroup,
     CreateHousehold,
     CreateList,
     CreateSave,
@@ -26,6 +28,7 @@ from app.schemas import (
     NoVideo,
     ProcessTask,
     Settings,
+    ShareSave,
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -100,6 +103,7 @@ def get_settings(uid: str = Depends(user)) -> dict:
             "lang": s.get("lang", "system"),
             "theme": s.get("theme", "system"),
             "recall": s.get("recall", True),
+            "puzzle": s.get("puzzle", True),
         },
         "saves_today": used.get("count", 0) if used.get("date") == usage.today() else 0,
         "gemini": {"keys": len(keys()), "models": MODELS, "usage_today": usage.model_usage()},
@@ -123,9 +127,49 @@ def create_household(body: CreateHousehold, uid: str = Depends(user)) -> dict:
     return {"space_id": space_id, "invite_url": url}
 
 
+def _invite_reply(space_id: str, url: str) -> dict:
+    return {"space_id": space_id, "invite_url": url, "code": url.rsplit("/", 1)[-1]}
+
+
 @app.post("/v1/spaces/{space_id}/invite")
 def new_invite(space_id: str, uid: str = Depends(user)) -> dict:
-    return {"invite_url": spaces.invite(uid, space_id)}
+    return _invite_reply(space_id, spaces.invite(uid, space_id))
+
+
+@app.post("/v1/groups")
+def create_group(body: CreateGroup, uid: str = Depends(user)) -> dict:
+    """V5: a new group (household, friends, a trip); the first one is the Home share target."""
+    space_id = spaces.create_group(uid, body.name)
+    return _invite_reply(space_id, spaces.invite(uid, space_id))
+
+
+@app.post("/v1/groups/{space_id}/default")
+def default_group(space_id: str, uid: str = Depends(user)) -> dict:
+    spaces.set_default(uid, space_id)
+    return {"space_id": space_id}
+
+
+@app.post("/v1/groups/{space_id}/leave")
+def leave_group(space_id: str, uid: str = Depends(user)) -> dict:
+    spaces.leave(uid, space_id)
+    return {"space_id": space_id}
+
+
+@app.post("/v1/saves/{save_id}/share")
+def share_save(save_id: str, body: ShareSave, uid: str = Depends(user)) -> dict:
+    """V5: shares a save into a group (its own copy) with a post: share, plan, cook or challenge."""
+    save = owned_save(save_id, uid)
+    if save.get("status") not in ("ready", "partial"):
+        raise HTTPException(409, "this save isn't ready yet")
+    post = groups.share(uid, save, body.space_id, body.item_id, body.kind, body.when, body.text)
+    return {"save_id": post["save_id"], "post_id": post["post_id"]}
+
+
+@app.post("/v1/spaces/{space_id}/posts/{post_id}/comments")
+def comment(space_id: str, post_id: str, body: CommentBody, uid: str = Depends(user)) -> dict:
+    """V5: a comment on a wall post; a photo for cook-along results and challenge proofs."""
+    groups.comment(uid, space_id, post_id, body.kind, body.text, body.photo_b64)
+    return {"post_id": post_id}
 
 
 @app.post("/v1/spaces/{space_id}/lists")

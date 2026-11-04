@@ -65,6 +65,28 @@ Future<Object?> _handle(MethodCall call) async {
         await Clipboard.setData(ClipboardData(text: text));
       }
       return null;
+    case 'shareImage':
+      final bytes = a['bytes']! as Uint8List;
+      final text = a['text'] as String? ?? '';
+      final blob =
+          web.Blob([bytes.toJS].toJS, web.BlobPropertyBag(type: 'image/png'));
+      final file = web.File([bytes.toJS].toJS, 'realbrain.png',
+          web.FilePropertyBag(type: 'image/png'));
+      try {
+        // iPhone and Android browsers: the share sheet with the image.
+        await web.window.navigator
+            .share(web.ShareData(text: text, files: [file].toJS))
+            .toDart;
+      } catch (_) {
+        // Desktop (or sharing refused): download it instead.
+        final url = web.URL.createObjectURL(blob);
+        final a = web.HTMLAnchorElement()
+          ..href = url
+          ..download = 'realbrain.png';
+        a.click();
+        web.URL.revokeObjectURL(url);
+      }
+      return null;
     case 'fid': // ponytail: no web push yet (I3)
     case 'initialLink': // invites: she types the code from the join page
       return null;

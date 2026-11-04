@@ -1,4 +1,4 @@
-Copyright © 2017 IBM Corp. with Reserved Font Name "Plex"
+Copyright © 2017 IBM Corp. with Reserved Font Name "Plex" (IBM Plex Sans, Plex Sans Arabic, Plex Mono)
 
 This Font Software is licensed under the SIL Open Font License, Version 1.1.
 

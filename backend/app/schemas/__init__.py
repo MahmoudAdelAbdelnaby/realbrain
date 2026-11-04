@@ -100,11 +100,62 @@ class Ideas(BaseModel):
     next_steps: list[str] = Field(default_factory=list, description="1-3 concrete things to do with it")
 
 
+class Title(BaseModel):
+    """V5 Watch & Read: one film, series or book the video recommends."""
+
+    kind: Literal["movie", "series", "book"]
+    title: str
+    creator: str | None = Field(None, description="Director or showrunner (films, series) or author (books)")
+    year: int | None = None
+    genres: list[str] = Field(default_factory=list, description="1-3 genres")
+    premise: str | None = Field(None, description="What it is about, in a sentence")
+    why: str | None = Field(None, description="Why the video recommends it, in its words")
+    seasons: int | None = None
+    episodes: int | None = None
+    platforms: list[str] = Field(
+        default_factory=list, description="Where to watch or read, only if the video says"
+    )
+    estimated: bool = Field(
+        False, description="True when any detail comes from general knowledge, not the video"
+    )
+    t: float
+
+
+class Entertainment(BaseModel):
+    type: Literal["entertainment"]
+    confidence: float = Field(ge=0, le=1)
+    items: list[Title]
+
+
+class Product(BaseModel):
+    """V5 Products: something the video shows or recommends buying."""
+
+    name: str
+    brand: str | None = None
+    description: str | None = None
+    specs: list[str] = Field(default_factory=list, description="Up to 5 short specs said or shown")
+    price: float | None = Field(None, description="Only a price the video states")
+    currency: str | None = Field(None, description="ISO code, e.g. EGP, USD")
+    price_text: str | None = Field(
+        None, description="The price as said when it is not one number, e.g. under 500 pounds"
+    )
+    merchant: str | None = Field(None, description="Where to buy it, if said")
+    url_guess: str | None = None
+    why: str | None = Field(None, description="Why the video recommends it")
+    t: float
+
+
+class Products(BaseModel):
+    type: Literal["products"]
+    confidence: float = Field(ge=0, le=1)
+    items: list[Product]
+
+
 # Plain union (anyOf), not a discriminated one: Gemini's schema support is safest with anyOf,
 # and the Literal `type` still makes validation pick the right model.
-Section = FactCheck | Tools | Recipe | Places | Workout | Ideas
+Section = FactCheck | Tools | Recipe | Places | Workout | Ideas | Entertainment | Products
 
-SECTIONS = Literal["fact_check", "tools", "recipe", "places", "workout", "ideas"]
+SECTIONS = Literal["fact_check", "tools", "recipe", "places", "workout", "ideas", "entertainment", "products"]
 
 
 class ExtractResult(BaseModel):
@@ -117,11 +168,15 @@ class ExtractResult(BaseModel):
     key_frame_t: float | None = None
     # Design v4 §5.1: the save as a whole, for the memory card ("Why you saved this", chips).
     good_for: str | None = Field(
-        None, max_length=80, description="Who or when it is good for, at most 60 chars, in the video's language, e.g. Quick weeknight dinner"
+        None,
+        max_length=80,
+        description="Who or when it is good for, at most 60 chars, in the video's language, e.g. Quick weeknight dinner",
     )
     effort_min: int | None = Field(None, ge=0, description="Minutes it takes to try, cook, do or use it")
     difficulty: Literal["easy", "medium", "hard"] | None = None
-    impact: Literal["low", "medium", "high"] | None = Field(None, description="How much it could change the viewer's day or work")
+    impact: Literal["low", "medium", "high"] | None = Field(
+        None, description="How much it could change the viewer's day or work"
+    )
     # Design v4 step 5 (Threads): what connects this save to others, across sections.
     topics: list[str] = Field(
         default_factory=list,
@@ -188,8 +243,10 @@ class CreatedSave(BaseModel):
 
 
 class FileUnder(BaseModel):
-    # "none": nothing fits (e.g. a product ad before P3-02); keep it as a plain save.
-    section: Literal["fact_check", "tools", "recipe", "places", "workout", "ideas", "none"]
+    # "none": nothing fits; keep it as a plain save.
+    section: Literal[
+        "fact_check", "tools", "recipe", "places", "workout", "ideas", "entertainment", "products", "none"
+    ]
 
 
 class NoVideo(BaseModel):
@@ -210,6 +267,44 @@ class CreateHousehold(BaseModel):
     name: str = Field("Home", min_length=1, max_length=60)
 
 
+class CreateGroup(BaseModel):
+    """V5 groups: any number per person; the first one becomes the "Home" share target."""
+
+    name: str = Field(min_length=1, max_length=60)
+
+
+class ShareSave(BaseModel):
+    """V5: share a save into a group (the group gets its own copy) with a post on its wall."""
+
+    space_id: str = Field(min_length=1, max_length=128)
+    item_id: str | None = Field(None, max_length=64)
+    kind: Literal["share", "plan", "cook", "challenge"] = "share"
+    when: float | None = Field(
+        None, ge=0, description="Epoch seconds: the plan, the cook-along, the challenge deadline"
+    )
+    text: str | None = Field(None, max_length=280)
+
+    @model_validator(mode="after")
+    def _when_for_activities(self):
+        if self.kind != "share" and self.when is None:
+            raise ValueError("plans, cook-alongs and challenges need a time")
+        return self
+
+
+class CommentBody(BaseModel):
+    """A comment on a wall post; `result` (a cook-along photo) and `proof` (a challenge) carry a photo."""
+
+    kind: Literal["comment", "result", "proof"] = "comment"
+    text: str | None = Field(None, max_length=1000)
+    photo_b64: str | None = Field(None, max_length=6_000_000)
+
+    @model_validator(mode="after")
+    def _something(self):
+        if not (self.text or "").strip() and not self.photo_b64:
+            raise ValueError("send text or a photo")
+        return self
+
+
 class CreateList(BaseModel):
     section: SECTIONS
     name: str = Field(min_length=1, max_length=60)
@@ -220,3 +315,5 @@ class Settings(BaseModel):
     theme: Literal["system", "light", "dark"] | None = None
     # Design v4 Recall: one "Remember this?" push a day; on unless turned off.
     recall: bool | None = None
+    # V5 My Brain: show the puzzle (progress counts either way).
+    puzzle: bool | None = None

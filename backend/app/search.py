@@ -27,6 +27,9 @@ def search_text(save: dict, result: ExtractResult | None, items: list[dict]) -> 
         parts.append(d.get("title"))
         parts.extend(d.get("tags") or [])
         for key in ("items", "ingredients", "exercises"):
-            parts.extend(x.get("name") for x in d.get(key) or [])
+            for x in d.get(key) or []:
+                # Names (dishes, tools, places, products), and V5 titles, creators, brands, genres.
+                parts.extend([x.get("name"), x.get("title"), x.get("creator"), x.get("brand")])
+                parts.extend(x.get("genres") or [])
         parts.extend(c.get("text") for c in d.get("claims") or [])
     return normalise(" ".join(p for p in parts if p))[:MAX_CHARS]

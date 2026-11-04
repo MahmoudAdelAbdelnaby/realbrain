@@ -5,7 +5,13 @@ DAY = 86400
 
 
 def save(sid, age_days, status="ready"):
-    return {"save_id": sid, "space_id": "p_r", "status": status, "created_at": NOW - age_days * DAY, "summary": sid}
+    return {
+        "save_id": sid,
+        "space_id": "p_r",
+        "status": status,
+        "created_at": NOW - age_days * DAY,
+        "summary": sid,
+    }
 
 
 def item(sid, **kw):

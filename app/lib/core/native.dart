@@ -25,15 +25,22 @@ Future<Map<String, dynamic>> api(
 Future<void> shareText(String text) =>
     native.invokeMethod('share', {'text': text});
 
+/// Shares a PNG (an achievement or recap card) with a line of text: the Android share sheet
+/// through a FileProvider, the Web Share API on the iPhone web app, a download on desktop.
+Future<void> shareImage(Uint8List png, String text) =>
+    native.invokeMethod('shareImage', {'bytes': png, 'text': text});
+
 /// Plain-language message for an [api] failure.
 String apiError(Object e) => switch (e) {
       PlatformException(code: 'BACKEND_UNREACHABLE') =>
-        "Can't reach the Realbrain backend. Is the PC on and on the same Wi-Fi?",
+        "Can't reach Realbrain right now. Saves wait on the phone and go when it's back.",
       PlatformException(code: 'NOT_SIGNED_IN') => 'Sign in first.',
       PlatformException(code: 'HTTP_404') =>
-        'That invite or space no longer exists.',
+        'That invite or group no longer exists.',
       PlatformException(code: 'HTTP_410') =>
         'This invite has expired. Ask for a new link.',
+      PlatformException(code: 'HTTP_403') =>
+        "You're not in that group any more.",
       PlatformException(:final message) => message ?? 'Something went wrong.',
       _ => '$e',
     };

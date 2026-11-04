@@ -29,7 +29,7 @@ def test_settings_report_usage_and_models():
     client.patch("/v1/settings", json={"theme": "dark", "lang": "ar"}, headers=me)
     usage.count_model("gemini-3.6-flash")
     s = client.get("/v1/settings", headers=me).json()
-    assert s["settings"] == {"lang": "ar", "theme": "dark", "recall": True}
+    assert s["settings"] == {"lang": "ar", "theme": "dark", "recall": True, "puzzle": True}
     flash = next(m for m in s["gemini"]["usage_today"] if m["model"] == "gemini-3.6-flash")
     assert flash["used"] >= 1 and flash["free_per_day"] == 20
     assert s["billing"].startswith("Spark")

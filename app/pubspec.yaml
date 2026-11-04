@@ -18,7 +18,9 @@ dependencies:
   flutter_map: 8.3.2
   flutter_web_plugins:
     sdk: flutter
+  image_picker: ^1.2.4
   latlong2: 0.10.1
+  qr: ^4.0.1
   wakelock_plus: 1.8.2
   web: 1.1.2
 
@@ -29,17 +31,46 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  # Inter (OFL, assets/fonts/OFL-Inter.txt) + IBM Plex Sans Arabic (OFL, assets/fonts/OFL.txt):
-  # design v4 (docs/DESIGN_V4_PROPOSAL.md).
+  # Realbrain V5 type (docs/DESIGN_V5.md §2.7), all OFL (licences next to the files):
+  # Fraunces for display, IBM Plex Sans / Mono for text and labels, Markazi Text and
+  # IBM Plex Sans Arabic for Arabic.
   fonts:
-    - family: Inter
+    - family: Fraunces
       fonts:
-        - asset: assets/fonts/Inter-Regular.ttf
-        - asset: assets/fonts/Inter-Medium.ttf
+        - asset: assets/fonts/Fraunces-Medium.ttf
           weight: 500
-        - asset: assets/fonts/Inter-SemiBold.ttf
+        - asset: assets/fonts/Fraunces-SemiBold.ttf
           weight: 600
-        - asset: assets/fonts/Inter-Bold.ttf
+        - asset: assets/fonts/Fraunces-Italic.ttf
+          style: italic
+        - asset: assets/fonts/Fraunces-MediumItalic.ttf
+          weight: 500
+          style: italic
+    - family: IBMPlexSans
+      fonts:
+        - asset: assets/fonts/IBMPlexSans-Regular.ttf
+        - asset: assets/fonts/IBMPlexSans-Italic.ttf
+          style: italic
+        - asset: assets/fonts/IBMPlexSans-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/IBMPlexSans-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/IBMPlexSans-Bold.ttf
+          weight: 700
+    - family: IBMPlexMono
+      fonts:
+        - asset: assets/fonts/IBMPlexMono-Regular.ttf
+        - asset: assets/fonts/IBMPlexMono-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/IBMPlexMono-SemiBold.ttf
+          weight: 600
+    - family: MarkaziText
+      fonts:
+        - asset: assets/fonts/MarkaziText-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/MarkaziText-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/MarkaziText-Bold.ttf
           weight: 700
     - family: IBMPlexSansArabic
       fonts:

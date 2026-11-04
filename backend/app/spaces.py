@@ -1,4 +1,10 @@
-"""Users, spaces and household invites (P1-03). Only the backend writes these; clients only read."""
+"""Users, spaces, groups and invites (P1-03, V5 groups). Only the backend writes these; clients only
+read (and, under the rules, react to posts).
+
+A person has a personal space (`spaces.me`) and any number of groups (`groups`). `spaces.home` is
+the group the "Realbrain · Home" share target saves into: the first group made or joined, or the
+one picked as the share target. Households made before V5 are groups of type "household".
+"""
 
 import os
 import secrets
@@ -10,6 +16,7 @@ from app import store
 
 INVITE_BASE = os.environ.get("INVITE_BASE", "https://reelbrain-dev.web.app/join/")
 INVITE_DAYS = 7
+GROUP_TYPES = ("household", "group")
 # No 0/o/1/l/i: codes are read aloud and typed in.
 _ALPHABET = "abcdefghjkmnpqrstuvwxyz23456789"
 
@@ -40,14 +47,39 @@ def ensure_user(uid: str, name: str | None = None, lang: str | None = None) -> d
     return user
 
 
+def display_name(uid: str, user: dict | None = None) -> str:
+    """The first name a group shows for a member."""
+    name = ((user or store.doc_get(f"users/{uid}") or {}).get("name") or "").strip()
+    return name.split()[0] if name else "Someone"
+
+
+def groups_of(user: dict) -> list[str]:
+    """Group ids, including a household made before V5 (it was only in spaces.home)."""
+    listed = list(user.get("groups") or [])
+    home = (user.get("spaces") or {}).get("home")
+    if home and home not in listed:
+        listed.append(home)
+    return listed
+
+
 def is_member(uid: str, space_id: str) -> bool:
     space = store.doc_get(f"spaces/{space_id}")
     return bool(space) and uid in space.get("members", [])
 
 
+def group(uid: str, space_id: str) -> dict:
+    """The group, if uid is a member (404 otherwise, so ids can't be probed)."""
+    space = store.doc_get(f"spaces/{space_id}")
+    if not space or uid not in space.get("members", []):
+        raise HTTPException(404, "group not found")
+    if space.get("type") not in GROUP_TYPES:
+        raise HTTPException(400, "not a group")
+    return space
+
+
 def resolve(uid: str, space_id: str) -> str:
     """The phone sends "me" or "home"; anything else must be a space the caller belongs to.
-    "home" without a household falls back to the personal space, so a share is never lost."""
+    "home" without a group falls back to the personal space, so a share is never lost."""
     user = ensure_user(uid)
     if space_id in ("me", "home"):
         return user["spaces"].get(space_id) or user["spaces"]["me"]
@@ -56,23 +88,43 @@ def resolve(uid: str, space_id: str) -> str:
     return space_id
 
 
-def create_household(uid: str, name: str) -> tuple[str, str]:
-    """One household per user: a second call returns the existing one with a fresh invite."""
+def _join(uid: str, space_id: str, user: dict) -> None:
+    """Adds uid to the group, its name to the group, the group to uid's list; the first group
+    becomes the Home share target."""
+    store.doc_array_add(f"spaces/{space_id}", "members", uid)
+    space = store.doc_get(f"spaces/{space_id}") or {}
+    store.doc_update(
+        f"spaces/{space_id}",
+        {"member_names": {**(space.get("member_names") or {}), uid: display_name(uid, user)}},
+    )
+    store.doc_array_add(f"users/{uid}", "groups", space_id)
+    spaces = user.get("spaces") or {}
+    if not spaces.get("home"):
+        store.doc_update(f"users/{uid}", {"spaces": {**spaces, "home": space_id}})
+
+
+def create_group(uid: str, name: str, kind: str = "group") -> str:
     user = ensure_user(uid)
-    space_id = user["spaces"].get("home")
-    if not space_id:
-        space_id = "h_" + secrets.token_hex(8)
-        store.doc_set(
-            f"spaces/{space_id}",
-            {
-                "name": name,
-                "type": "household",
-                "members": [uid],
-                "created_by": uid,
-                "created_at": time.time(),
-            },
-        )
-        store.doc_update(f"users/{uid}", {"spaces": {**user["spaces"], "home": space_id}})
+    space_id = ("h_" if kind == "household" else "g_") + secrets.token_hex(8)
+    store.doc_set(
+        f"spaces/{space_id}",
+        {
+            "name": name,
+            "type": kind,
+            "members": [],
+            "member_names": {},
+            "created_by": uid,
+            "created_at": time.time(),
+        },
+    )
+    _join(uid, space_id, user)
+    return space_id
+
+
+def create_household(uid: str, name: str) -> tuple[str, str]:
+    """Pre-V5 route: one household per user; a second call returns it with a fresh invite."""
+    user = ensure_user(uid)
+    space_id = user["spaces"].get("home") or create_group(uid, name, kind="household")
     return space_id, invite(uid, space_id)
 
 
@@ -80,8 +132,8 @@ def invite(uid: str, space_id: str) -> str:
     space = store.doc_get(f"spaces/{space_id}")
     if not space or uid not in space.get("members", []):
         raise HTTPException(404, "space not found")
-    if space.get("type") != "household":
-        raise HTTPException(400, "only a household can be shared")
+    if space.get("type") not in GROUP_TYPES:
+        raise HTTPException(400, "only a group can be shared")
     code = "".join(secrets.choice(_ALPHABET) for _ in range(8))
     store.doc_set(
         f"invites/{code}",
@@ -97,8 +149,30 @@ def accept(uid: str, code: str) -> str:
         raise HTTPException(404, "invite not found")
     if inv["expires_at"] < time.time():
         raise HTTPException(410, "invite expired, ask for a new link")
-    user = ensure_user(uid)
-    store.doc_array_add(f"spaces/{inv['space_id']}", "members", uid)
-    # Joining someone's household makes it your Home share target.
-    store.doc_update(f"users/{uid}", {"spaces": {**user["spaces"], "home": inv["space_id"]}})
+    _join(uid, inv["space_id"], ensure_user(uid))
     return inv["space_id"]
+
+
+def set_default(uid: str, space_id: str) -> None:
+    """Makes a group the "Realbrain · Home" share target."""
+    group(uid, space_id)
+    user = ensure_user(uid)
+    store.doc_update(f"users/{uid}", {"spaces": {**user["spaces"], "home": space_id}})
+
+
+def leave(uid: str, space_id: str) -> None:
+    """Leaves a group; if it was the share target, the next group (if any) takes over."""
+    space = group(uid, space_id)
+    store.doc_array_remove(f"spaces/{space_id}", "members", uid)
+    names = {k: v for k, v in (space.get("member_names") or {}).items() if k != uid}
+    store.doc_update(f"spaces/{space_id}", {"member_names": names})
+    user = ensure_user(uid)
+    rest = [g for g in groups_of(user) if g != space_id]
+    store.doc_update(f"users/{uid}", {"groups": rest})
+    spaces = dict(user.get("spaces") or {})
+    if spaces.get("home") == space_id:
+        if rest:
+            spaces["home"] = rest[0]
+        else:
+            spaces.pop("home", None)
+        store.doc_update(f"users/{uid}", {"spaces": spaces})

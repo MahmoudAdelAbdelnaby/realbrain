@@ -7,17 +7,20 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../core/orbit.dart';
+import '../../core/art/hoopoe.dart';
+import '../../core/art/mark.dart';
+import '../../core/data/firestore_repo.dart';
+import '../../core/data/repo.dart';
 import '../../core/native.dart';
-import '../../core/surface.dart';
 import '../../core/theme/tokens.dart';
-import '../feed/feed_screen.dart';
-import '../save/save_screen.dart';
-import '../settings/settings_screen.dart';
-import '../spaces/household_screen.dart';
+import '../../core/ui/art_frames.dart';
+import '../../core/ui/components.dart';
+import '../../core/ui/states.dart';
+import '../shared/open.dart';
+import '../shell/app_shell.dart';
 
-/// Signed out: the sign-in screen. Signed in: make sure the user and personal space exist,
-/// send any saves that waited for sign-in, and open invite links.
+/// Signed out: onboarding and sign-in. Signed in: the user and personal space exist, saves that
+/// waited for sign-in are sent, invite links and notification taps open where they point.
 class AuthGate extends StatefulWidget {
   const AuthGate({super.key});
 
@@ -27,8 +30,9 @@ class AuthGate extends StatefulWidget {
 
 class _AuthGateState extends State<AuthGate> {
   final _nav = GlobalKey<NavigatorState>();
-  String? _pendingCode;
-  String? _bootstrapped;
+  String? _pendingCode, _bootstrapped, _repoFor;
+  StreamSubscription<String>? _tokenRefresh;
+  StreamSubscription<Object?>? _config;
 
   @override
   void initState() {
@@ -46,53 +50,42 @@ class _AuthGateState extends State<AuthGate> {
     FirebaseMessaging.instance.getInitialMessage().then(_openSave);
     FirebaseMessaging.onMessage.listen((m) {
       final n = m.notification;
-      if (n == null || !mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(n.title ?? 'Save ready'),
-        action: SnackBarAction(label: 'Open', onPressed: () => _openSave(m)),
-      ));
+      final ctx = _nav.currentContext;
+      if (n == null || ctx == null || !ctx.mounted) return;
+      toast(ctx, n.title ?? 'Ready',
+          action: 'Open', onAction: () => _openSave(m));
     });
   }
 
   void _openSave(RemoteMessage? m) {
-    final space = m?.data['space_id'] as String?;
     final save = m?.data['save_id'] as String?;
-    if (space == null ||
-        save == null ||
-        FirebaseAuth.instance.currentUser == null) {
-      return;
-    }
+    if (save == null || FirebaseAuth.instance.currentUser == null) return;
     // After a cold start from a tap, wait for the first frame so the navigator exists.
-    WidgetsBinding.instance.addPostFrameCallback((_) => _nav.currentState?.push(
-          MaterialPageRoute(
-              builder: (_) => SaveScreen(spaceId: space, saveId: save)),
-        ));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final ctx = _nav.currentContext;
+      if (ctx != null) openSave(ctx, save);
+    });
   }
 
-  /// Asks once for notification permission, then registers with FCM. The installation ID it
-  /// reports (now and whenever it changes) goes to the backend as this phone's push target.
+  /// Asks once for notification permission, then registers with FCM; the installation ID goes
+  /// to the backend as this phone's push target.
   Future<void> _registerPush() async {
     try {
       final fm = FirebaseMessaging.instance;
       final perm = await fm.requestPermission();
       if (perm.authorizationStatus == AuthorizationStatus.denied) return;
-      _tokenRefresh ??= fm.onRegistered.listen(
-        (fid) => api('POST', '/v1/me', {'fcm_token': fid}).ignore(),
-      );
+      _tokenRefresh ??= fm.onRegistered
+          .listen((fid) => api('POST', '/v1/me', {'fcm_token': fid}).ignore());
       await fm.register();
-      // onRegistered only fires for a new registration; an already registered phone reports
-      // its installation ID here.
       final fid = await native.invokeMethod<String>('fid');
       debugPrint(
-          'Reelbrain push target ${fid == null ? 'missing' : 'registered'}');
+          'Realbrain push target ${fid == null ? 'missing' : 'registered'}');
       if (fid != null) await api('POST', '/v1/me', {'fcm_token': fid});
     } catch (e) {
       // No push (permission refused or no Play services): saves still work.
-      debugPrint('Reelbrain push registration failed: $e');
+      debugPrint('Realbrain push registration failed: $e');
     }
   }
-
-  StreamSubscription<String>? _tokenRefresh;
 
   void _openInvite(String? code) {
     if (code == null) return;
@@ -100,27 +93,22 @@ class _AuthGateState extends State<AuthGate> {
       _pendingCode = code; // opened after sign-in
       return;
     }
-    _nav.currentState?.push(
-      MaterialPageRoute(builder: (_) => JoinScreen(code: code)),
-    );
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final ctx = _nav.currentContext;
+      if (ctx == null) return;
+      try {
+        final id = await Repo.instance.join(code);
+        if (ctx.mounted) {
+          toast(ctx, 'You joined the group');
+          await openGroup(ctx, id);
+        }
+      } catch (e) {
+        if (ctx.mounted) toast(ctx, apiError(e));
+      }
+    });
   }
 
-  StreamSubscription<Object?>? _config;
-  StreamSubscription<Object?>? _prefs;
-
-  /// users/{uid}.settings -> app language and theme.
-  void _followPrefs(String uid) {
-    _prefs ??=
-        FirebaseFirestore.instance.doc('users/$uid').snapshots().listen((snap) {
-      final s = (snap.data()?['settings'] as Map?) ?? const {};
-      appPrefs.value = (
-        lang: s['lang'] as String? ?? 'system',
-        theme: s['theme'] as String? ?? 'system'
-      );
-    }, onError: (_) {});
-  }
-
-  /// The backend publishes its address (it changes with each tunnel start); follow it.
+  /// The backend publishes its address (Firestore config/backend); follow it.
   void _followBackend() {
     _config ??= FirebaseFirestore.instance
         .doc('config/backend')
@@ -131,25 +119,14 @@ class _AuthGateState extends State<AuthGate> {
       backendUrl.value = url;
       await native.invokeMethod('setBackendUrl', {'url': url});
       await native.invokeMethod('retryWaiting');
-      // New backend (or the first address we learn): register with it.
-      _bootstrapped = null;
+      _bootstrapped = null; // a new backend: register with it
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) unawaited(_bootstrap(user));
     }, onError: (_) {});
   }
 
-  @override
-  void dispose() {
-    _config?.cancel();
-    _prefs?.cancel();
-    _tokenRefresh?.cancel();
-    super.dispose();
-  }
-
   Future<void> _bootstrap(User user) async {
     _followBackend();
-    _followPrefs(user.uid);
-    // Wait for the backend's address from Firestore; the listener calls back here.
     if (backendUrl.value == null || _bootstrapped == user.uid) return;
     _bootstrapped = user.uid;
     try {
@@ -159,8 +136,8 @@ class _AuthGateState extends State<AuthGate> {
       });
       unawaited(_registerPush());
     } on PlatformException {
-      // Backend offline: the next call retries; saves wait on the phone meanwhile.
-      _bootstrapped = null;
+      _bootstrapped =
+          null; // backend offline: saves wait on the phone meanwhile
     }
     await native.invokeMethod('retryWaiting');
     final code = _pendingCode;
@@ -169,29 +146,46 @@ class _AuthGateState extends State<AuthGate> {
   }
 
   @override
+  void dispose() {
+    _config?.cancel();
+    _tokenRefresh?.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snap) {
         if (snap.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-              body: Center(child: CircularProgressIndicator()));
+          return const Scaffold(body: LoadingMark(text: 'Realbrain'));
         }
         final user = snap.data;
-        if (user == null) return const SignInScreen();
+        if (user == null) {
+          _repoFor = null;
+          return const SignInScreen();
+        }
+        if (_repoFor != user.uid) {
+          Repo.instance = FirestoreRepo();
+          _repoFor = user.uid;
+        }
         unawaited(_bootstrap(user));
         return Navigator(
           key: _nav,
           onGenerateRoute: (_) =>
-              MaterialPageRoute(builder: (_) => const FeedScreen()),
+              MaterialPageRoute(builder: (_) => const AppShell()),
         );
       },
     );
   }
 }
 
+/// Onboarding and sign-in: what Realbrain does in three plates, then one button.
 class SignInScreen extends StatefulWidget {
-  const SignInScreen({super.key});
+  const SignInScreen({super.key, this.onSignIn});
+
+  /// Overrides Google sign-in (previews and tests).
+  final Future<void> Function()? onSignIn;
 
   @override
   State<SignInScreen> createState() => _SignInScreenState();
@@ -207,10 +201,14 @@ class _SignInScreenState extends State<SignInScreen> {
       _error = null;
     });
     try {
-      // Web: a redirect, since home-screen apps on iPhone can't open popups.
-      await (kIsWeb
-          ? FirebaseAuth.instance.signInWithRedirect(GoogleAuthProvider())
-          : FirebaseAuth.instance.signInWithProvider(GoogleAuthProvider()));
+      if (widget.onSignIn != null) {
+        await widget.onSignIn!();
+      } else {
+        // Web: a redirect, since home-screen apps on iPhone can't open popups.
+        await (kIsWeb
+            ? FirebaseAuth.instance.signInWithRedirect(GoogleAuthProvider())
+            : FirebaseAuth.instance.signInWithProvider(GoogleAuthProvider()));
+      }
     } on FirebaseAuthException catch (e) {
       if (mounted) setState(() => _error = e.message ?? e.code);
     } finally {
@@ -220,80 +218,96 @@ class _SignInScreenState extends State<SignInScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final t = Theme.of(context).textTheme;
     final c = RbColors.of(context);
+    final t = Theme.of(context).textTheme;
     return Scaffold(
-      body: Haze(
-        child: SafeArea(
-          // Onboarding (design v4 step 3): the orbital brain, what Realbrain does, one action.
-          child: ListView(
-            padding: const EdgeInsets.all(RbSpace.side),
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 480),
+            child: ListView(
+                padding: const EdgeInsets.fromLTRB(
+                    RbSpace.side, 16, RbSpace.side, 24),
                 children: [
-                  const Center(child: OrbitBrain(size: 280)),
-                  const SizedBox(height: 8),
-                  Text('Realbrain', style: t.headlineLarge),
-                  const SizedBox(height: 8),
-                  Text('The things you discover.\nFinally part of your life.',
-                      style: t.bodyLarge?.copyWith(color: c.muted)),
-                  const SizedBox(height: 28),
-                  for (final (icon, title, body) in const [
-                    (Icons.ios_share, 'Save anything', 'From reels to ideas'),
+                  const Wordmark(size: 22),
+                  const SizedBox(height: 24),
+                  Plate(
+                    caption: 'Pl. 1 · Hudhud, the scout',
+                    child: const Hudhud(
+                        width: 250, pose: HudhudPose.carrying, motion: true),
+                  ),
+                  const SizedBox(height: 26),
+                  Text.rich(
+                    TextSpan(children: [
+                      const TextSpan(text: 'Everything you discover, '),
+                      TextSpan(
+                          text: 'finally used.',
+                          style: RbType.serif(34, color: c.text, italic: true)),
+                    ]),
+                    style: RbType.serif(34, color: c.text),
+                  ),
+                  const SizedBox(height: 22),
+                  for (final (n, title, body) in const [
                     (
-                      Icons.auto_awesome_outlined,
-                      'Turn it into something',
-                      'Recipes, tools, places, workouts and more'
+                      '01',
+                      'Save',
+                      'Share any reel, link or idea to Realbrain. It never asks you anything.'
                     ),
                     (
-                      Icons.history,
-                      'Get it back when it matters',
-                      'At the right time, automatically'
+                      '02',
+                      'Understand',
+                      'It comes back as a recipe, a place, a tool, a verdict, a watchlist…'
+                    ),
+                    (
+                      '03',
+                      'Use',
+                      'Cook it, visit it, try it, together. Everything you finish is a piece of your brain.'
                     ),
                   ])
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 18),
-                      child: Row(children: [
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                              color: c.raised,
-                              borderRadius: BorderRadius.circular(12)),
-                          child: Icon(icon, size: 20, color: c.text),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(title, style: t.titleSmall),
-                                Text(body, style: t.bodySmall),
-                              ]),
-                        ),
-                      ]),
+                    Container(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(
+                          border: Border(top: BorderSide(color: c.line))),
+                      child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SizedBox(
+                                width: 40,
+                                child: Text(n,
+                                    style: RbType.monoNumber(15,
+                                        color: c.brandText))),
+                            Expanded(
+                              child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(title,
+                                        style: RbType.serif(20, color: c.text)),
+                                    const SizedBox(height: 2),
+                                    Text(body,
+                                        style: t.bodyMedium
+                                            ?.copyWith(color: c.muted)),
+                                  ]),
+                            ),
+                          ]),
                     ),
-                  const SizedBox(height: 16),
-                  PillButton(
-                    action: true,
-                    label: _busy ? 'Signing in…' : 'Get started',
-                    onPressed: _busy ? null : _signIn,
-                  ),
-                  const SizedBox(height: 8),
-                  Text('Signs in with your Google account.',
-                      textAlign: TextAlign.center, style: t.bodySmall),
+                  const SizedBox(height: 22),
+                  RbButton(_busy ? 'Signing in…' : 'Get started with Google',
+                      expand: true,
+                      busy: _busy,
+                      onPressed: _busy ? null : _signIn),
+                  const SizedBox(height: 10),
+                  Text(
+                      'Your saves stay private to you and the groups you share with.',
+                      textAlign: TextAlign.center,
+                      style: t.bodySmall),
                   if (_error != null) ...[
                     const SizedBox(height: 12),
-                    Text(_error!,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                            color: Theme.of(context).colorScheme.error)),
+                    ErrorNote(
+                        title: 'Couldn’t sign in',
+                        message: _error!,
+                        onRetry: _signIn),
                   ],
-                  const SizedBox(height: 12),
-                ],
-              ),
-            ],
+                ]),
           ),
         ),
       ),

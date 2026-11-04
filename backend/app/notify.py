@@ -40,6 +40,18 @@ def key_line(result: ExtractResult, partial: bool = False) -> tuple[str, str]:
             # P1-08 replaces this with the verdict line once grounding exists.
             n = len(s.claims)
             title = f"Fact check: {n} claim{'s' if n != 1 else ''} to check"
+        case "ideas":
+            title = f"Idea saved: {s.title}"
+        case "entertainment":
+            e = s.items[0] if s.items else None
+            verb = "To read" if e and e.kind == "book" else "To watch"
+            title = f"{verb}: {e.title}{_more(s.items)}" if e else "Saved to Watch & Read"
+        case "products":
+            p = s.items[0] if s.items else None
+            price = (
+                f" · {p.currency + ' ' if p.currency else ''}{p.price:g}" if p and p.price is not None else ""
+            )
+            title = f"Product saved: {p.name}{price}{_more(s.items)}" if p else "Product saved"
         case _:
             title = "Saved"
     if partial:

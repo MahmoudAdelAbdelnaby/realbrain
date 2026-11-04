@@ -1,7 +1,8 @@
 rules_version = '2';
 // Backend contract: a user reads a space only if their uid is in `members`; clients may write only
-// `note`, `user_state`, `recall_after` and list membership. Everything else (users, spaces, invites, AI results)
-// is written by the backend's service account, which bypasses these rules.
+// `note`, `user_state`, `recall_after`, their own `seen` time, `done_at`, list membership, and (V5)
+// their own RSVP and like on a group post. Everything else (users, spaces, invites, AI results,
+// posts and comments) is written by the backend's service account, which bypasses these rules.
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() {
@@ -15,6 +16,21 @@ service cloud.firestore {
 
     function onlyChanges(fields) {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly(fields);
+    }
+
+    // A map field where each person may change only their own entry (seen times, RSVPs, likes).
+    function ownEntryOnly(field) {
+      return !(field in request.resource.data.diff(resource.data).affectedKeys())
+        || request.resource.data.get(field, {}).diff(resource.data.get(field, {})).affectedKeys()
+             .hasOnly([request.auth.uid]);
+    }
+
+    function ownEntry(field) {
+      return request.resource.data.get(field, {}).get(request.auth.uid, null);
+    }
+
+    function changed(field) {
+      return field in request.resource.data.diff(resource.data).affectedKeys();
     }
 
     // Items across saves (collection group), for the feed's "to try" counters. Queries must filter
@@ -43,11 +59,29 @@ service cloud.firestore {
 
         match /items/{itemId} {
           allow read: if member(spaceId);
-          // user_state, and (design v4 Recall) recall_after: "Not now" brings it back after this
-          // time (epoch seconds). 'archived' takes it out of Recall for good.
-          allow update: if member(spaceId) && onlyChanges(['user_state', 'recall_after'])
-            && request.resource.data.get('user_state', null) in [null, 'to_try', 'tried', 'visited', 'cooked', 'done', 'using', 'not_useful', 'archived']
-            && (request.resource.data.get('recall_after', null) == null || request.resource.data.recall_after is number);
+          // user_state (V5 adds in_progress, compared, purchased), done_at when it was finished,
+          // recall_after for Recall's "Not now", and seen.{uid}: when *you* last opened it.
+          // 'archived' takes it out of Recall for good.
+          allow update: if member(spaceId) && onlyChanges(['user_state', 'recall_after', 'done_at', 'seen'])
+            && request.resource.data.get('user_state', null) in [null, 'to_try', 'tried', 'visited', 'cooked', 'done', 'using', 'not_useful', 'archived', 'in_progress', 'compared', 'purchased']
+            && (request.resource.data.get('recall_after', null) == null || request.resource.data.recall_after is number)
+            && (request.resource.data.get('done_at', null) == null || request.resource.data.done_at is number)
+            && ownEntryOnly('seen')
+            && (!changed('seen') || ownEntry('seen') is number);
+        }
+      }
+
+      // V5 group walls: the backend writes posts and comments; members RSVP, join and like.
+      match /posts/{postId} {
+        allow read: if member(spaceId);
+        allow update: if member(spaceId) && onlyChanges(['rsvp', 'likes'])
+          && ownEntryOnly('rsvp') && ownEntryOnly('likes')
+          // 'done' is the backend's (posting proof); people choose the rest.
+          && (!changed('rsvp') || ownEntry('rsvp') in [null, 'going', 'maybe', 'no', 'in'])
+          && (!changed('likes') || ownEntry('likes') in [null, true]);
+
+        match /comments/{commentId} {
+          allow read: if member(spaceId);
         }
       }
 
