@@ -1,6 +1,6 @@
 # Demo build
 
-`.github/workflows/demo.yml` builds **Realbrain demo**: the real V5 screens on the sample archive in
+`.github/workflows/demo.yml` builds **Realbrain v2**, the demo: the real V5 screens on the sample archive in
 `lib/preview/sample.dart`, with no Firebase, sign-in or backend. It installs next to the real app
 (package `com.reelbrain.reelbrain.demo`, no share targets) and every control works on the sample
 data, which resets when the app restarts.

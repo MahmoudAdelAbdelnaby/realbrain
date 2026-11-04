@@ -1,7 +1,7 @@
 name: Demo APK
 
-# Realbrain demo (app/demo/README.md): the V5 screens on sample data, with no Firebase, sign-in or
-# backend, installable next to the real app. The APK is in the run's Artifacts.
+# Realbrain v2, the demo (app/demo/README.md): the V5 screens on sample data, with no Firebase,
+# sign-in or backend, installable next to the real app. The APK is in the run's Artifacts.
 on:
   workflow_dispatch:
   push:
