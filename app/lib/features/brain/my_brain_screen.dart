@@ -682,11 +682,12 @@ class _InsightCard extends StatelessWidget {
                       border: Border.all(color: k < i.filled ? hue : c.line),
                     ),
                   ),
-                const Spacer(),
-                Flexible(
+                // All the room the dots leave (a Spacer would take half of it).
+                Expanded(
                     child: Text(i.action,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.end,
                         style: Theme.of(context)
                             .textTheme
                             .labelMedium

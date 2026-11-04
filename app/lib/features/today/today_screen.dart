@@ -629,7 +629,7 @@ class RevisitCard extends StatelessWidget {
             child:
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               MonoLabel('Saved ${span(t - d.createdAt)} ago · never tried',
-                  color: c.brandText),
+                  color: c.brandText, maxLines: 2),
               const SizedBox(height: 6),
               Text(d.title,
                   maxLines: 3,
