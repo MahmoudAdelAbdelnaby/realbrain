@@ -52,7 +52,7 @@ class MainActivity : FlutterActivity() {
                         if (bytes == null) return@setMethodCallHandler result.error("BAD_ARGS", "bytes required", null)
                         val dir = java.io.File(cacheDir, "share").apply { mkdirs() }
                         val file = java.io.File(dir, "realbrain.png").apply { writeBytes(bytes) }
-                        val uri = androidx.core.content.FileProvider.getUriForFile(this, "$packageName.files", file)
+                        val uri = androidx.core.content.FileProvider.getUriForFile(this@MainActivity, "$packageName.files", file)
                         val send = Intent(Intent.ACTION_SEND).setType("image/png")
                             .putExtra(Intent.EXTRA_STREAM, uri)
                             .putExtra(Intent.EXTRA_TEXT, call.argument<String>("text"))

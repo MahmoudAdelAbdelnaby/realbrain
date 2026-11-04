@@ -16,24 +16,27 @@ import '../features/shell/app_shell.dart';
 import '../main.dart';
 import 'sample.dart';
 
-/// The screenshot preview: the real screens on sample data, no Firebase. Build with
-///   flutter build web -t lib/preview/main_preview.dart
-/// and open with ?theme=dark|light&tab=0..3&route=... (see [_open]). Never shipped in the app.
+/// The real screens on sample data, no Firebase or backend. Two uses:
+/// * the screenshot preview: `flutter build web -t lib/preview/main_preview.dart`, opened with
+///   ?theme=dark|light&tab=0..3&route=... (see [_open]), on a fixed clock so shots repeat;
+/// * the demo APK: the same with `--dart-define=RB_DEMO=true` (.github/workflows/demo.yml), on
+///   the real clock, so the pick and greeting follow the time of day.
+/// Neither is the shipped app (lib/main.dart).
 void main() {
   final q = Uri.base.queryParameters;
-  final now = DateTime(2026, 11, 3, 19, 20);
+  final now = demoBuild ? DateTime.now() : DateTime(2026, 11, 3, 19, 20);
   final state = sampleState(now, puzzle: q['puzzle'] != 'off');
   Repo.instance = DemoRepo(state,
       posts: samplePosts(state, now),
       comments: sampleComments(now),
-      clock: () => now);
+      clock: demoBuild ? DateTime.now : () => now);
   appPrefs.value = (lang: q['lang'] ?? 'en', theme: q['theme'] ?? 'dark');
   backendUrl.value = ''; // frames are relative preview/img paths
   runApp(ReelbrainApp(
       home: _PreviewHome(
           route: q['route'],
           tab: int.tryParse(q['tab'] ?? '0') ?? 0,
-          now: now)));
+          now: demoBuild ? null : now)));
 }
 
 class _PreviewHome extends StatefulWidget {
@@ -41,7 +44,9 @@ class _PreviewHome extends StatefulWidget {
       {required this.route, required this.tab, required this.now});
   final String? route;
   final int tab;
-  final DateTime now;
+
+  /// Null: the live clock (the demo build).
+  final DateTime? now;
 
   @override
   State<_PreviewHome> createState() => _PreviewHomeState();

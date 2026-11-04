@@ -1,11 +1,19 @@
-/// Sample archive for the screenshot preview and widget tests: two people's worth of saves
-/// across every category and state, two groups with plans, a cook-along and a challenge.
-/// Frames point at preview/img/*.jpg, served next to the preview build (not shipped in the app).
+/// Sample archive for the screenshot preview, the demo build and widget tests: two people's worth
+/// of saves across every category and state, two groups with plans, a cook-along and a challenge.
 library;
 
 import '../core/data/brain.dart';
 
 const me = 'mahmoud';
+
+/// The demo APK (`--dart-define=RB_DEMO=true`, .github/workflows/demo.yml): sample photos bundled
+/// from demo/img and the real clock. Otherwise photos are preview/img/*.jpg, served next to the
+/// web preview build, and never part of the app.
+const demoBuild = bool.fromEnvironment('RB_DEMO');
+
+/// A sample photo by name.
+String img(String name) =>
+    demoBuild ? 'asset:demo/img/$name.jpg' : 'preview/img/$name.jpg';
 
 class _B {
   _B(this.now);
@@ -51,7 +59,7 @@ class _B {
           ? null
           : 'https://www.$platform.com/@${creator ?? 'someone'}/$id',
       'summary': summary,
-      'key_frame_url': frame == null ? null : 'preview/img/$frame.jpg',
+      'key_frame_url': frame == null ? null : img(frame),
       'created_at': ago(days: days, hours: hours),
       'created_by': by,
       if (by != me) 'shared_by': by,
@@ -83,7 +91,7 @@ Json _step(String text, double t, {int? timer, String? frame}) => {
       'text': text,
       't': t,
       'timer_s': timer,
-      if (frame != null) 'frame': 'preview/img/$frame.jpg'
+      if (frame != null) 'frame': img(frame)
     };
 
 Json _ing(String name, num? qty, String? unit, {bool est = false}) =>
@@ -404,7 +412,7 @@ BrainState sampleState(DateTime now, {bool puzzle = true}) {
             'why_go': 'Street-food classics done right, open late',
             'what_to_order': 'Ta’ameya sandwich, hawawshi, tahini fries',
             't': 5.0,
-            'frame': 'preview/img/zooba.jpg'
+            'frame': img('zooba')
           }
         ]
       },
@@ -428,7 +436,7 @@ BrainState sampleState(DateTime now, {bool puzzle = true}) {
             'verdict': 'false',
             'correction':
                 'Stomach acid and enzymes digest fruit with the rest of the meal; it does not rot.',
-            'frame': 'preview/img/fruits.jpg'
+            'frame': img('fruits')
           },
         ],
         'overall': 'false',
@@ -614,7 +622,7 @@ BrainState sampleState(DateTime now, {bool puzzle = true}) {
             'verdict': 'mostly_true',
             'correction':
                 'Archaeologists report edible honey in tombs, though exact finds are hard to verify.',
-            'frame': 'preview/img/bees.jpg'
+            'frame': img('bees')
           },
           {
             'text': 'Honey has no water, so bacteria cannot grow in it',
@@ -833,7 +841,7 @@ BrainState sampleState(DateTime now, {bool puzzle = true}) {
             'rest_s': 30,
             'cues': 'Drive the knees, light feet',
             't': 4.0,
-            'frame': 'preview/img/runner.jpg'
+            'frame': img('runner')
           },
           {
             'name': 'Step-ups',
@@ -1026,7 +1034,7 @@ BrainState sampleState(DateTime now, {bool puzzle = true}) {
       'platform': 'tiktok',
       'summary': 'Someone unboxing three pairs of headphones',
       'source_url': 'https://www.tiktok.com/@deals/video/4',
-      'key_frame_url': 'preview/img/sunnies.jpg',
+      'key_frame_url': img('sunnies'),
       'created_at': b.ago(days: 1),
       'created_by': me,
       'sections': <String>[],
@@ -1130,7 +1138,7 @@ Map<String, List<Json>> samplePosts(BrainState s, DateTime now) {
         'noun': section == 'entertainment' ? 'series' : null,
         'title': title,
         'detail': detail,
-        'frame': frame == null ? null : 'preview/img/$frame.jpg',
+        'frame': frame == null ? null : img(frame),
         'save_id': saveTitle == null ? null : _saveOf(s, saveTitle),
         'when': when,
         'rsvp': rsvp,
@@ -1213,7 +1221,7 @@ Map<String, List<Json>> sampleComments(DateTime now) {
         'by_name': 'Omar',
         'text': 'Done in 11:40. Legs are gone.',
         'kind': 'proof',
-        'photo': 'preview/img/runner.jpg',
+        'photo': img('runner'),
         'at': at(hours: 9)
       },
     ],

@@ -23,38 +23,44 @@ class FrameImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (stored == null) return fallback;
+    final s = stored;
+    if (s == null) return fallback;
+    // The demo build bundles its sample photos ("asset:path"); real frames live on the backend.
+    if (s.startsWith('asset:')) return _image(AssetImage(s.substring(6)));
     return ValueListenableBuilder<String?>(
       valueListenable: backendUrl,
       builder: (context, _, __) {
-        final url = frameUrl(stored);
+        final url = frameUrl(s);
         if (url == null) return fallback;
-        return LayoutBuilder(builder: (context, box) {
-          final dpr = MediaQuery.devicePixelRatioOf(context);
-          final w = box.maxWidth.isFinite ? box.maxWidth : 400.0;
-          return Image.network(
-            url,
-            fit: fit,
-            alignment: alignment,
-            width: double.infinity,
-            height: double.infinity,
-            cacheWidth: (w * dpr).round().clamp(64, 1600),
-            gaplessPlayback: true,
-            errorBuilder: (_, __, ___) => fallback,
-            frameBuilder: (context, child, frame, sync) {
-              if (sync || frame != null) {
-                return AnimatedOpacity(
-                    opacity: frame == null && !sync ? 0 : 1,
-                    duration: RbMotion.base,
-                    child: child);
-              }
-              return Stack(fit: StackFit.expand, children: [fallback, child]);
-            },
-          );
-        });
+        return _image(NetworkImage(url));
       },
     );
   }
+
+  Widget _image(ImageProvider provider) =>
+      LayoutBuilder(builder: (context, box) {
+        final dpr = MediaQuery.devicePixelRatioOf(context);
+        final w = box.maxWidth.isFinite ? box.maxWidth : 400.0;
+        return Image(
+          image: ResizeImage.resizeIfNeeded(
+              (w * dpr).round().clamp(64, 1600), null, provider),
+          fit: fit,
+          alignment: alignment,
+          width: double.infinity,
+          height: double.infinity,
+          gaplessPlayback: true,
+          errorBuilder: (_, __, ___) => fallback,
+          frameBuilder: (context, child, frame, sync) {
+            if (sync || frame != null) {
+              return AnimatedOpacity(
+                  opacity: frame == null && !sync ? 0 : 1,
+                  duration: RbMotion.base,
+                  child: child);
+            }
+            return Stack(fit: StackFit.expand, children: [fallback, child]);
+          },
+        );
+      });
 }
 
 /// The specimen card: what a discovery looks like without a frame (typed ideas, links,

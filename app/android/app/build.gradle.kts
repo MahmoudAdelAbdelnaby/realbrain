@@ -14,6 +14,10 @@ val local = Properties().apply {
 }
 fun localProp(key: String) = "\"" + (local.getProperty(key) ?: "") + "\""
 
+// REALBRAIN_DEMO=1: the sample-data demo (app/demo/README.md). Its own package and name, so it
+// installs next to the real app, and no share targets, since it has no account to save into.
+val demo = System.getenv("REALBRAIN_DEMO") == "1"
+
 android {
     namespace = "com.reelbrain.reelbrain"
     compileSdk = flutter.compileSdkVersion
@@ -26,7 +30,9 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.reelbrain.reelbrain"
+        applicationId = "com.reelbrain.reelbrain" + (if (demo) ".demo" else "")
+        manifestPlaceholders["appLabel"] = if (demo) "Realbrain demo" else "Realbrain"
+        manifestPlaceholders["shareTargets"] = if (demo) "false" else "true"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

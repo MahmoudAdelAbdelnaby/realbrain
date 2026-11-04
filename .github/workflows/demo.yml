@@ -1,0 +1,47 @@
+name: Demo APK
+
+# Realbrain demo (app/demo/README.md): the V5 screens on sample data, with no Firebase, sign-in or
+# backend, installable next to the real app. The APK is in the run's Artifacts.
+on:
+  workflow_dispatch:
+  push:
+    branches: [claude/zealous-edison-23h0cc]
+    paths: [app/**, .github/workflows/demo.yml]
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      # A placeholder Firebase config for the demo's own package; the demo never calls Firebase.
+      - run: sed 's/"com.reelbrain.reelbrain"/"com.reelbrain.reelbrain.demo"/' ../.github/ci-google-services.json > android/app/google-services.json
+      # The sample photos go into this build only; the shipped app never lists demo/img.
+      - run: |
+          python3 - <<'EOF'
+          from pathlib import Path
+          p = Path('pubspec.yaml'); s = p.read_text()
+          anchor = 'flutter:\n  uses-material-design: true\n'
+          assert anchor in s and '\n  assets:' not in s
+          p.write_text(s.replace(anchor, anchor + '  assets:\n    - demo/img/\n', 1))
+          EOF
+      - run: flutter pub get
+      - run: flutter build apk --release --split-per-abi --target-platform android-arm64 -t lib/preview/main_preview.dart --dart-define=RB_DEMO=true
+        env:
+          REALBRAIN_DEMO: "1"
+      - run: cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk realbrain-demo.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: realbrain-demo
+          path: app/realbrain-demo.apk
+          retention-days: 30

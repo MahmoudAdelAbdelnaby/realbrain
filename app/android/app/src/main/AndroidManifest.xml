@@ -9,7 +9,7 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <application
         android:extractNativeLibs="true"
-        android:label="Realbrain"
+        android:label="${appLabel}"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:enableOnBackInvokedCallback="true">
@@ -56,6 +56,7 @@
             android:theme="@android:style/Theme.Translucent.NoTitleBar" />
         <activity-alias
             android:name=".ShareMe"
+            android:enabled="${shareTargets}"
             android:targetActivity=".ShareActivity"
             android:label="@string/share_me"
             android:exported="true">
@@ -67,6 +68,7 @@
         </activity-alias>
         <activity-alias
             android:name=".ShareHome"
+            android:enabled="${shareTargets}"
             android:targetActivity=".ShareActivity"
             android:label="@string/share_home"
             android:exported="true">
