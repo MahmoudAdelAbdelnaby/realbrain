@@ -232,4 +232,67 @@ image settling as you swipe. Everything collapses to fades under reduced motion.
 
 ## 3. What changed in the contracts (V5)
 
-See §6 of this file once built (kept current with the code).
+**AI contract** (`backend/app/schemas`, `prompts/extract.md`), same single Extract call:
+
+* `entertainment`: `items[]` of `{kind: movie|series|book, title, creator?, year?, genres[], premise?,
+  why?, seasons?, episodes?, platforms[], estimated, t}`. Details from general knowledge set
+  `estimated: true`; the app says so.
+* `products`: `items[]` of `{name, brand?, description?, specs[], price?, currency?, price_text?,
+  merchant?, url_guess?, why?, t}`. Prices only when stated. Product videos no longer get "no section".
+* Moments (`t`) for steps, exercises, places and products are the moment the thing is *visible*, so
+  the frame cut there shows it (complements the key-frame rule that avoids talking heads).
+* `affiliate_url` is added by the backend only when `AFFILIATE_RULES` (env, JSON per shop domain)
+  matches; `url_guess` is kept and the app always shows it next to a disclosed affiliate link.
+
+**Endpoints** (all Firebase-authenticated):
+
+| Method and path | Does |
+| --- | --- |
+| POST /v1/groups `{name}` | New group; the first one becomes the "Home" share target. Returns `space_id, invite_url, code` |
+| POST /v1/spaces/{id}/invite | Now any group (households too); also returns `code` |
+| POST /v1/invites/{code}/accept | Joins; adds to `users.groups`; sets Home only if you had none |
+| POST /v1/groups/{id}/default · /leave | Share target; leave (Home moves to your next group) |
+| POST /v1/saves/{id}/share `{space_id, item_id?, kind, when?, text?}` | Copies the save into the group (once per group, personal progress reset) and posts `share`/`plan`/`cook`/`challenge` |
+| POST /v1/spaces/{id}/posts/{pid}/comments `{kind, text?, photo_b64?}` | Comment; `result`/`proof` photos (JPEG/PNG/WebP by magic bytes, ≤ 4 MB) mark you done |
+| GET/PATCH /v1/settings | + `puzzle` |
+| POST /v1/me | Also back-fills your name on groups from before V5 |
+
+**Firestore**: `users.groups[]`; `spaces.member_names{uid: first name}`, `spaces.type` `group`;
+`spaces/{id}/posts/{pid}` and `…/comments/{cid}` (backend-written); on items `seen.{uid}` (when you
+last opened it), `done_at`, and `user_state` adds `in_progress`, `compared`, `purchased`.
+
+**Rules** (`infra/firestore.rules`, 12 emulator tests): members may write their own `seen` entry
+(a number), `done_at`, the new states; read walls and comments; on posts change only their own
+`rsvp` (`going`/`maybe`/`no`/`in`; `done` is the backend's) and `likes` (`true`). Nothing else.
+
+**Android**: `shareImage` on the method channel through a `FileProvider` (achievement and recap
+cards); launcher, themed and splash icons regenerated from the mark (`tool/brand_icons.py`).
+
+---
+
+## 4. Status and limitations (3-4 Nov)
+
+Verified here: `flutter analyze` (clean), `dart format` (clean), `flutter test` (61, including
+widget tests of every main screen at 360 × 780 dp in ink, paper, RTL and tablet sizes), backend
+`ruff` + `pytest` (81), Firestore rules on the emulator (12), and the preview build screenshotted
+on a 360 × 780 viewport.
+
+Not verifiable in this container, so it needs a device check:
+
+* **Android build.** No Android SDK here. CI builds the APK; the new Kotlin (`shareImage`,
+  FileProvider) and the `image_picker` and `qr` plugins are only reviewed, not run on a phone.
+* **Live data.** No Firebase project in the container: screens were exercised on the in-memory demo
+  repo (`lib/preview`, the same screens and actions). The backend and rules must be deployed
+  (`infra/oracle/deploy`, `firebase deploy --only firestore:rules,firestore:indexes`) before the
+  phone uses groups, sharing, comments and the new categories.
+* **Map tiles** need network (OpenStreetMap), as before.
+
+Known gaps (honest list):
+
+* Proof is a **photo**, not a video (video upload and playback would need storage and a player).
+* No poster or cover lookup for Watch & Read (no external API); the reel's frame or a typeset title
+  card stands in. Search links (IMDb, JustWatch, Goodreads) are searches, not claims.
+* Prices come only from the video; affiliate links need `AFFILIATE_RULES` set on the backend.
+* Group names can't be edited in the app yet; leaving is supported.
+* The landing page (`web/landing`) still wears the v4 look.
+* The iOS native shell is unchanged; the iPhone uses the web app and the Shortcut (I1/I2).

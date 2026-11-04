@@ -62,6 +62,18 @@ def groups_of(user: dict) -> list[str]:
     return listed
 
 
+def backfill_names(uid: str, user: dict) -> None:
+    """Puts uid's first name on each of their groups that doesn't show it yet (groups and
+    households from before V5 have no member_names)."""
+    for space_id in groups_of(user):
+        space = store.doc_get(f"spaces/{space_id}")
+        if space and uid in space.get("members", []) and uid not in (space.get("member_names") or {}):
+            store.doc_update(
+                f"spaces/{space_id}",
+                {"member_names": {**(space.get("member_names") or {}), uid: display_name(uid, user)}},
+            )
+
+
 def is_member(uid: str, space_id: str) -> bool:
     space = store.doc_get(f"spaces/{space_id}")
     return bool(space) and uid in space.get("members", [])

@@ -330,8 +330,7 @@ class _ViewerPageState extends State<_ViewerPage> {
                 duration: RbMotion.base,
                 switchInCurve: RbMotion.enter,
                 child: current == null
-                    ? _Overview(
-                        key: const ValueKey(-1), d: d, moments: moments.length)
+                    ? _Overview(key: const ValueKey(-1), d: d, moments: moments)
                     : _MomentText(
                         key: ValueKey(_m),
                         m: current,
@@ -397,7 +396,7 @@ class _ViewerPageState extends State<_ViewerPage> {
 class _Overview extends StatelessWidget {
   const _Overview({super.key, required this.d, required this.moments});
   final Discovery d;
-  final int moments;
+  final List<Moment> moments;
 
   @override
   Widget build(BuildContext context) {
@@ -425,16 +424,35 @@ class _Overview extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: t.bodyMedium?.copyWith(color: c.muted)),
         ],
-        if (moments > 0) ...[
+        if (moments.isNotEmpty) ...[
+          // What's inside, at a glance: the first moments as a numbered list.
+          const SizedBox(height: 12),
+          for (final (i, m) in moments.take(3).indexed)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child:
+                  Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                SizedBox(
+                    width: 26,
+                    child: Text('${i + 1}'.padLeft(2, '0'),
+                        style: RbType.monoNumber(12.5, color: c.brandText))),
+                Expanded(
+                  child: Text(m.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: t.bodyMedium?.copyWith(color: c.text)),
+                ),
+              ]),
+            ),
           const SizedBox(height: 10),
           Row(children: [
             Icon(Icons.swipe_left_outlined, size: 16, color: c.faint),
             const SizedBox(width: 6),
             Expanded(
               child: Text(
-                  moments == 1
+                  moments.length == 1
                       ? 'Swipe the picture for the moment found'
-                      : 'Swipe the picture through $moments moments',
+                      : 'Swipe the picture through ${moments.length} moments',
                   style: t.bodySmall),
             )
           ]),

@@ -174,3 +174,16 @@ def test_only_finished_saves_can_be_shared():
         "/v1/saves", json={"source_url": "https://youtu.be/q", "space_id": "me"}, headers=ANA
     ).json()["save_id"]
     assert client.post(f"/v1/saves/{save_id}/share", json={"space_id": gid}, headers=ANA).status_code == 409
+
+
+def test_households_from_before_v5_learn_member_names_and_count_as_groups():
+    store.doc_set("users/old", {"name": "Old Timer", "spaces": {"me": "p_old", "home": "h_legacy"}})
+    store.doc_set("spaces/p_old", {"type": "personal", "members": ["old"]})
+    store.doc_set("spaces/h_legacy", {"name": "Home", "type": "household", "members": ["old"]})
+    client.post("/v1/me", json={}, headers={"Authorization": "Bearer dev:old"})
+    assert store.doc_get("spaces/h_legacy")["member_names"] == {"old": "Old"}
+    # The household works as a group: invite, share target, wall.
+    assert (
+        client.post("/v1/spaces/h_legacy/invite", headers={"Authorization": "Bearer dev:old"}).status_code
+        == 200
+    )

@@ -87,6 +87,7 @@ def me(body: Me, token: Annotated[dict, Depends(claims)]) -> dict:
     u = spaces.ensure_user(uid, body.name or token.get("name"), body.lang)
     if body.fcm_token:
         store.doc_array_add(f"users/{uid}", "fcm_tokens", body.fcm_token)
+    spaces.backfill_names(uid, u)  # households made before V5 learn their members' names
     return {"uid": uid, "spaces": u["spaces"]}
 
 
