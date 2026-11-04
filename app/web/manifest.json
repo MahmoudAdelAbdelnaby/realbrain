@@ -3,9 +3,9 @@
   "short_name": "Realbrain",
   "start_url": ".",
   "display": "standalone",
-  "background_color": "#0E0F12",
-  "theme_color": "#0E0F12",
-  "description": "Turn shared reels into structured knowledge.",
+  "background_color": "#121110",
+  "theme_color": "#121110",
+  "description": "Everything you discover, finally used.",
   "orientation": "portrait-primary",
   "prefer_related_applications": false,
   "icons": [

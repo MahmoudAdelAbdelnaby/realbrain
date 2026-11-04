@@ -20,7 +20,9 @@ Path _parse(String d) {
   var lastCmd = '';
   while (t.more) {
     if (t.isCommand) cmd = t.command();
-    if (cmd.isEmpty) throw FormatException('path must start with a command', d);
+    if (cmd.isEmpty || (lastCmd.isEmpty && cmd != 'M' && cmd != 'm')) {
+      throw FormatException('path must start with a move (M) command', d);
+    }
     final rel = cmd == cmd.toLowerCase();
     final c = cmd.toUpperCase();
     double x(double v) => rel ? cx + v : v;

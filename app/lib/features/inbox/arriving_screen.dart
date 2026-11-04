@@ -242,15 +242,19 @@ class _NeedsYou extends StatelessWidget {
         ],
         Row(children: [
           if (save['source_url'] != null)
-            TextButton(
-                onPressed: () => openSave(context, save['save_id'] as String),
-                child: const Text('Details')),
+            Flexible(
+              child: TextButton(
+                  onPressed: () => openSave(context, save['save_id'] as String),
+                  child: const Text('Details')),
+            ),
           const Spacer(),
-          RbButton.quiet('Try again',
-              small: true,
-              icon: Icons.refresh,
-              onPressed: () => _run(
-                  context, () => Repo.instance.retry(save), 'Trying again')),
+          Flexible(
+            child: RbButton.quiet('Try again',
+                small: true,
+                icon: Icons.refresh,
+                onPressed: () => _run(
+                    context, () => Repo.instance.retry(save), 'Trying again')),
+          ),
         ]),
       ]),
     );

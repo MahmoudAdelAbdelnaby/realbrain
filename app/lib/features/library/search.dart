@@ -4,9 +4,12 @@ library;
 
 import '../../core/data/brain.dart';
 
-/// Lowercase, Arabic diacritics and tatweel dropped, alef/ya/ta-marbuta variants folded.
+/// Lowercase, Arabic diacritics (U+0610-061A, U+064B-065F, U+0670) and tatweel (U+0640) dropped,
+/// alef/ya/ta-marbuta variants folded. Escaped code points: bidi text can't reorder them.
 String normalise(String text) {
-  final stripped = text.toLowerCase().replaceAll(RegExp('[ؐ-ًؚ-ٰٟـ]'), '');
+  final stripped = text
+      .toLowerCase()
+      .replaceAll(RegExp('[\\u0610-\\u061A\\u064B-\\u065F\\u0670\\u0640]'), '');
   const fold = {
     'أ': 'ا',
     'إ': 'ا',

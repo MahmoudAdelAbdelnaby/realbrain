@@ -195,16 +195,18 @@ class PostCard extends StatelessWidget {
               Text('${likes.length}',
                   style: RbType.monoNumber(13, color: c.muted)),
             const SizedBox(width: 8),
-            TextButton.icon(
-              onPressed: () => openComments(context, group, post),
-              icon: Icon(Icons.chat_bubble_outline, size: 19, color: c.muted),
-              label: Text(
-                  ((post['comment_count'] ?? 0) as num) > 0
-                      ? '${post['comment_count']}'
-                      : kind == 'cook'
-                          ? 'Share how it went'
-                          : 'Comment',
-                  style: t.labelMedium?.copyWith(color: c.muted)),
+            Flexible(
+              child: TextButton.icon(
+                onPressed: () => openComments(context, group, post),
+                icon: Icon(Icons.chat_bubble_outline, size: 19, color: c.muted),
+                label: Text(
+                    ((post['comment_count'] ?? 0) as num) > 0
+                        ? '${post['comment_count']}'
+                        : kind == 'cook'
+                            ? 'Share how it went'
+                            : 'Comment',
+                    style: t.labelMedium?.copyWith(color: c.muted)),
+              ),
             ),
           ]),
         ),

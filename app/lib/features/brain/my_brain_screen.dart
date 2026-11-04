@@ -125,20 +125,22 @@ class _MyBrainScreenState extends State<MyBrainScreen> {
                       textAlign: TextAlign.center,
                       style: RbType.serif(17, color: c.text, italic: true)),
                   const SizedBox(height: 8),
-                  Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                    _Legend(color: c.brand, label: 'Finished'),
-                    const SizedBox(width: 16),
-                    _Legend(
-                        color: Colors.transparent,
-                        border: c.brand,
-                        hatched: true,
-                        label: 'Opened'),
-                    const SizedBox(width: 16),
-                    _Legend(
-                        color: Colors.transparent,
-                        border: c.faint,
-                        label: 'Waiting'),
-                  ]),
+                  Wrap(
+                      alignment: WrapAlignment.center,
+                      spacing: 16,
+                      runSpacing: 6,
+                      children: [
+                        _Legend(color: c.brand, label: 'Finished'),
+                        _Legend(
+                            color: Colors.transparent,
+                            border: c.brand,
+                            hatched: true,
+                            label: 'Opened'),
+                        _Legend(
+                            color: Colors.transparent,
+                            border: c.faint,
+                            label: 'Waiting'),
+                      ]),
                   TextButton(
                     onPressed: () =>
                         Repo.instance.patchSettings({'puzzle': false}),
@@ -681,11 +683,14 @@ class _InsightCard extends StatelessWidget {
                     ),
                   ),
                 const Spacer(),
-                Text(i.action,
-                    style: Theme.of(context)
-                        .textTheme
-                        .labelMedium
-                        ?.copyWith(color: c.muted)),
+                Flexible(
+                    child: Text(i.action,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context)
+                            .textTheme
+                            .labelMedium
+                            ?.copyWith(color: c.muted))),
               ]),
             ]),
           ),

@@ -430,11 +430,13 @@ class _Overview extends StatelessWidget {
           Row(children: [
             Icon(Icons.swipe_left_outlined, size: 16, color: c.faint),
             const SizedBox(width: 6),
-            Text(
-                moments == 1
-                    ? 'Swipe the picture for the moment found'
-                    : 'Swipe the picture through $moments moments',
-                style: t.bodySmall),
+            Expanded(
+              child: Text(
+                  moments == 1
+                      ? 'Swipe the picture for the moment found'
+                      : 'Swipe the picture through $moments moments',
+                  style: t.bodySmall),
+            )
           ]),
         ],
       ]),

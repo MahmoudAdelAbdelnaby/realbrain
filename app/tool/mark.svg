@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Realbrain app icon (V5): the mark from lib/core/art/mark.dart on ink. Rendered to the PNG
+       icons (web/icons, web/favicon.png, android mipmaps). {R} is the corner radius, {S} the mark's scale. -->
+  <rect width="100" height="100" rx="{R}" fill="#121110"/>
+  <g transform="translate({T} {T2}) scale({S})" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M53 11.22C60.03 10.3 67.44 11.22 73 14C85 18 93 30 91 43L76 43.4C76.8 45.6 75.2 46.6 74.6 47.2C77.6 50.4 74.6 54 71 54C67.4 54 64.4 50.4 67.4 47.2C66.8 46.6 65.2 45.6 66 43.4L53.4 43L53.2 34C51 35 49.6 33 48.9 32.4C45.6 35.4 41.8 32.2 41.8 28.4C41.8 24.6 45.6 21.4 48.9 24.4C49.6 23.8 51 21.8 53.2 22.8Z" fill="#F0A53A"/>
+    <path d="M53 11.22C60.03 10.3 67.44 11.22 73 14C85 18 93 30 91 43L76 43.4C76.8 45.6 75.2 46.6 74.6 47.2C77.6 50.4 74.6 54 71 54C67.4 54 64.4 50.4 67.4 47.2C66.8 46.6 65.2 45.6 66 43.4L53.4 43L53.2 34C51 35 49.6 33 48.9 32.4C45.6 35.4 41.8 32.2 41.8 28.4C41.8 24.6 45.6 21.4 48.9 24.4C49.6 23.8 51 21.8 53.2 22.8Z" fill="none" stroke="#121110" stroke-width="2.6"/>
+    <g fill="none" stroke="#F2ECE1" stroke-width="{W}">
+      <path d="M23 66C13 64 8 54 11 44C13 31 24 20 38 17C42 13.89 47.38 11.96 53 11.22C60.03 10.3 67.44 11.22 73 14C85 18 93 30 91 43C90 52 86 58 79 60C79 67 73 73 65 71C60 75 55 76 50 73C40 74 30 71 23 66Z"/><path d="M59 73.5C59.5 78 58.5 82 56 86"/><path d="M21 56.5C31 55 40 51.5 49.5 46.5M33 21.5C25 26.5 21.5 34 24 42.5"/>
+    </g>
+  </g>
+</svg>

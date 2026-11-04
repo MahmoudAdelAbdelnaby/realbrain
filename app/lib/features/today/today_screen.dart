@@ -417,7 +417,9 @@ class _PickCard extends StatelessWidget {
                 Glyph(Glyphs.piece,
                     size: 14, color: c.brand, fill: c.brand, weight: 1.2),
                 const SizedBox(width: 6),
-                MonoLabel('Picked for ${pick.kicker}', color: c.brandText),
+                Flexible(
+                    child: MonoLabel('Picked for ${pick.kicker}',
+                        color: c.brandText)),
               ]),
               const SizedBox(height: 6),
               Text(pick.reason,
