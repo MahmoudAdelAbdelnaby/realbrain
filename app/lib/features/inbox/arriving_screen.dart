@@ -248,13 +248,12 @@ class _NeedsYou extends StatelessWidget {
                   child: const Text('Details')),
             ),
           const Spacer(),
-          Flexible(
-            child: RbButton.quiet('Try again',
-                small: true,
-                icon: Icons.refresh,
-                onPressed: () => _run(
-                    context, () => Repo.instance.retry(save), 'Trying again')),
-          ),
+          // Its natural width: only Details gives way when space is short.
+          RbButton.quiet('Try again',
+              small: true,
+              icon: Icons.refresh,
+              onPressed: () => _run(
+                  context, () => Repo.instance.retry(save), 'Trying again')),
         ]),
       ]),
     );

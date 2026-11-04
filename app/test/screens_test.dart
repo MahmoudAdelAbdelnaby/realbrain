@@ -63,6 +63,8 @@ void main() {
     expect(find.text('Cook it'), findsOneWidget);
     expect(
         find.text('One save being understood · 1 needs you'), findsOneWidget);
+    // The strip says it; nothing floats over the pick's button.
+    expect(find.textContaining('Watching the video'), findsNothing);
     for (final shelf in [
       'Left off',
       'Not tried yet',

@@ -64,18 +64,10 @@ class AppShellState extends State<AppShell> {
       ..addAll(busy);
   }
 
+  /// Only a save that just finished floats above the tab bar, for 4 s. Saves still being
+  /// understood live on Today's strip (and a dot on the Today tab), so the bar never sits on top
+  /// of the thing you came to do, such as the pick's main button.
   StatusLine? _status(BuildContext context, BrainState s) {
-    if (s.processing.isNotEmpty) {
-      final p = s.processing.first;
-      final more =
-          s.processing.length > 1 ? ' · ${s.processing.length - 1} more' : '';
-      return StatusLine(
-        key: 'busy-${p['save_id']}-${p['status']}',
-        text: '${p['step_text'] ?? 'Understanding'}…$more',
-        working: true,
-        onTap: () => openArriving(context),
-      );
-    }
     final f = _flash;
     if (f != null) {
       final d = s.forSave('${f['save_id']}').firstOrNull;
@@ -127,7 +119,11 @@ class AppShellState extends State<AppShell> {
               onCapture: () => openCapture(context),
               status: _status(context, s),
               items: [
-                const NavItem('Today', glyph: Glyphs.today),
+                NavItem('Today',
+                    glyph: Glyphs.today,
+                    dot: s.processing.isNotEmpty && tab != 0
+                        ? 'a save is being understood'
+                        : null),
                 NavItem('Library',
                     glyph: Glyphs.library, badge: s.attention.length),
                 const NavItem('Groups', glyph: Glyphs.groups),

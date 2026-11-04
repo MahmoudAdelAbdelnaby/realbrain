@@ -58,19 +58,21 @@ class GroupsScreen extends StatelessWidget {
         )
       else
         for (final g in s.groups) _GroupCard(g: g, state: s),
+      // Stacked, full width: side by side, "Join a group" no longer fits a 360 dp screen.
       Padding(
         padding: const EdgeInsets.fromLTRB(RbSpace.side, 8, RbSpace.side, 0),
-        child: Row(children: [
+        child: Column(children: [
           if (s.groups.isNotEmpty) ...[
-            Expanded(
-                child: RbButton.secondary('New group',
-                    glyph: Glyphs.groups,
-                    onPressed: () => createGroupFlow(context))),
-            const SizedBox(width: 10),
+            RbButton.secondary('New group',
+                glyph: Glyphs.groups,
+                expand: true,
+                onPressed: () => createGroupFlow(context)),
+            const SizedBox(height: 10),
           ],
-          Expanded(
-              child: RbButton.secondary('Join a group',
-                  icon: Icons.qr_code_2, onPressed: () => joinFlow(context))),
+          RbButton.secondary('Join a group',
+              icon: Icons.qr_code_2,
+              expand: true,
+              onPressed: () => joinFlow(context)),
         ]),
       ),
       const SizedBox(height: 24),

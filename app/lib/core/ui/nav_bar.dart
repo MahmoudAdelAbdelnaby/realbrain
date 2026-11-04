@@ -5,17 +5,22 @@ import '../art/mark.dart';
 import '../theme/tokens.dart';
 import 'components.dart';
 
-/// One tab: its glyph (or the brain mark), label, and a count badge.
+/// One tab: its glyph (or the brain mark), label, a count badge, and an optional quiet dot.
 class NavItem {
-  const NavItem(this.label, {this.glyph, this.badge = 0});
+  const NavItem(this.label, {this.glyph, this.badge = 0, this.dot});
   final String label;
 
   /// Null draws the brain mark (My Brain).
   final String? glyph;
   final int badge;
+
+  /// When set, a small saffron dot (no number) and this phrase for screen readers, e.g. Today
+  /// while a save is being understood: its strip says what is happening.
+  final String? dot;
 }
 
-/// What sits above the tab bar: a save being understood, or one that just arrived.
+/// What floats above the tab bar for a few seconds: a save that just arrived. Saves still being
+/// understood are shown on Today's strip instead, so nothing sits over the content for long.
 class StatusLine {
   const StatusLine(
       {required this.key,
@@ -30,7 +35,7 @@ class StatusLine {
 }
 
 /// The V5 tab bar (docs/DESIGN_V5.md §2.5): Today · Library · ( + ) · Groups · My Brain, with a
-/// saffron index tab on the selected slot and the status line floating above.
+/// saffron index tab on the selected slot and the Ready line floating above for a few seconds.
 class RbNavBar extends StatelessWidget {
   const RbNavBar({
     super.key,
@@ -112,7 +117,11 @@ class _Slot extends StatelessWidget {
     return Semantics(
       selected: selected,
       button: true,
-      label: item.badge > 0 ? '${item.label}, ${item.badge} new' : item.label,
+      label: item.badge > 0
+          ? '${item.label}, ${item.badge} new'
+          : item.dot != null
+              ? '${item.label}, ${item.dot}'
+              : item.label,
       excludeSemantics: true,
       child: Pressable(
         onTap: onTap,
@@ -139,7 +148,10 @@ class _Slot extends StatelessWidget {
                         backgroundColor: c.brand,
                         textColor: c.onBrand,
                         child: icon)
-                    : icon,
+                    : item.dot != null
+                        ? Badge(
+                            smallSize: 7, backgroundColor: c.brand, child: icon)
+                        : icon,
               ),
             ),
             const SizedBox(height: 3),

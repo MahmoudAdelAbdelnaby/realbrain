@@ -2,7 +2,7 @@
 
 Status: built 3 Nov 2026 on `claude/zealous-edison-23h0cc`. Replaces the visual and navigation parts of
 `DESIGN_V4_PROPOSAL.md` (and through it v3 and Darkroom). The PRD, AI contract and backend contract
-stay; their V5 additions are listed in §6.
+stay; their V5 additions are listed in §3.
 
 ---
 
@@ -125,7 +125,7 @@ the catalogue's numbering without either one's literalism.
 | Wordmark | *Realbrain* in Fraunces SemiBold, -2% tracking, next to the mark. |
 | Mascot | Hoopoe, ink line + cinnamon fill, striped wings. Poses: perched, curious (empty), carrying the piece (success/onboarding), reading (loading). |
 | Glyphs | 24-unit line icons, 1.6 stroke, round caps: pot, kettlebell, folded map, terminal, scales, bulb, ticket (clapper/TV/book for sub-kinds), price tag. |
-| Texture | Fine grain over the ground (≤ 3% opacity), one cached shader; off with reduced motion and transparency. |
+| Texture | None: grounds are flat. The print feel comes from type, hairline rules and the plates (a grain layer was tried on paper and dropped: one more full-screen layer for no gain on OLED). |
 
 ### 2.4 Information architecture
 
@@ -150,7 +150,9 @@ library stays simple as it grows:
 * **Today**: the pick for right now, then five shelves with different shapes (not five
   carousels): *Left off* (bookmarks), *Not tried yet* (2 × 2 plate grid), *From your groups* (wall
   excerpts), *Recently saved* (numbered catalogue rows), *Worth revisiting* (one card with Not now /
-  Archive). A processing strip at the top replaces the Inbox card.
+  Archive). A processing strip at the top replaces the Inbox card. Nothing floats over the
+  content while a save is being understood (v4's pill sat on the main button): the strip says it,
+  the Today tab carries a dot while you are elsewhere, and only *Ready: …* floats up, for 4 s.
 * **Library**: search first (everything, Arabic-normalised), then the *index* (categories as
   catalogue drawers with counts and what's open), collections, and a status filter. Category pages
   have their own filters (tags, tool kinds, Movies/Series/Books, product status), the map for places,
